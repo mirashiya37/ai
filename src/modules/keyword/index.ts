@@ -28,20 +28,21 @@ export default class extends Module {
 			indices: ['userId']
 		});
 
-		setInterval(this.learn, 1000 * 60 * 60);
+		setInterval(this.learn, 1000 * 60 * 30);
 
 		return {};
 	}
 
 	@bindThis
 	private async learn() {
-		const tl = await this.ai.api('notes/local-timeline', {
-			limit: 30
+		const tl: any = await this.ai.api('notes/global-timeline', {
+			limit: 100
 		});
 
 		const interestedNotes = tl.filter(note =>
 			note.userId !== this.ai.account.id &&
 			note.text != null &&
+			note.visibility == "public" &&
 			note.cw == null);
 
 		let keywords: string[][] = [];
@@ -70,8 +71,11 @@ export default class extends Module {
 				keyword: keyword[0],
 				learnedAt: Date.now()
 			});
-
-			text = serifs.keyword.learned(keyword[0], kanaToHira(keyword[8]));
+			if (/^[ぁ-んァ-ヴー]*$/.test(keyword[0]) == true) {
+				text = serifs.keyword.learned(keyword[0], null);
+			} else {
+				text = serifs.keyword.learned(keyword[0], kanaToHira(keyword[8]));
+			}
 		}
 
 		this.ai.post({
