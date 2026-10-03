@@ -2,6 +2,7 @@ import { bindThis } from '@/decorators.js';
 import { HandlerResult } from '@/ai.js';
 import Module from '@/module.js';
 import Message from '@/message.js';
+import { genItem } from '@/vocabulary.js';
 import serifs, { getSerif } from '@/serifs.js';
 import getDate from '@/utils/get-date.js';
 
@@ -33,7 +34,24 @@ export default class extends Module {
 			this.ote(msg) ||
 			this.ponkotu(msg) ||
 			this.rmrf(msg) ||
-			this.shutdown(msg)
+			this.shutdown(msg) ||
+			this.mom(msg) ||
+			this.baby(msg) ||
+			this.diet(msg) ||
+			this.sleep(msg) ||
+			this.nade(msg) ||
+			this.otukare(msg) ||
+			this.hightouch(msg) ||
+			this.adana(msg) ||
+			this.otukaresama(msg) ||
+			this.height(msg) ||
+			this.weight(msg) ||
+			this.thanks(msg) ||
+			this.sugoi(msg) ||
+			this.sorry(msg) ||
+			this.hold(msg) ||
+			this.nuge(msg) ||
+			this.can(msg)
 		);
 	}
 
@@ -306,4 +324,210 @@ export default class extends Module {
 			reaction: 'confused'
 		};
 	}
+
+	// 以下ワード追加分
+
+	@bindThis
+	private mom(msg: Message): boolean {
+		if (!msg.includes(['ママ', 'まま', 'マンマ', 'ばぶ', 'バブ', '母上', 'お母さん'])) return false;
+
+		msg.reply(getSerif(msg.friend.love >= 5 ? serifs.core.mom.love(msg.friend.name) :
+			msg.friend.love <= -3 ? serifs.core.mom.hate :
+				serifs.core.mom.normal(msg.friend.name)));
+
+		return true;
+	}
+
+	@bindThis
+	private hold(msg: Message): boolean {
+		if (!msg.includes(['だっこ', '抱っこ'])) return false;
+
+		msg.reply(msg.friend.love >= 5 ? serifs.core.hold.love :
+			msg.friend.love <= -3 ? serifs.core.hold.hate :
+				serifs.core.hold.normal);
+
+		return true;
+	}
+
+	@bindThis
+	private baby(msg: Message): boolean {
+		if (!msg.includes(['よちよち', 'よしよし'])) return false;
+
+		msg.reply(
+			msg.friend.love >= 5 ? serifs.core.baby.love :
+				msg.friend.love <= -3 ? serifs.core.baby.hate :
+					serifs.core.baby.normal);
+
+		return true;
+	}
+
+	@bindThis
+	private diet(msg: Message): boolean {
+		if (!msg.includes(['ご飯', 'ごはん'])) return false;
+
+		msg.reply(getSerif(
+			msg.friend.love >= 10 ? serifs.core.diet.love(msg.friend.name) :
+				msg.friend.love <= -10 ? serifs.core.diet.hate :
+					serifs.core.diet.normal));
+
+		return true;
+	}
+
+	@bindThis
+	private sleep(msg: Message): boolean | HandlerResult {
+		if (!msg.includes(['慰めて', 'なぐさめて'])) return false;
+
+		msg.reply(serifs.core.nade);
+
+		return {
+			reaction: ':petthex:'
+		};
+	}
+
+	@bindThis
+	private otukare(msg: Message): boolean | HandlerResult {
+		if (!msg.includes(['疲れた', 'つかれた'])) return false;
+
+		msg.reply(serifs.core.otukare(msg.friend.name));
+
+		return {
+			reaction: ':petthex:'
+		};
+	}
+
+	@bindThis
+	private nade(msg: Message): boolean {
+		if (!msg.includes(['眠い', 'ねむい', '寝たい', 'ねたい'])) return false;
+
+		msg.reply(
+			msg.friend.love >= 15 ? serifs.core.sleep.love(msg.friend.name) :
+				msg.friend.love <= -6 ? serifs.core.sleep.hate :
+					serifs.core.sleep.normal);
+
+		return true;
+	}
+
+	@bindThis
+	private hightouch(msg: Message): boolean | HandlerResult {
+		if (!msg.includes(['ハイタッチ', 'はいたっち'])) return false;
+
+		msg.reply(
+			msg.friend.love <= -3 ? serifs.core.higntouch.hate :
+				serifs.core.higntouch.normal(msg.friend.name));
+
+		return {
+			reaction: '🙌'
+		};
+	}
+
+	@bindThis
+	private adana(msg: Message): boolean | HandlerResult {  // いつかそのまま名前を覚えさせられたらいいね
+		if (!msg.includes(['あだな', 'あだ名', '渾名', 'あだにゃ'])) return false;
+		const item = genItem();
+
+		msg.reply(serifs.core.adana(item, msg.friend.name));
+
+		return {
+			reaction: '🙌'
+		};
+	}
+
+	@bindThis
+	private height(msg: Message): boolean | HandlerResult {
+		if (!msg.includes(['身長', '背の高さ'])) return false;
+
+		msg.reply(serifs.core.height);
+
+		return {
+			reaction: ':neko_tere_nya:'
+		};
+	}
+
+	@bindThis
+	private weight(msg: Message): boolean | HandlerResult {
+		if (!msg.includes(['体重'])) return false;
+
+		msg.reply(serifs.core.weight);
+
+		msg.friend.decLove();
+
+		return {
+			reaction: 'confused'
+		};
+	}
+
+	@bindThis
+	private otukaresama(msg: Message): boolean {
+		if (!msg.includes(['おつかれ', 'お疲れ'])) return false;
+
+		msg.reply(getSerif(
+			msg.friend.love >= 5 ? serifs.core.otukaresama.love(msg.friend.name) :
+				msg.friend.love <= -20 ? serifs.core.otukaresama.hate2 :
+					msg.friend.love <= -3 ? serifs.core.otukaresama.hate1 :
+						serifs.core.otukaresama.normal(msg.friend.name)));
+
+		return true;
+	}
+
+	@bindThis
+	private sugoi(msg: Message): boolean {
+		if (!msg.includes(["えらい", "すごい"])) return false;
+
+		msg.reply(getSerif(
+			msg.friend.love >= 5 ? serifs.core.sugoi.love(msg.friend.name) :
+				serifs.core.sugoi.normal));
+
+		return true;
+	}
+
+	@bindThis
+	private thanks(msg: Message): boolean {
+		if (!msg.includes(["ありがとう", "ありがたい"])) return false;
+
+		msg.reply(getSerif(
+			msg.friend.love >= 5 ? serifs.core.thanks.love(msg.friend.name) :
+			msg.friend.love <= 3 ? serifs.core.thanks.hate :
+				serifs.core.thanks.normal(msg.friend.name)));
+
+		return true;
+	}
+
+	@bindThis
+	private sorry(msg: Message): boolean | HandlerResult {
+		if (!msg.includes(['ごめん', 'ゴメン', "sorry"])) return false;
+
+		msg.reply(
+			msg.friend.love <= -3 ? serifs.core.sorry.hate :
+				serifs.core.sorry.normal);
+
+		return {
+			reaction: 'confused'
+		};
+	}
+
+	@bindThis
+	private nuge(msg: Message): boolean | HandlerResult {
+		if (!msg.includes(['脱げ', '脱いで', "ぬげ", "ぬいで"])) return false;
+
+		msg.reply(
+			msg.friend.love <= -3 ? serifs.core.nuge.hate :
+				serifs.core.nuge.normal);
+
+		return {
+			reaction: 'confused'
+		};
+	}
+
+	@bindThis
+	private can(msg: Message): boolean | HandlerResult {
+		if (!msg.includes(["できる","出来る"])) return false;
+
+		msg.reply(serifs.core.can);
+
+		return {
+			reaction: '🙌'
+		};
+	}
 }
+
+
