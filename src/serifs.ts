@@ -479,7 +479,7 @@ export default {
 	},
 
 	chart: {
-		post: 'インスタンスの投稿数です！',
+		post: 'miyarakeyの1日あたりの合計投稿数の推移です！', // 文言変更
 		foryou: '描きました！'
 	},
 
