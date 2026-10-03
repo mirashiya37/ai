@@ -323,7 +323,7 @@ export default {
 	 * タイマー
 	 */
 	timer: {
-		set: 'わかりました！',
+		set: (noticeDate) => noticeDate ? `わかりました！$[unixtime ${noticeDate}]にお知らせしますね！` : `わかりました！`,
 
 		invalid: 'うーん...？',
 

@@ -30,18 +30,19 @@ export default class extends Module {
 			msg.reply(serifs.timer.invalid);
 			return true;
 		}
-
+		const nowDate = Date.now()
 		const time =
 			(1000 * seconds) +
 			(1000 * 60 * minutes) +
 			(1000 * 60 * 60 * hours);
+		const noticeDate = Math.floor((nowDate + time) / 1000);
 
 		if (time > 86400000) {
 			msg.reply(serifs.timer.tooLong);
 			return true;
 		}
 
-		msg.reply(serifs.timer.set);
+		msg.reply(serifs.timer.set(noticeDate));
 
 		const str = `${hours ? hoursQuery![0] : ''}${minutes ? minutesQuery![0] : ''}${seconds ? secondsQuery![0] : ''}`;
 
@@ -57,7 +58,7 @@ export default class extends Module {
 	}
 
 	@bindThis
-	private timeoutCallback(data) {
+	private async timeoutCallback(data) {
 		const friend = this.ai.lookupFriend(data.userId);
 		if (friend == null) return; // 処理の流れ上、実際にnullになることは無さそうだけど一応
 		const text = serifs.timer.notify(data.time, friend.name);
