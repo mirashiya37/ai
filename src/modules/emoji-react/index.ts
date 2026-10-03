@@ -22,8 +22,11 @@ export default class extends Module {
 
 	@bindThis
 	private async onNote(note: Note) {
+		if (note.userId == "9yk8bsv1ursv0006") return;
 		if (note.reply != null) return;
+		if (note.cw !== null) return;
 		if (note.text == null) return;
+		if (note.text.includes('$[blur')) return;
 		if (note.text.includes('@')) return; // (自分または他人問わず)メンションっぽかったらreject
 
 		const react = async (reaction: string, immediate = false) => {
@@ -36,7 +39,7 @@ export default class extends Module {
 			});
 		};
 
-		const customEmojis = note.text.match(/:([^\n:]+?):/g);
+		const customEmojis = note.text.match(/:(?!.*http[s]?:\/\/)([^\n:]+?):/g);  // 過剰反応を抑える
 		if (customEmojis) {
 			// カスタム絵文字が複数種類ある場合はキャンセル
 			if (!customEmojis.every((val, i, arr) => val === arr[0])) return;
@@ -64,10 +67,9 @@ export default class extends Module {
 			return react(reaction);
 		}
 
-		if (includes(note.text, ['ぴざ'])) return react('🍕');
+		if (includes(note.text, ['ぴざ'])) return react(':meow_pizza:');
 		if (includes(note.text, ['ぷりん'])) return react('🍮');
-		if (includes(note.text, ['寿司', 'sushi']) || note.text === 'すし') return react('🍣');
-
+		if (includes(note.text, ['寿司', 'sushi']) || note.text === 'すし') return react(':meow_sushi:');
 		if (includes(note.text, ['藍'])) return react('🙌');
 	}
 }
