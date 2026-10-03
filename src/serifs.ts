@@ -72,7 +72,7 @@ export default {
 			normal: name => name ? `いってらっしゃい、${name}！` : 'いってらっしゃい！',
 		},
 
-		tooLong: '長すぎる気がします...',
+		tooLong: '長すぎる気がします...(10文字以下にしてください)',
 
 		invalidName: '発音が難しい気がします',
 

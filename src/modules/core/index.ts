@@ -62,9 +62,9 @@ export default class extends Module {
 
 	@bindThis
 	private setName(msg: Message): boolean  {
-		if (!msg.text) return false;
-		if (!msg.text.includes('って呼んで')) return false;
-		if (msg.text.startsWith('って呼んで')) return false;
+		if (!msg.extractedText) return false;
+		if (!msg.extractedText.includes('って呼んで')) return false;
+		if (msg.extractedText.startsWith('って呼んで')) return false;
 
 		const name = msg.extractedText.match(/\s*(.+?)って呼んで/)![1];
 
