@@ -428,9 +428,23 @@ class Session {
 	 * 対局が始まったことをMisskeyに投稿します
 	 */
 	private postGameStarted = async () => {
+		let difficulty: string
+		if (this.strength == 0) {
+			difficulty = "接待"
+		} else if (this.strength == 2) {
+			difficulty = "やさしい"
+		} else if (this.strength == 3) {
+			difficulty = "ふつう"
+		} else if (this.strength == 4) {
+			difficulty = "つよい"
+		} else if (this.strength == 5) {
+			difficulty = "藍の本気"
+		} else {
+			difficulty = "えらー"
+		}
 		const text = this.isSettai
 			? serifs.reversi.startedSettai(this.userName)
-			: serifs.reversi.started(this.userName, this.strength.toString());
+			: serifs.reversi.started(this.userName, difficulty);
 
 		return await this.post(`${text}\n→[観戦する](${this.url})`);
 	}

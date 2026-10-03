@@ -58,6 +58,22 @@ export default class extends Module {
 					msg.friend.updateReversiStrength(0);
 				}
 
+				if (msg.includes(['簡単', 'かんたん', '易しい', 'やさしい', '手加減', 'easy', 'やさしく', '優しく'])) {
+					msg.friend.updateReversiStrength(2);
+				}
+
+				if (msg.includes(['ふつう', '普通', 'normal'])) {
+					msg.friend.updateReversiStrength(3);
+				}
+
+				if (msg.includes(['難しい', 'むずかしい', '死', '鬼', '地獄', 'hard', 'つよい', '強い', '強く', 'つよく'])) {
+					msg.friend.updateReversiStrength(4);
+				}
+
+				if (msg.includes(['藍']) && msg.includes(['本気'])) {
+					msg.friend.updateReversiStrength(5);
+				}
+
 				this.ai.api('reversi/match', {
 					userId: msg.userId
 				});
@@ -89,10 +105,10 @@ export default class extends Module {
 
 	@bindThis
 	private onReversiGameStart(game: any) {
-		let strength = 4;
+		let strength = 3;
 		const friend = this.ai.lookupFriend(game.user1Id !== this.ai.account.id ? game.user1Id : game.user2Id)!;
 		if (friend != null) {
-			strength = friend.doc.reversiStrength ?? 4;
+			strength = friend.doc.reversiStrength ?? 3;
 			friend.updateReversiStrength(null);
 		}
 
@@ -118,16 +134,16 @@ export default class extends Module {
 				label: '接待',
 				value: 0
 			}, {
-				label: '弱',
+				label: 'かんたん',
 				value: 2
 			}, {
-				label: '中',
+				label: 'ふつう',
 				value: 3
 			}, {
-				label: '強',
+				label: 'むずかしい',
 				value: 4
 			}, {
-				label: '最強',
+				label: '藍の本気',
 				value: 5
 			}]
 		}];

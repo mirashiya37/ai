@@ -183,52 +183,52 @@ export default {
 		/**
 		 * 対局開始
 		 */
-		started: (name, strength) => `対局を${name}と始めました！ (強さ${strength})`,
+		started: (name, strength) => `対局を${name}と始めました！ (強さ:${strength}) #aiReversi`,
 
 		/**
 		 * 接待開始
 		 */
-		startedSettai: name => `(${name}の接待を始めました)`,
+		startedSettai: name => `(${name}の接待を始めました) #aiReversi`,
 
 		/**
 		 * 勝ったとき
 		 */
-		iWon: name => `${name}に勝ちました♪`,
+		iWon: name => `${name}に勝ちました♪ #aiReversi`,
 
 		/**
 		 * 接待のつもりが勝ってしまったとき
 		 */
-		iWonButSettai: name => `(${name}に接待で勝っちゃいました...)`,
+		iWonButSettai: name => `(${name}に接待で勝っちゃいました...) #aiReversi`,
 
 		/**
 		 * 負けたとき
 		 */
-		iLose: name => `${name}に負けました...`,
+		iLose: name => `${name}に負けました... #aiReversi`,
 
 		/**
 		 * 接待で負けてあげたとき
 		 */
-		iLoseButSettai: name => `(${name}に接待で負けてあげました...♪)`,
+		iLoseButSettai: name => `(${name}に接待で負けてあげました...♪) #aiReversi`,
 
 		/**
 		 * 引き分けたとき
 		 */
-		drawn: name => `${name}と引き分けました～`,
+		drawn: name => `${name}と引き分けました～ #aiReversi`,
 
 		/**
 		 * 接待で引き分けたとき
 		 */
-		drawnSettai: name => `(${name}に接待で引き分けました...)`,
+		drawnSettai: name => `(${name}に接待で引き分けました...) #aiReversi`,
 
 		/**
 		 * 相手が投了したとき
 		 */
-		youSurrendered: name => `${name}が投了しちゃいました`,
+		youSurrendered: name => `${name}が投了しちゃいました #aiReversi`,
 
 		/**
 		 * 接待してたら相手が投了したとき
 		 */
-		settaiButYouSurrendered: name => `(${name}を接待していたら投了されちゃいました... ごめんなさい)`,
+		settaiButYouSurrendered: name => `(${name}を接待していたら投了されちゃいました... ごめんなさい) #aiReversi`,
 	},
 
 	/**
