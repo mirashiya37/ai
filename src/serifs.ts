@@ -395,7 +395,7 @@ export default {
 
 		finish: 'ゲームの結果発表です！',
 
-		finishWithWinner: (user, name) => name ? `今回は${user}さん(${name})の勝ちです！またやりましょう♪` : `今回は${user}さんの勝ちです！またやりましょう♪`,
+		finishWithWinner: (user, name) => name ? `今回は${name}(${user})の勝ちです！またやりましょう♪` : `今回は${user}さんの勝ちです！またやりましょう♪`,
 
 		finishWithNoWinner: '今回は勝者はいませんでした... またやりましょう♪',
 
