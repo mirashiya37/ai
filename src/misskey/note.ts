@@ -10,4 +10,6 @@ export type Note = {
 		expiredAfter: number;
 		multiple: boolean;
 	} | null;
+	cw: string | null;
+	userId: | string;
 };

@@ -12,7 +12,7 @@ import { sleep } from '@/utils/sleep.js';
 export default class Message {
 	private ai: 藍;
 	private chatMessage: { id: string; fromUser: any; fromUserId: string; text: string; } | null;
-	private note: { id: string; user: any; userId: string; text: string; renoteId: string; replyId: string; } | null;
+	private note: { id: string; user: any; userId: string; text: string; renoteId: string; replyId: string; visibility: string; } | null;
 	public isChat: boolean;
 
 	public get id(): string {
@@ -93,9 +93,30 @@ export default class Message {
 				fileId: opts?.file?.id
 			});
 		} else {
+			let visibility, visibleUserIds;  // 公開範囲に応じて返信の範囲を変更する
+			switch (this.note.visibility) {
+				case "public":
+					visibility = "public";
+					break;
+				case "home":
+					visibility = "home";
+					break;
+				case "followers":
+					visibility = "specified"; // フォローされているとは限らないため、ダイレクト投稿に
+					visibleUserIds = [this.note.userId];
+					break;
+				case "specified":
+					visibility = "specified";
+					visibleUserIds = [this.note.userId];
+					break;
+				default:
+					break;
+			}
 			return await this.ai.post({
 				replyId: this.note.id,
 				text: text,
+				visibility: visibility,
+				visibleUserIds: visibleUserIds,
 				fileIds: opts?.file ? [opts?.file.id] : undefined,
 				cw: opts?.cw,
 				renoteId: opts?.renote
