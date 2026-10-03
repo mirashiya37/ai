@@ -6,7 +6,7 @@ import serifs, { getSerif } from '@/serifs.js';
 import { acct } from '@/utils/acct.js';
 import config from '@/config.js';
 
-const NOTIFY_INTERVAL = 1000 * 60 * 60 * 12;
+const NOTIFY_INTERVAL = 1000 * 60 * 60 * 24; // 24時間ごとに変更する
 
 export default class extends Module {
 	public readonly name = 'reminder';
@@ -17,7 +17,7 @@ export default class extends Module {
 		isChat: boolean;
 		thing: string | null;
 		quoteId: string | null;
-		times: number; // 催促した回数(使うのか？)
+		times: number; // 催促した回数(使うのか？) => 使った
 		createdAt: number;
 	}>;
 
@@ -150,12 +150,40 @@ export default class extends Module {
 				text: serifs.reminder.notifyWithThing(remind.thing, friend.name)
 			});
 		} else {
-			try {
-				reply = await this.ai.post({
-					renoteId: remind.thing == null && remind.quoteId ? remind.quoteId : remind.id,
-					text: acct(friend.doc.user) + ' ' + serifs.reminder.notify(friend.name)
-				});
-			} catch (err) {
+			try {  // 
+				if (remind.times > 60) {  // 2ヶ月放置
+					let forget: number = Math.floor(Math.random() * 10)
+					if (forget == 1) {
+						reply = await this.ai.post({
+							renoteId: remind.thing == null && remind.quoteId ? remind.quoteId : remind.id,
+							text: acct(friend.doc.user) + ' ' + serifs.reminder.forget
+						});
+						this.unsubscribeReply(remind.thing == null && remind.quoteId ? remind.quoteId : remind.id);
+						this.reminds.remove(remind);
+						return;
+					} else {
+						reply = await this.ai.post({
+							renoteId: remind.thing == null && remind.quoteId ? remind.quoteId : remind.id,
+							text: acct(friend.doc.user) + ' ' + serifs.reminder.month(friend.name)
+						});
+					}
+				} else if (remind.times > 30) {  // 1ヶ月放置
+					reply = await this.ai.post({
+						renoteId: remind.thing == null && remind.quoteId ? remind.quoteId : remind.id,
+						text: acct(friend.doc.user) + ' ' + serifs.reminder.month(friend.name)
+					});
+				} else if (remind.times > 7) {  // 1週間放置
+					reply = await this.ai.post({
+						renoteId: remind.thing == null && remind.quoteId ? remind.quoteId : remind.id,
+						text: acct(friend.doc.user) + ' ' + serifs.reminder.week(friend.name)
+					});
+				} else {  // それ以外
+					reply = await this.ai.post({
+						renoteId: remind.thing == null && remind.quoteId ? remind.quoteId : remind.id,
+						text: acct(friend.doc.user) + ' ' + serifs.reminder.notify(friend.name)
+					});
+				}
+			} catch (err: any) {
 				// renote対象が消されていたらリマインダー解除
 				if (err.statusCode === 400) {
 					this.unsubscribeReply(remind.thing == null && remind.quoteId ? remind.quoteId : remind.id);

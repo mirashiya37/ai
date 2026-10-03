@@ -342,9 +342,15 @@ export default {
 
 		reminds: 'やること一覧です！',
 
-		notify: (name) => name ? `${name}、これやりましたか？` : `これやりましたか？`,
+		forget: 'えーっと・・・なに言おうとしたんでしたっけ・・・？',
 
-		notifyWithThing: (thing, name) => name ? `${name}、「${thing}」やりましたか？` : `「${thing}」やりましたか？`,
+		notify: (name) => name ? `${name}、これやりましたか？ #remAInder` : `これやりましたか？ #remAInder`,
+
+		week: (name) => name ? `${name}、もうやりましたよね？？ #remAInder` : `もうやりましたよね？？ #remAInder`,
+
+		month: (name) => name ? `${name}、まだやってないんですか（●｀ε´●） #remAInder` : `まだやってないんですか（●｀ε´●） #remAInder`,
+
+		notifyWithThing: (thing, name) => name ? `${name}、「${thing}」やりましたか？ #remAInder` : `「${thing}」やりましたか？ #remAInder`,
 
 		done: (name) => name ? [
 			`よく出来ました、${name}♪`,
