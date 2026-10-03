@@ -421,7 +421,7 @@ export default class 藍 {
 	 */
 	@bindThis
 	public api(endpoint: string, param?: any) {
-		this.log(`API: ${endpoint}`);
+		this.log(`API: ${config.apiUrl}/${endpoint}`);
 		return got.post(`${config.apiUrl}/${endpoint}`, {
 			json: Object.assign({
 				i: config.i
