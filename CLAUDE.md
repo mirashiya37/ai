@@ -1,7 +1,8 @@
 # CLAUDE.md
 
 `syuilo/ai`(Misskey のBot「藍」)を、自サーバ向けに改修した Fork。
-詳しいデプロイ手順は [docs/deploy.md](docs/deploy.md)、バージョンの付け方は [docs/versioning.md](docs/versioning.md) を参照。
+詳しいデプロイ手順は [docs/deploy.md](docs/deploy.md)、バージョンの付け方は [docs/versioning.md](docs/versioning.md)、
+形態素解析(MeCab / Sudachi)の切り替えは [docs/morph-analyzer.md](docs/morph-analyzer.md) を参照。
 
 ## ブランチと本番反映
 
