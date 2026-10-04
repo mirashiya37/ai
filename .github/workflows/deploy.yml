@@ -1,0 +1,44 @@
+name: Deploy
+
+on:
+  push:
+    branches: [custom]
+  workflow_dispatch:
+
+# 同時に2つデプロイしない。実行中のデプロイは途中で止めず、後続を待たせる
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    needs: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    env:
+      SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+      SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+      DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Connect to tailnet
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+          ping: ${{ secrets.DEPLOY_SSH_HOST }}
+
+      # Tailscale SSHを使うので、SSH鍵やknown_hostsの管理は不要
+      - name: Deploy over Tailscale SSH
+        run: |
+          tailscale ssh "$SSH_USER@$SSH_HOST" \
+            bash -s -- "$DEPLOY_PATH" "$GITHUB_SHA" < scripts/deploy.sh
