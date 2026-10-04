@@ -15,7 +15,9 @@
 
 本番のイメージ(CI でビルドして GHCR に置くもの)は、Sudachi だけを入れている(`deploy.yml` のビルド引数 `enable_mecab=0`)。
 そのため、サーバの `config.json` には `"morphAnalyzer": "sudachi"` が必須。
-無いと MeCab を起動しようとして、学習のタイミングで Bot が落ちる。
+無いと MeCab を起動しようとして失敗する。Bot は落ちずに動き続けるが、学習が毎回失敗して、何も覚えなくなる
+(ログに `Uncaught exception: spawn mecab ENOENT` が30分ごとに出る)。
+起動時のログに `Morph analyzer: mecab` と出ていたら、この設定漏れ。`Morph analyzer: sudachi` なら正しい。
 
 ## 設定(`config.json`)
 

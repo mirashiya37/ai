@@ -185,8 +185,9 @@ Actions のどのジョブで失敗したか(`ci` → `build` → `deploy`)で�
 
 ### 動いているBotの問題
 
-- **起動直後、または学習のタイミング(30分ごと)で落ちる**: イメージに MeCab が無いのに、`config.json` の
-  `morphAnalyzer` が `sudachi` になっていない。[morph-analyzer.md](morph-analyzer.md) を参照
+- **何も覚えなくなった(ログに `Uncaught exception: spawn mecab ENOENT` が30分ごとに出る)**: イメージに MeCab が無いのに、
+  `config.json` の `morphAnalyzer` が `sudachi` になっていない。Bot は落ちずに動き続けるので、気づきにくい。
+  起動時のログが `Morph analyzer: mecab` なら設定漏れ。[morph-analyzer.md](morph-analyzer.md) を参照
 - **`config.json` を変えたのに反映されない**: `config.json` はファイル単体でマウントしているため、
   エディタが保存時にファイルを置き換えると、`docker compose restart` では古い内容のまま。
   `docker compose up -d --force-recreate` でコンテナを作り直す
