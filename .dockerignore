@@ -11,3 +11,9 @@ node_modules/
 test/
 data/
 .vscode/
+.env
+docker-compose.override.yml
+.git
+.github/
+scripts/
+docs/
