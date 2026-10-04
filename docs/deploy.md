@@ -194,8 +194,8 @@ Actions のどのジョブで失敗したか(`ci` → `build` → `deploy`)で�
   docker compose logs --since 6h app 2>&1 | grep -E "\[keyword\]|Uncaught"
   ```
 
-  `Learn:` の行が30分おきに出ていれば動いている。`already known` なら、選ばれた語がすでに覚えていた語で、何も起きていない
-  (覚えている語が増えるほど、新しい語に当たりにくい)。`Uncaught exception` が出ていれば、その内容が原因。
+  `Learn:` の行が30分おきに出ていれば動いている。`(0 not yet learned)` が続くのは、見かけた語がすべて覚えている語だったとき
+  (何も起きていない。タイムラインの投稿が少ないときなど)。`Uncaught exception` が出ていれば、その内容が原因。
   詳しいログの見方は [features.md](features.md) の「学習の経過(ログ)」を参照
 - **`config.json` を変えたのに反映されない**: `config.json` はファイル単体でマウントしているため、
   エディタが保存時にファイルを置き換えると、`docker compose restart` では古い内容のまま。

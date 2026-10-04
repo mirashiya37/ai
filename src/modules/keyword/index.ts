@@ -208,10 +208,14 @@ export default class extends Module {
 		const newKeywords = uniqueKeywords.filter(keyword => this.learnedKeywords.findOne({ keyword }) == null);
 		this.log(`Learn: ${interestedNotes.length} notes, ${uniqueKeywords.length} keywords (${newKeywords.length} not yet learned)`);
 
-		if (keywords.length === 0) return;
+		// すでに覚えている語を選ぶと、その回は何も起きないので、まだ覚えていない語の中から選ぶ
+		const newSet = new Set(newKeywords);
+		const candidates = keywords.filter(token => newSet.has(token[0]));
 
-		const rnd = Math.floor((1 - Math.sqrt(Math.random())) * keywords.length);
-		const keyword = keywords.sort((a, b) => a[0].length < b[0].length ? 1 : -1)[rnd];
+		if (candidates.length === 0) return;
+
+		const rnd = Math.floor((1 - Math.sqrt(Math.random())) * candidates.length);
+		const keyword = candidates.sort((a, b) => a[0].length < b[0].length ? 1 : -1)[rnd];
 
 		const exist = this.learnedKeywords.findOne({
 			keyword: keyword[0]
@@ -220,7 +224,6 @@ export default class extends Module {
 		let text: string;
 
 		if (exist) {
-			this.log(`Learn: "${keyword[0]}" is already known`);
 			return;
 		} else {
 			this.learnedKeywords.insertOne({
