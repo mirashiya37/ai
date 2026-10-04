@@ -3,6 +3,12 @@
 このフォークのバージョン(`package.json` の `_v`)ごとの変更。付け方は [versioning.md](versioning.md)。
 機能の詳細は [features.md](features.md)。
 
+## 2.0.1-mk2.6.0
+
+- マスター用のコマンド `/keywords`、`/forget 語句`、`/unforget 語句` を追加した。忘れさせた語句は、以後も覚えない。
+- 日付が変わったときに、学習の状況(覚えた・忘れた・いま覚えている個数)をマスターにチャットで送るようにした。
+- 起動時に、使っている形態素解析をログに出すようにした。
+
 ## 2.0.1-mk2.5.0
 
 - 形態素解析に Sudachi(SudachiDict full)を使えるようにした。`config.json` の `morphAnalyzer` で選ぶ(既定は MeCab)。
