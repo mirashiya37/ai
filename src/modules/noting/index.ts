@@ -1,7 +1,7 @@
 import { bindThis } from '@/decorators.js';
 import Module from '@/module.js';
 import serifs from '@/serifs.js';
-import { genItem } from '@/vocabulary.js';
+import { getLearnedKeywords, genItemWithKeyword } from '@/utils/gen-item-with-keyword.js';
 import config from '@/config.js';
 
 export default class extends Module {
@@ -22,18 +22,19 @@ export default class extends Module {
 
 	@bindThis
 	private post() {
+		const keywords = getLearnedKeywords(this.ai);
 		const notes = [
 			...serifs.noting.notes,
 			() => {
-				const item = genItem();
+				const item = genItemWithKeyword(keywords);
 				return serifs.noting.want(item);
 			},
 			() => {
-				const item = genItem();
+				const item = genItemWithKeyword(keywords);
 				return serifs.noting.see(item);
 			},
 			() => {
-				const item = genItem();
+				const item = genItemWithKeyword(keywords);
 				return serifs.noting.expire(item);
 			},
 		];
