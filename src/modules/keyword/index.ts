@@ -116,22 +116,25 @@ export default class extends Module {
 		this.setData(data);
 
 		// 初回(この機能を入れた日)は、その日のおみくじを変えないよう翌日から始める
-		if (isFirstTime) return;
+		if (isFirstTime) {
+			this.log('Forget: skipped on the first run');
+			return;
+		}
 
 		const threshold = Date.now() - 1000 * 60 * 60 * 24 * FORGET_AFTER_DAYS;
-		const forgotten = this.learnedKeywords
-			.find({ learnedAt: { $lt: threshold } })
-			.filter(() => Math.random() < FORGET_RATE);
+		const eligible = this.learnedKeywords.find({ learnedAt: { $lt: threshold } });
+		const forgotten = eligible.filter(() => Math.random() < FORGET_RATE);
 
 		for (const doc of forgotten) {
 			this.learnedKeywords.remove(doc);
 		}
 
-		if (forgotten.length > 0) {
-			// 一度に大量に忘れることもあるので、語句は先頭の数個だけ出す
-			const examples = forgotten.slice(0, 5).map(doc => doc.keyword).join(', ');
-			this.log(`Forgot ${forgotten.length} keywords (e.g. ${examples}${forgotten.length > 5 ? ', ...' : ''})`);
-		}
+		// 忘れた語がなくても、動いたことが分かるよう毎回ログに残す。
+		// 一度に大量に忘れることもあるので、語句は先頭の数個だけ出す
+		const examples = forgotten.length > 0
+			? ` (e.g. ${forgotten.slice(0, 5).map(doc => doc.keyword).join(', ')}${forgotten.length > 5 ? ', ...' : ''})`
+			: '';
+		this.log(`Forget: ${forgotten.length} forgotten of ${eligible.length} older than ${FORGET_AFTER_DAYS} days, ${this.learnedKeywords.count()} remain${examples}`);
 
 		this.report(forgotten.length);
 	}

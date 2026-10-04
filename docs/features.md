@@ -41,6 +41,12 @@ upstream(`syuilo/ai`)に対して、このフォークで追加・変更した�
 - 忘れる処理は、日付が変わったときに1日1回だけ行う(おみくじの結果が1日の途中で変わらないように)。
 - 忘れた語句は、また見かければ覚え直す。
 - 日数と確率は `src/modules/keyword/index.ts` の `FORGET_AFTER_DAYS` / `FORGET_RATE`。
+- 忘れる処理が動くたび(日付が変わったとき、1日1回)、結果をログに出す。忘れた語がなくても出る。
+
+  ```
+  [keyword]: Forget: 12 forgotten of 4500 older than 30 days, 9000 remain (e.g. 東京, ずんだ, ...)
+  [keyword]: Forget: skipped on the first run          機能を入れた初日だけ
+  ```
 
 ### 管理コマンドと日次レポート(マスター専用)
 
