@@ -11,6 +11,9 @@
 - **`custom` への push は、CI → イメージのビルド → デプロイの順で、自動的に本番へ反映される。** push の前に、本番に出してよい変更か確認する。
 - **ドキュメントだけの変更(`docs/`、`CLAUDE.md`、`README.md` など)をコミットするときは、メッセージに `[skip ci]` を付ける。**
   CI もデプロイも動かない。コード、Dockerfile、ワークフロー、`package.json` を含むコミットには付けない(本番に反映されなくなる)。
+  **コミットメッセージのどこかにこの文字列があるだけで効く**(本文で「付けない」と説明するときも同じ。実際に起きた)。
+  コードと一緒に push するコミットのメッセージには、この文字列を書かない。誤って動かなかったときは、
+  `gh workflow run deploy.yml --ref custom`(または Actions の Run workflow)で手動実行する。
 - upstream の取り込みは `git fetch upstream && git merge upstream/master`(rebase や force push はしない)。
   `package.json` の `_v` が競合したら、upstream の部分だけを書き換える(フォーク側の番号は変えない)。
 
