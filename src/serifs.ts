@@ -193,6 +193,11 @@ export default {
 		adanaAsk: (item, name) => name ? `${name}、「${item}」とお呼びしてもいいですか？` : `「${item}」とお呼びしてもいいですか？`,
 
 		adanaNo: name => name ? `わかりました、これからも${name}とお呼びしますね！` : 'わかりました、またいいあだ名を考えておきますね！',
+
+		learnedKeywords: (keywords: string[]) => keywords.length > 0
+			? `最近は「${keywords.join('」「')}」を覚えました！`
+			: 'まだ何も覚えていないです…',
+
 		otukare: name => name ? `${name}、お疲れ様です！！` : 'お疲れ様です！！',
 
 		higntouch: {

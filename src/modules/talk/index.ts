@@ -45,6 +45,7 @@ export default class extends Module {
 			this.otukare(msg) ||
 			this.hightouch(msg) ||
 			this.adana(msg) ||
+			this.learned(msg) ||
 			this.otukaresama(msg) ||
 			this.height(msg) ||
 			this.weight(msg) ||
@@ -468,6 +469,20 @@ export default class extends Module {
 		this.unsubscribeReply(key);
 		return {
 			reaction: '🙌'
+		};
+	}
+
+	@bindThis
+	private learned(msg: Message): boolean | HandlerResult {
+		if (!msg.includes(['何覚えた', 'なに覚えた', '何を覚えた', 'なにを覚えた', 'なにおぼえた', '覚えた言葉', 'おぼえた言葉'])) return false;
+
+		// 新しく覚えた順に3つ
+		const keywords = getLearnedKeywords(this.ai).slice(-3).reverse();
+
+		msg.reply(serifs.core.learnedKeywords(keywords));
+
+		return {
+			reaction: '💡'
 		};
 	}
 

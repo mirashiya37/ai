@@ -15,7 +15,7 @@ const KEYWORD_MAX_LENGTH = 10;
 export function getLearnedKeywords(ai: 藍, learnedBefore = Infinity): string[] {
 	return ai.getCollection('_keyword_learnedKeywords')
 		.find()
-		.filter(doc => doc.learnedAt < learnedBefore && doc.keyword.length <= KEYWORD_MAX_LENGTH)
+		.filter(doc => doc.learnedAt < learnedBefore)
 		.sort((a, b) => a.learnedAt - b.learnedAt || (a.keyword < b.keyword ? -1 : 1))
 		.map(doc => doc.keyword);
 }
@@ -29,6 +29,7 @@ export function genItemWithKeyword(keywords: string[], rng: () => number = Math.
 	const useKeyword = rng() < KEYWORD_RATE;
 	const pick = rng();
 
+	keywords = keywords.filter(keyword => keyword.length <= KEYWORD_MAX_LENGTH);
 	if (!useKeyword || keywords.length === 0) return genItem(rng);
 
 	const keyword = keywords[Math.floor(pick * keywords.length)];
