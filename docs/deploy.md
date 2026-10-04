@@ -79,25 +79,37 @@ ACLは既存の内容(`grants` で全許可、`ssh` で `autogroup:member` → �
 Dockgeのスタック(以下 `<スタックの絶対パス>`)に置いてあるファイルのうち、
 **ソースコード(`src/` `Dockerfile` など)だけをGit管理に切り替え**、
 `compose.yaml` `config.json` `data/` `font.ttf` はそのまま残します。
-これらは `.gitignore` で除外されているか、リポジトリに存在しないため、上書きされません。
+これらは新しいリポジトリでは `.gitignore` で除外されるため、以降のデプロイでは上書きされません。
+
+> **注意: 既に別のGitリポジトリだった場合、これらのファイルが消えます。**
+> スタックが元からGitリポジトリで、`config.json` `data/memory.json` `font.ttf` が**追跡されていた**と、
+> `git checkout -f` が「`custom` に存在しない追跡ファイル」として削除します。
+> 消えた後に `docker compose up` すると、Dockerがマウント元の名前で**空のディレクトリ**を作り、
+> コンテナが `ERR_UNSUPPORTED_DIR_IMPORT` で起動しません(実際に起きた)。
+> 下の手順の「0. 退避」で、必ず先に避難させてください。
+
 一度だけ、サーバで次を実行します(`STACK` はスタックのパスに置き換える)。
 
 ```bash
 STACK=<スタックの絶対パス>
 cd "$STACK"
 
-# 0. 念のためバックアップ(data/ には学習データが入っている)
-cp -a "$STACK" "$STACK.bak-$(date +%Y%m%d)"
+# 0. 退避(バックアップ + 追跡状況の確認)
+cp -a "$STACK" "$STACK.bak-$(date +%Y%m%d)"        # ディレクトリごとのバックアップ
+git ls-files 2>/dev/null | grep -E '^(config\.json|font\.ttf|data/)' || echo "追跡されていない"
+KEEP="$(mktemp -d)"
+cp -a config.json font.ttf data "$KEEP"/            # 存在するものだけでよい(エラーは無視)
 
 # 1. その場でリポジトリ化して、customブランチの内容に揃える
 git init -q
-git remote add origin https://github.com/mirashiya37/ai
+git remote add origin https://github.com/mirashiya37/ai   # 既にあれば: git remote set-url origin <URL>
 git fetch origin custom
 git checkout -f -B custom origin/custom   # ソースはcustomの内容で上書きされる
 
-# 2. 除外されているはずのファイルが無事か確認
-git status --short            # 何も表示されなければ、ローカル専用ファイルはすべて除外済み
-ls compose.yaml config.json font.ttf data/memory.json
+# 2. 退避したファイルを戻す(消えていなくても、同じ内容で上書きされるだけ)
+cp -a "$KEEP"/. .
+git status --short            # 何も表示されなければOK(3ファイルは.gitignore済み)
+ls -la config.json font.ttf data/memory.json   # 先頭が - (ファイル)であること。d(ディレクトリ)ならNG
 
 # 3. 起動確認(Dockgeのcompose.yamlが使われる)
 docker compose up -d --build
@@ -145,6 +157,24 @@ Settings → Environments → `production` を作成し、次を設定します�
   サーバに `tag:server` が付いているか、`grants` で `tag:ci` の通信を制限していないかを確認する
 - **サーバのタグを付けたら他のサービスが止まった**: `--advertise-tags` は一覧を置き換える。
   元のタグ(例: `tag:既存のタグ`)も含めて指定し直す
+- **コンテナが `ERR_UNSUPPORTED_DIR_IMPORT` で起動しない / `not a directory` でマウントに失敗する**:
+  `config.json` `data/` `font.ttf` のいずれかが、Dockerの作った空のディレクトリになっている。復旧は次のとおり
+  (元のファイルは、元のリポジトリのコミットや退避したバックアップから取り出す。`git checkout` ではなく `git show` を使うと、
+  インデックスを汚さない)
+
+  ```bash
+  cd "<スタックの絶対パス>"
+  docker compose stop
+  sudo rmdir config.json data font.ttf          # 空のディレクトリだけが消える(中身があれば失敗して安全)
+  mkdir data
+  git show <元のブランチ>:config.json      > config.json
+  git show <元のブランチ>:font.ttf         > font.ttf
+  git show <元のブランチ>:data/memory.json > data/memory.json
+  docker compose down && docker compose up -d   # 古いコンテナの中身も作り直す。upだけだと同じエラーが出る
+  ```
+
+  `docker compose down` が必要なのは、前回の失敗時にコンテナ内の `/ai/config.json` もディレクトリとして作られており、
+  `up -d` だけではそのコンテナが再利用されるため。
 - **ビルドの型エラー**: upstream時点で多数あり、DockerfileもCIも成果物の有無で判定している
 
 ## ロールバック
