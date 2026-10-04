@@ -2,7 +2,7 @@ import { bindThis } from '@/decorators.js';
 import { HandlerResult } from '@/ai.js';
 import Module from '@/module.js';
 import Message from '@/message.js';
-import { genItem } from '@/vocabulary.js';
+import { getLearnedKeywords, genItemWithKeyword } from '@/utils/gen-item-with-keyword.js';
 import serifs, { getSerif } from '@/serifs.js';
 import getDate from '@/utils/get-date.js';
 
@@ -423,7 +423,7 @@ export default class extends Module {
 	@bindThis
 	private adana(msg: Message): boolean | HandlerResult {  // いつかそのまま名前を覚えさせられたらいいね
 		if (!msg.includes(['あだな', 'あだ名', '渾名', 'あだにゃ'])) return false;
-		const item = genItem();
+		const item = genItemWithKeyword(getLearnedKeywords(this.ai));
 
 		msg.reply(serifs.core.adana(item, msg.friend.name));
 
