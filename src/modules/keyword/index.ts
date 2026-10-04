@@ -6,6 +6,7 @@ import config from '@/config.js';
 import serifs from '@/serifs.js';
 import { mecab } from './mecab.js';
 import { sudachi } from './sudachi.js';
+import { isLearnableCommonNoun } from './token-filter.js';
 import getDate from '@/utils/get-date.js';
 import { countKeywords } from '@/utils/keyword-trend.js';
 
@@ -193,8 +194,9 @@ export default class extends Module {
 
 		for (const [i, note] of interestedNotes.entries()) {
 			const tokens = sudachiTokens ? sudachiTokens[i] : await mecab(texts[i], config.mecab, config.mecabDic);
-			// 人名は、名字・名前(姓・名)だけを除く。キャラクター名など辞書にフルネームで載っている名前(一般)は覚える
-			const keywordsInThisNote = tokens.filter(token => token[2] == '固有名詞' && (token[3] !== '人名' || token[4] === '一般') && token[8] != null && !ignored.includes(token[0]));
+			// 人名は、名字・名前(姓・名)だけを除く。キャラクター名など辞書にフルネームで載っている名前(一般)は覚える。
+			// 普通名詞は、一般的すぎる語を除いた一部だけ覚える(token-filter.ts)
+			const keywordsInThisNote = tokens.filter(token => (token[2] == '固有名詞' && (token[3] !== '人名' || token[4] === '一般') || isLearnableCommonNoun(token)) && token[8] != null && !ignored.includes(token[0]));
 			keywords = keywords.concat(keywordsInThisNote);
 			trendNotes.push({ id: note.id, keywords: keywordsInThisNote.map(token => token[0]) });
 		}
