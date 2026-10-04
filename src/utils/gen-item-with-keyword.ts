@@ -5,7 +5,7 @@ import { genItem, itemPrefixes } from '@/vocabulary.js';
 const KEYWORD_RATE = 0.3;
 
 /** 長すぎる語句はアンケートの選択肢などに収まらないので使わない */
-const KEYWORD_MAX_LENGTH = 10;
+export const KEYWORD_MAX_LENGTH = 10;
 
 /**
  * 学習済みの語句を、学習した順に返す

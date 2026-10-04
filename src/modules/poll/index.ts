@@ -2,7 +2,7 @@ import { bindThis } from '@/decorators.js';
 import Message from '@/message.js';
 import Module from '@/module.js';
 import serifs from '@/serifs.js';
-import { getLearnedKeywords, genItemWithKeyword } from '@/utils/gen-item-with-keyword.js';
+import { getLearnedKeywords, genItemWithKeyword, KEYWORD_MAX_LENGTH } from '@/utils/gen-item-with-keyword.js';
 import config from '@/config.js';
 import type { Note } from '@/misskey/note.js';
 
@@ -64,10 +64,20 @@ export default class extends Module {
 			['好きなおにぎりの具', 'みなさんの好きなおにぎりの具はなんですか？'],
 		];
 
-		const poll = polls[Math.floor(Math.random() * polls.length)];
-
 		const keywords = getLearnedKeywords(this.ai);
-		const choices = [
+
+		// 最近覚えた言葉が4つ以上あれば、ときどきそれだけで選択肢を作る
+		const recentKeywords = keywords.filter(keyword => keyword.length <= KEYWORD_MAX_LENGTH).slice(-20);
+		const useLearnedPoll = recentKeywords.length >= 4 && Math.random() < 0.2;
+
+		const poll = useLearnedPoll
+			? ['最近覚えた言葉', 'みなさんは、私が最近覚えた言葉の中で、どれがいちばん気になりますか？']
+			: polls[Math.floor(Math.random() * polls.length)];
+
+		const choices = useLearnedPoll ? [0, 1, 2, 3].map(() =>
+			// 重複しないよう、選んだ語句は候補から取り除く
+			recentKeywords.splice(Math.floor(Math.random() * recentKeywords.length), 1)[0]
+		) : [
 			genItemWithKeyword(keywords),
 			genItemWithKeyword(keywords),
 			genItemWithKeyword(keywords),
