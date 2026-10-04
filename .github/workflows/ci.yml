@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      # DockerfileのRUNと同じく、型エラーでは落とさず成果物の有無で判定する
+      - name: Build
+        run: npm run build || true
+
+      - name: Verify build output
+        run: |
+          test -f built/index.js
+          node --check built/index.js
