@@ -69,5 +69,7 @@
   サーバは `compose.yaml` の `image:` で pull するだけ。スタックには `compose.yaml`・`config.json`・`data/`・`font.ttf`・`.env` だけを置く。
 - イメージは public なので、秘密の値をイメージに入れない(`.dockerignore` で `config.json` などを除外している。Dockerfile で COPY しない)。
 - イメージに MeCab は入れていない(ビルド引数 `enable_mecab=0`)。サーバの `config.json` の `"morphAnalyzer": "sudachi"` は消さない。
+- コンテナは `TZ=Asia/Tokyo` で動かす(サーバの `compose.yaml` の `environment`)。コード中の時刻(定期投稿の `getHours()` など)は日本時間で書き、
+  UTC から逆算した数字にしない。TZ を外すと日付の区切りと定期投稿が9時間ずれる。
 - `config.json` を変えたら `docker compose up -d --force-recreate` で反映する(`restart` では反映されないことがある)。
 - `docker compose` は、スタックのディレクトリで実行する(プロジェクト名がディレクトリ名と一致するため)。

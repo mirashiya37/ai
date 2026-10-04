@@ -25,7 +25,7 @@ export default class extends Module {
 	@bindThis
 	private async post() {
 		const now = new Date();
-		if (now.getHours() !== 13) return;
+		if (now.getHours() !== 22) return;
 		const date = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
 		const data = this.getData();
 		if (data.lastPosted == date) return;
