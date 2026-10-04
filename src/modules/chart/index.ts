@@ -5,6 +5,7 @@ import Message from '@/message.js';
 import { renderChart } from './render-chart.js';
 import { items } from '@/vocabulary.js';
 import config from '@/config.js';
+import { takeTrend } from '@/utils/keyword-trend.js';
 
 export default class extends Module {
 	public readonly name = 'chart';
@@ -34,9 +35,12 @@ export default class extends Module {
 		this.log('Time to chart');
 		const file = await this.genChart('notes');
 
+		// 前回の投稿から今回までに、タイムラインでよく見かけた言葉を添える
+		const trend = takeTrend(this.ai);
+
 		this.log('Posting...');
 		this.ai.post({
-			text: serifs.chart.post,
+			text: serifs.chart.post + (trend.length > 0 ? '\n\n' + serifs.chart.trend(trend) : ''),
 			fileIds: [file.id]
 		});
 	}

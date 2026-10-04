@@ -486,7 +486,8 @@ export default {
 
 	chart: {
 		post: 'miyarakeyの1日あたりの合計投稿数の推移です！', // 文言変更
-		foryou: '描きました！'
+		foryou: '描きました！',
+		trend: (keywords: string[]) => `今日よく見かけた言葉は「${keywords.join('」「')}」でした！`
 	},
 
 	checkCustomEmojis: {

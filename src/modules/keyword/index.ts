@@ -7,6 +7,7 @@ import serifs from '@/serifs.js';
 import { mecab } from './mecab.js';
 import { sudachi } from './sudachi.js';
 import getDate from '@/utils/get-date.js';
+import { countKeywords } from '@/utils/keyword-trend.js';
 
 /** 覚えてから忘れ始めるまでの日数 */
 const FORGET_AFTER_DAYS = 30;
@@ -173,6 +174,7 @@ export default class extends Module {
 
 		let keywords: string[][] = [];
 		const ignored = this.getIgnored();
+		const trendNotes: { id: string; keywords: string[] }[] = [];
 
 		// Sudachi は起動のたびに辞書を読み込むので、まとめて解析しておく
 		const sudachiTokens = config.morphAnalyzer === 'sudachi'
@@ -184,7 +186,12 @@ export default class extends Module {
 			// 人名は、名字・名前(姓・名)だけを除く。キャラクター名など辞書にフルネームで載っている名前(一般)は覚える
 			const keywordsInThisNote = tokens.filter(token => token[2] == '固有名詞' && (token[3] !== '人名' || token[4] === '一般') && token[8] != null && !ignored.includes(token[0]));
 			keywords = keywords.concat(keywordsInThisNote);
+			trendNotes.push({ id: note.id, keywords: keywordsInThisNote.map(token => token[0]) });
 		}
+
+		// 「今日よく見かけた言葉」(チャートの投稿に添える)のために数える。
+		// チャートが無効だと数がリセットされず増え続けるので、そのときは数えない
+		if (config.chartEnabled !== false) countKeywords(this.ai, trendNotes);
 
 		if (keywords.length === 0) return;
 
