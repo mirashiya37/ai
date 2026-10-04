@@ -195,7 +195,8 @@ Actions のどのジョブで失敗したか(`ci` → `build` → `deploy`)で�
   ```
 
   `Learn:` の行が30分おきに出ていれば動いている。`(0 not yet learned)` が続くのは、見かけた語がすべて覚えている語だったとき
-  (何も起きていない。タイムラインの投稿が少ないときなど)。`Uncaught exception` が出ていれば、その内容が原因。
+  (何も起きていない。タイムラインの投稿が少ないときなど)。`Uncaught exception` が出ていれば、その内容が原因
+  (`sudachipy exited with …` なら、Sudachi の失敗。[morph-analyzer.md](morph-analyzer.md) の「注意点」を参照)。
   詳しいログの見方は [features.md](features.md) の「学習の経過(ログ)」を参照
 - **`config.json` を変えたのに反映されない**: `config.json` はファイル単体でマウントしているため、
   エディタが保存時にファイルを置き換えると、`docker compose restart` では古い内容のまま。
