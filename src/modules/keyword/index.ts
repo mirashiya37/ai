@@ -179,9 +179,12 @@ export default class extends Module {
 		const ignored = this.getIgnored();
 		const trendNotes: { id: string; keywords: string[] }[] = [];
 
-		// URL は「https」やドメイン・パスの一部が固有名詞と判定されてしまうので、解析の前に取り除く。
-		// 後ろに空白なしで日本語が続くこともあるので、URL に使える ASCII の文字だけを取り除く
-		const texts: string[] = interestedNotes.map(note => note.text.replace(/https?:\/\/[\w\-.~:/?#\[\]@!$&'()*+,;=%]+/g, ' '));
+		// URL は「https」やドメイン・パスの一部が、カスタム絵文字の記法(:meow_sushi: や :name@host:)は「meow」などが、
+		// 固有名詞と判定されてしまうので、解析の前に取り除く(絵文字の記法は、直前が英数字のもの=時刻の 12:30:45 などは残す)。
+		// URL は、後ろに空白なしで日本語が続くこともあるので、URL に使える ASCII の文字だけを取り除く
+		const texts: string[] = interestedNotes.map(note => note.text
+			.replace(/https?:\/\/[\w\-.~:/?#\[\]@!$&'()*+,;=%]+/g, ' ')
+			.replace(/(?<![A-Za-z0-9]):[\w+\-]+(?:@[\w.\-]+)?:/g, ' '));
 
 		// Sudachi は起動のたびに辞書を読み込むので、まとめて解析しておく
 		const sudachiTokens = config.morphAnalyzer === 'sudachi'
