@@ -1,0 +1,43 @@
+# CLAUDE.md
+
+`syuilo/ai`(Misskey のBot「藍」)を、自サーバ向けに改修した Fork。
+詳しいデプロイ手順は [docs/deploy.md](docs/deploy.md) を参照。
+
+## ブランチと本番反映
+
+- `custom` が本番用。`master` は upstream(`syuilo/ai`)と同じ内容で、触らない。
+- **`custom` への push は、CI を通った後に本番へ自動デプロイされる。** push の前に、本番に出してよい変更か確認する。
+- upstream の取り込みは `git fetch upstream && git merge upstream/master`(rebase や force push はしない)。
+
+## 公開範囲(Fork は public)
+
+- 実環境の値は、コード・ドキュメント・コミットメッセージのどこにもコミットしない。
+  対象はホスト名、サーバのパス、SSH ユーザー名、メールアドレス、トークン、API キー、内部 IP。
+  必要なときは `<スタックの絶対パス>` のようなプレースホルダーで書く。
+- Git 管理外のファイル(`.gitignore` 済み): `config.json`、`data/`、`font.ttf`、`.env`、`docker-compose.override.yml`。
+  これらを `git add -f` で追加しない。
+- 接続先やトークンは GitHub の Secrets(Environment `production`)で管理している。
+
+## ビルドと CI
+
+- ビルドは `npm run build`(`tspc`)、起動は `node ./built`。依存は `npm install`(ロックファイルなし)。
+- **型エラーは upstream の時点で多数あり、直さない。** Dockerfile も CI も、終了コードではなく
+  `built/index.js` の存在と構文で判定する。型エラーの修正は、頼まれたときだけ行う。
+- ただし、自分の改修では新しい型エラーを増やさない。変更前後で `npx tsc --noEmit` のエラー件数を比べ、増えていたら直す。
+- `config.json` が無くてもビルドは通る(実行時に必要)。
+
+## 改修の方針
+
+- upstream のファイルへの変更は最小限にする。merge の競合を減らすため、整形・インデント・空行だけの変更はしない。
+- 自サーバ固有の値(除外するユーザー ID、カスタム絵文字名、投稿時刻など)は、既存の独自改修と同じ場所に置く。
+- コミットは機能ごとに分け、日本語で `type(scope): 内容` の形式にする(例: `feat(reversi): …`、`fix(core): …`、`chore: …`)。
+  本文には変更の理由を書く。
+
+## サーバ運用(Dockge)
+
+- Bot は Dockge のスタックで動く。スタックのディレクトリは、このリポジトリの clone になっている。
+- サーバで `git checkout -f` や `git reset --hard` を実行する前に、`config.json`・`data/`・`font.ttf` を退避する。
+  追跡ファイルだった場合に消え、Docker が空のディレクトリを作ってコンテナが起動しなくなる(実際に起きた)。
+- 消えたときの復旧は、`git show <ブランチ>:<ファイル>` で取り出し、`docker compose down` で
+  コンテナを作り直してから `up -d` する。詳細は `docs/deploy.md` の「つまずきやすい点」。
+- `docker compose` は、スタックのディレクトリで実行する(プロジェクト名がディレクトリ名と一致するため)。
