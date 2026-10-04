@@ -176,13 +176,17 @@ export default class extends Module {
 		const ignored = this.getIgnored();
 		const trendNotes: { id: string; keywords: string[] }[] = [];
 
+		// URL は「https」やドメイン・パスの一部が固有名詞と判定されてしまうので、解析の前に取り除く。
+		// 後ろに空白なしで日本語が続くこともあるので、URL に使える ASCII の文字だけを取り除く
+		const texts: string[] = interestedNotes.map(note => note.text.replace(/https?:\/\/[\w\-.~:/?#\[\]@!$&'()*+,;=%]+/g, ' '));
+
 		// Sudachi は起動のたびに辞書を読み込むので、まとめて解析しておく
 		const sudachiTokens = config.morphAnalyzer === 'sudachi'
-			? await sudachi(interestedNotes.map(note => note.text), config.sudachi, config.sudachiDict)
+			? await sudachi(texts, config.sudachi, config.sudachiDict)
 			: null;
 
 		for (const [i, note] of interestedNotes.entries()) {
-			const tokens = sudachiTokens ? sudachiTokens[i] : await mecab(note.text, config.mecab, config.mecabDic);
+			const tokens = sudachiTokens ? sudachiTokens[i] : await mecab(texts[i], config.mecab, config.mecabDic);
 			// 人名は、名字・名前(姓・名)だけを除く。キャラクター名など辞書にフルネームで載っている名前(一般)は覚える
 			const keywordsInThisNote = tokens.filter(token => token[2] == '固有名詞' && (token[3] !== '人名' || token[4] === '一般') && token[8] != null && !ignored.includes(token[0]));
 			keywords = keywords.concat(keywordsInThisNote);
