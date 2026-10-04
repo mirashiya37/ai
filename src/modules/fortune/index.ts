@@ -3,7 +3,7 @@ import Module from '@/module.js';
 import Message from '@/message.js';
 import serifs from '@/serifs.js';
 import seedrandom from 'seedrandom';
-import { genItem } from '@/vocabulary.js';
+import { getLearnedKeywords, genItemWithKeyword } from '@/utils/gen-item-with-keyword.js';
 
 export const blessing = [
 	'藍吉',
@@ -54,7 +54,9 @@ export default class extends Module {
 			const seed = `${date.getFullYear()}/${date.getMonth()}/${date.getDate()}@${msg.userId}`;
 			const rng = seedrandom(seed);
 			const omikuji = blessing[Math.floor(rng() * blessing.length)];
-			const item = genItem(rng);
+			// 同じ日は結果が変わらないよう、その日の0時より前に学習した語句だけを候補にする
+			const startOfToday = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+			const item = genItemWithKeyword(getLearnedKeywords(this.ai, startOfToday), rng);
 			msg.reply(`**${omikuji}🎉**\nラッキーアイテム: ${item}`, {
 				cw: serifs.fortune.cw(msg.friend.name)
 			});
