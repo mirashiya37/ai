@@ -4,6 +4,12 @@ import { spawn } from 'child_process';
 const TIMEOUT = 1000 * 60;
 
 /**
+ * 1件あたりの最大文字数。Sudachi は、1件が約17000〜20000文字を超えると、まとめて渡した他の投稿も含めて
+ * 全体がエラーになる。Misskey の投稿は3000文字までだが、他のサーバーからは長い投稿が来ることがあるので、切り詰める。
+ */
+const MAX_TEXT_LENGTH = 5000;
+
+/**
  * コマンドを実行して、標準出力を行ごとに返す。
  * mecab.ts の cmd() は、出力が大きい(約16KB以上)と終わらなくなるので、ここでは使わない。
  * タイムラインの100件をまとめて解析すると、出力が大きくなる。
@@ -37,7 +43,7 @@ function run(command: string, args: string[], stdin: string): Promise<string[]> 
  * @returns Tokens for each text
  */
 export async function sudachi(texts: string[], sudachi = 'sudachipy', dict = 'full'): Promise<string[][][]> {
-	const input = texts.map(text => text.replace(/[\n\s\t]/g, ' ')).join('\n') + '\n';
+	const input = texts.map(text => text.slice(0, MAX_TEXT_LENGTH).replace(/[\n\s\t]/g, ' ')).join('\n') + '\n';
 	const lines = await run(sudachi, ['tokenize', '-m', 'C', '-a', '-s', dict], input);
 
 	const results: string[][][] = [];
