@@ -8,7 +8,9 @@
 ## ブランチと本番反映
 
 - `custom` が本番用。`master` は upstream(`syuilo/ai`)と同じ内容で、触らない。
-- **`custom` への push は、CI を通った後に本番へ自動デプロイされる。** push の前に、本番に出してよい変更か確認する。
+- **`custom` への push は、CI → イメージのビルド → デプロイの順で、自動的に本番へ反映される。** push の前に、本番に出してよい変更か確認する。
+- **ドキュメントだけの変更(`docs/`、`CLAUDE.md`、`README.md` など)をコミットするときは、メッセージに `[skip ci]` を付ける。**
+  CI もデプロイも動かない。コード、Dockerfile、ワークフロー、`package.json` を含むコミットには付けない(本番に反映されなくなる)。
 - upstream の取り込みは `git fetch upstream && git merge upstream/master`(rebase や force push はしない)。
   `package.json` の `_v` が競合したら、upstream の部分だけを書き換える(フォーク側の番号は変えない)。
 
@@ -44,6 +46,7 @@
 - おみくじは「同じ人・同じ日なら同じ結果」を保つ。候補の語句は `getLearnedKeywords(ai, その日の0時)` で固定し、
   乱数の消費順も変えない。語句を消す処理(忘却など)は、日付が変わったときにだけ行う。
 - 人名は、細分類が「姓」「名」のものだけを学習しない(キャラクター名は覚える)。条件は `src/modules/keyword/index.ts`。
+- 不適切語句の除外ロジックは、いまは入れていない(方針として見送り)。必要になったら `getLearnedKeywords` に条件を足す。
 
 ## バージョン
 
