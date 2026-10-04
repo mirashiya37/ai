@@ -1,16 +1,22 @@
 # デプロイ(CI/CD)
 
-`custom` ブランチへの push で、CI(ビルド確認)を通した後にサーバへ自動デプロイします。
+`custom` ブランチへの push で、CI(ビルド確認)を通した後、イメージをビルドしてGHCRに置き、サーバへ自動デプロイします。
 
 ```
 push (custom)
   └─ ci.yml      : npm install → build → built/index.js の存在と構文を確認
-  └─ deploy.yml  : Tailscaleに参加(tag:ci) → Tailscale SSHでサーバへ入る
-                     └─ scripts/deploy.sh : git merge --ff-only → docker compose up -d --build → 起動確認
+  └─ deploy.yml  : build  : Dockerイメージをビルド → ghcr.io/mirashiya37/ai に push(:custom と :sha-<コミット>)
+                   deploy : Tailscaleに参加(tag:ci) → Tailscale SSHでサーバへ入る
+                     └─ scripts/deploy.sh : docker compose pull → up -d → イメージのコミットと起動を確認
 ```
 
-サーバ上の `compose.yaml` `config.json` `data/` `font.ttf` はGit管理外なので、
-`git merge` では変更されません。Dockgeのスタックにそのまま残します。
+サーバはイメージをpullするだけで、ソースもビルドも持ちません。
+Dockgeのスタックには `compose.yaml` `config.json` `data/` `font.ttf`(と Dockge の `.env`)だけを置きます。
+
+- イメージには MeCab を入れていない(CI のビルド引数 `enable_mecab=0`)。形態素解析は Sudachi を使うので、
+  サーバの `config.json` に `"morphAnalyzer": "sudachi"` が必要([morph-analyzer.md](morph-analyzer.md))。
+- イメージは public。`config.json` `data/` `.env` などは `.dockerignore` でイメージから除外している。
+  秘密の値を Dockerfile で COPY しないこと。
 
 ## 1. Tailscale側の設定(Tailscale SSHを有効のまま使う)
 
@@ -74,57 +80,72 @@ ACLは既存の内容(`grants` で全許可、`ssh` で `autogroup:member` → �
    - タグ: `tag:ci`
    - 発行された Client ID / Secret を控える
 
-## 2. サーバ側の準備(Dockgeのスタックをその場でGitリポジトリ化する)
+## 2. サーバ側の準備(Dockgeのスタックをイメージで動かす)
 
-Dockgeのスタック(以下 `<スタックの絶対パス>`)に置いてあるファイルのうち、
-**ソースコード(`src/` `Dockerfile` など)だけをGit管理に切り替え**、
-`compose.yaml` `config.json` `data/` `font.ttf` はそのまま残します。
-これらは新しいリポジトリでは `.gitignore` で除外されるため、以降のデプロイでは上書きされません。
+Dockgeのスタック(以下 `<スタックの絶対パス>`)の `compose.yaml` は、`build:` ではなく `image:` でイメージを指定します。
+DNSなど環境固有の設定は、`compose.yaml` に書いたままにします。
 
-> **注意: 既に別のGitリポジトリだった場合、これらのファイルが消えます。**
-> スタックが元からGitリポジトリで、`config.json` `data/memory.json` `font.ttf` が**追跡されていた**と、
-> `git checkout -f` が「`custom` に存在しない追跡ファイル」として削除します。
-> 消えた後に `docker compose up` すると、Dockerがマウント元の名前で**空のディレクトリ**を作り、
-> コンテナが `ERR_UNSUPPORTED_DIR_IMPORT` で起動しません(実際に起きた)。
-> 下の手順の「0. 退避」で、必ず先に避難させてください。
+```yaml
+services:
+  app:
+    image: ghcr.io/mirashiya37/ai:custom
+    platform: linux/amd64
+    volumes:
+      - ./config.json:/ai/config.json:ro
+      - ./font.ttf:/ai/font.ttf:ro
+      - ./data:/ai/data
+    restart: always
+    dns:                     # 環境に合わせる(不要なら消す)
+      - <IPv6 address>
+      - <IPv4 address>
+networks: {}
+```
 
-一度だけ、サーバで次を実行します(`STACK` はスタックのパスに置き換える)。
+以降は `docker compose` をスタックのディレクトリで実行すれば、Dockgeの画面にも同じスタックとして表示されます
+(プロジェクト名がディレクトリ名と一致するため)。Dockgeの「更新」ボタンでも、最新のイメージをpullして起動し直せます。
+
+SSHユーザーが `docker` グループに入っていること。
+
+### 以前の構成(スタックがGitのclone)から移行する
+
+以前は、スタックのディレクトリをこのリポジトリのcloneにして、サーバでビルドしていました。
+一度だけ、サーバで次を実行して移行します(`STACK` はスタックのパスに置き換える)。
+先に、移行後の `deploy.yml` を push してイメージを GHCR に置き、パッケージを public にしておきます(「3. GitHub側の設定」)。
+このときのデプロイは、`compose.yaml` が `image:` になっていないため、何も変えずに失敗します。
+
+> **注意: `config.json` `data/` `font.ttf` を消さないこと。**
+> これらが無い状態で `docker compose up` すると、Dockerがマウント元の名前で**空のディレクトリ**を作り、
+> コンテナが `ERR_UNSUPPORTED_DIR_IMPORT` で起動しません(実際に起きた)。必ず先にバックアップします。
 
 ```bash
 STACK=<スタックの絶対パス>
 cd "$STACK"
 
-# 0. 退避(バックアップ + 追跡状況の確認)
-cp -a "$STACK" "$STACK.bak-$(date +%Y%m%d)"        # ディレクトリごとのバックアップ
-git ls-files 2>/dev/null | grep -E '^(config\.json|font\.ttf|data/)' || echo "追跡されていない"
-KEEP="$(mktemp -d)"
-cp -a config.json font.ttf data "$KEEP"/            # 存在するものだけでよい(エラーは無視)
+# 0. バックアップ(ディレクトリごと)
+cp -a "$STACK" "$STACK.bak-$(date +%Y%m%d)"
 
-# 1. その場でリポジトリ化して、customブランチの内容に揃える
-git init -q
-git remote add origin https://github.com/mirashiya37/ai   # 既にあれば: git remote set-url origin <URL>
-git fetch origin custom
-git checkout -f -B custom origin/custom   # ソースはcustomの内容で上書きされる
+# 1. compose.yaml を上の例のように書き換える(build: の4行を image: の1行にする。dns などはそのまま)
 
-# 2. 退避したファイルを戻す(消えていなくても、同じ内容で上書きされるだけ)
-cp -a "$KEEP"/. .
-git status --short            # 何も表示されなければOK(3ファイルは.gitignore済み)
-ls -la config.json font.ttf data/memory.json   # 先頭が - (ファイル)であること。d(ディレクトリ)ならNG
+# 2. イメージを取得して起動し直す(ソースはまだ残っているが、もう使われない)
+docker compose pull
+docker compose up -d
+docker compose ps                                     # app が running であること
+docker inspect -f '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$(docker compose ps -q app)"
+                                                      # custom の最新コミットのSHAが出ること
 
-# 3. 起動確認(Dockgeのcompose.yamlが使われる)
-docker compose up -d --build
+# 3. Gitのclone(ソースと .git)を片付ける。残すのは compose.yaml config.json font.ttf data .env だけ
+find . -mindepth 1 -maxdepth 1 \
+  ! -name compose.yaml ! -name config.json ! -name font.ttf ! -name data ! -name .env \
+  -print                                              # まず消える対象を確認する
+find . -mindepth 1 -maxdepth 1 \
+  ! -name compose.yaml ! -name config.json ! -name font.ttf ! -name data ! -name .env \
+  -exec rm -rf {} +
+ls -la config.json font.ttf data/memory.json          # 先頭が - (ファイル)であること。d(ディレクトリ)ならNG
+docker compose up -d                                  # 設定は変わらないので、そのまま動き続ける
 ```
 
-注意点:
-
-- Forkがpublicなので、`git fetch` に認証は不要です。
-- Dockgeの `compose.yaml` が優先して使われます。リポジトリ側の `docker-compose.yml` は同じディレクトリに現れますが、
-  使われません(複数あるという警告が出ることがあります)。DNS設定など環境固有の設定は、
-  Dockge側の `compose.yaml` に書いたままにします。`docker-compose.override.yml` はサーバでは不要です。
-- SSHユーザーが `docker` グループに入っていること。スタックのディレクトリの所有者がSSHユーザーであること
-  (違う場合、gitが "dubious ownership" で止まるので `git config --global --add safe.directory "$STACK"` を実行する)。
-- 以降は `docker compose` をスタックのディレクトリで実行すれば、Dockgeの画面にも同じスタックとして表示されます
-  (プロジェクト名がディレクトリ名と一致するため)。
+最後に、Actions → Deploy → Run workflow で手動実行し、デプロイが通ることを確かめます。
+バックアップ(`$STACK.bak-…`)は、しばらく問題がなければ消します。トークン入りの `config.json` を含むので、放置しないこと。
 
 ## 3. GitHub側の設定
 
@@ -144,6 +165,10 @@ Settings → Environments → `production` を作成し、次を設定します�
 ホスト名・ユーザー名・パスもSecretsにしているのは、publicリポジトリで実環境の値を見せないためです
 (Secretsの値はログでも `***` に伏せられます)。そのためデバッグ時、ログ上でこれらの値は見えません。
 
+GHCRへのpushは、ワークフローの `GITHUB_TOKEN`(`packages: write`)で行うので、追加のSecretは不要です。
+初めてpushしたあと、パッケージを public にします(Your profile → Packages → `ai` → Package settings →
+Change visibility → Public)。private のままだと、サーバのpullが `denied` で失敗します。
+
 ## 4. 動作確認
 
 1. Actions → Deploy → Run workflow(`custom` を選択)で手動実行する
@@ -159,17 +184,13 @@ Settings → Environments → `production` を作成し、次を設定します�
   元のタグ(例: `tag:既存のタグ`)も含めて指定し直す
 - **コンテナが `ERR_UNSUPPORTED_DIR_IMPORT` で起動しない / `not a directory` でマウントに失敗する**:
   `config.json` `data/` `font.ttf` のいずれかが、Dockerの作った空のディレクトリになっている。復旧は次のとおり
-  (元のファイルは、元のリポジトリのコミットや退避したバックアップから取り出す。`git checkout` ではなく `git show` を使うと、
-  インデックスを汚さない)
+  (元のファイルは、バックアップ(`<スタックの絶対パス>.bak-…`)から戻す)
 
   ```bash
   cd "<スタックの絶対パス>"
   docker compose stop
   sudo rmdir config.json data font.ttf          # 空のディレクトリだけが消える(中身があれば失敗して安全)
-  mkdir data
-  git show <元のブランチ>:config.json      > config.json
-  git show <元のブランチ>:font.ttf         > font.ttf
-  git show <元のブランチ>:data/memory.json > data/memory.json
+  cp -a "<バックアップのパス>"/config.json "<バックアップのパス>"/font.ttf "<バックアップのパス>"/data .
   docker compose down && docker compose up -d   # 古いコンテナの中身も作り直す。upだけだと同じエラーが出る
   ```
 
@@ -179,11 +200,19 @@ Settings → Environments → `production` を作成し、次を設定します�
 - **`config.json` を変えたのに反映されない**: `config.json` はファイル単体でマウントしているため、
   エディタが保存時にファイルを置き換えると、`docker compose restart` では古い内容のまま。
   `docker compose up -d --force-recreate` でコンテナを作り直す
-- **`Found multiple config files` という警告が出る**: Dockgeの `compose.yaml` とリポジトリの `docker-compose.yml` が
-  両方あるため。`compose.yaml` が使われるので無害。消したい場合は、スタックの `.env` に `COMPOSE_FILE=compose.yaml` を足す
+- **デプロイが `compose.yaml の app が image: … になっていない` で止まる**: サーバの `compose.yaml` がまだ `build:` のまま。
+  「以前の構成から移行する」を行う。このとき、動いているコンテナは変更されていない
+- **pullが `denied` / `unauthorized` で失敗する**: GHCRのパッケージが private のまま。「3. GitHub側の設定」で public にする
+- **デプロイが `running image is …, expected …` で止まる**: pullしたイメージが、デプロイしたコミットのものではない。
+  build ジョブが成功しているか、`compose.yaml` の `image:` のタグが `:custom` かを確認する
 - **Dockerfileを変えた後のビルドが遅い**: Sudachiの辞書(約140MB)のダウンロードと展開が走るため。
-  Dockerfileの変更はCIでは確かめていない。ビルドに失敗した場合はデプロイが止まり、動いているコンテナはそのまま残る
+  ビルドはCI(build ジョブ)で行うので、失敗した場合はデプロイまで進まず、動いているコンテナはそのまま残る
+- **コンテナが起動直後に落ちる(学習のタイミングで落ちる)**: イメージに MeCab が無いのに、`config.json` の
+  `morphAnalyzer` が `sudachi` になっていない。[morph-analyzer.md](morph-analyzer.md) を参照
 
 ## ロールバック
 
-デプロイに失敗するとスクリプトが直前のコミットを表示します。`git revert` してpushすると、再デプロイされます。
+イメージには、コミットごとのタグ(`:sha-<コミットのSHA>`)が付いています。
+デプロイに失敗するとスクリプトが直前のSHAを表示するので、すぐ戻したいときは `compose.yaml` の `image:` を
+`ghcr.io/mirashiya37/ai:sha-<直前のSHA>` にして `docker compose up -d` します(戻したあと、`:custom` に戻すのを忘れない)。
+恒久的には `git revert` してpushすると、再デプロイされます。
