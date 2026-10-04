@@ -4,6 +4,7 @@ import Module from '@/module.js';
 import config from '@/config.js';
 import serifs from '@/serifs.js';
 import { mecab } from './mecab.js';
+import { sudachi } from './sudachi.js';
 import getDate from '@/utils/get-date.js';
 
 /** 覚えてから忘れ始めるまでの日数 */
@@ -88,8 +89,13 @@ export default class extends Module {
 
 		let keywords: string[][] = [];
 
-		for (const note of interestedNotes) {
-			const tokens = await mecab(note.text, config.mecab, config.mecabDic);
+		// Sudachi は起動のたびに辞書を読み込むので、まとめて解析しておく
+		const sudachiTokens = config.morphAnalyzer === 'sudachi'
+			? await sudachi(interestedNotes.map(note => note.text), config.sudachi, config.sudachiDict)
+			: null;
+
+		for (const [i, note] of interestedNotes.entries()) {
+			const tokens = sudachiTokens ? sudachiTokens[i] : await mecab(note.text, config.mecab, config.mecabDic);
 			const keywordsInThisNote = tokens.filter(token => token[2] == '固有名詞' && token[3] !== '人名' && token[8] != null);
 			keywords = keywords.concat(keywordsInThisNote);
 		}

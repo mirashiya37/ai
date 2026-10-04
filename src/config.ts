@@ -21,6 +21,9 @@ type Config = {
 	aichatGroundingWithGoogleSearchAlwaysEnabled?: boolean;
 	mecab?: string;
 	mecabDic?: string;
+	morphAnalyzer?: 'mecab' | 'sudachi';
+	sudachi?: string;
+	sudachiDict?: 'small' | 'core' | 'full';
 	memoryDir?: string;
 };
 
