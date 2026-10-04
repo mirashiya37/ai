@@ -1,6 +1,6 @@
 # 形態素解析(MeCab / Sudachi)
 
-キーワード学習(`keyword` モジュール)は、タイムラインのノートを形態素解析して固有名詞を覚える。
+キーワード学習(`keyword` モジュール)は、タイムラインのノートを形態素解析して、固有名詞と一部の普通名詞を覚える。
 解析には MeCab(mecab-ipadic-NEologd)と Sudachi(SudachiDict)のどちらかを使える。
 
 | | MeCab + NEologd | Sudachi + SudachiDict(full) |
@@ -11,7 +11,7 @@
 | 本番のイメージ | 入っていない | ○ |
 
 どちらも、品詞は IPADIC と同じ並びで扱う(`src/modules/keyword/sudachi.ts` で変換している)。
-学習の条件(固有名詞・名字や名前だけの人名ではない・読みがある)は共通。
+学習の条件(固有名詞または一部の普通名詞・名字や名前だけの人名ではない・読みがある)は共通。
 
 本番のイメージ(CI でビルドして GHCR に置くもの)は、Sudachi だけを入れている(`deploy.yml` のビルド引数 `enable_mecab=0`)。
 そのため、サーバの `config.json` には `"morphAnalyzer": "sudachi"` が必須。
