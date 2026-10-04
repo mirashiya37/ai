@@ -23,7 +23,9 @@ Docker イメージには、両方が入っている(`Dockerfile` の `enable_me
    echo '東京ドームで初音ミクのライブ' | docker compose exec -T app sudachipy tokenize -m C -a -s full
    ```
 
-2. サーバの `config.json` に次を足して、コンテナを再起動する(`docker compose restart`)。
+2. サーバの `config.json` に次を足して、コンテナを作り直す(`docker compose up -d --force-recreate`)。
+   `config.json` はファイル単体でマウントしているため、エディタが保存時にファイルを置き換えると、
+   `docker compose restart` では古い内容のまま反映されない。
 
    ```json
    "morphAnalyzer": "sudachi"
@@ -35,7 +37,7 @@ Docker イメージには、両方が入っている(`Dockerfile` の `enable_me
    | `sudachi` | `sudachipy` | sudachipy のコマンド |
    | `sudachiDict` | `full` | 辞書の種類(`small` / `core` / `full`)。イメージに入っているのは `full` だけ |
 
-MeCab に戻すときは、`morphAnalyzer` を消して再起動する。
+MeCab に戻すときは、`morphAnalyzer` を消して、同じくコンテナを作り直す。
 
 ## 辞書を更新する
 
