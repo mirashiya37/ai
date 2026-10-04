@@ -1,31 +1,44 @@
 #!/usr/bin/env bash
 # サーバ上で実行されるデプロイスクリプト。
-# 使い方: bash deploy.sh <デプロイ先ディレクトリ> <デプロイするコミットSHA>
+# 使い方: bash deploy.sh <スタックのディレクトリ> <デプロイするコミットSHA> <イメージ名(タグなし)>
+# イメージはCIがGHCRにpush済みなので、ここではpullして起動し直すだけ。
 set -euo pipefail
 
 DEPLOY_PATH="${1:?deploy path is required}"
 SHA="${2:?commit sha is required}"
+IMAGE="${3:?image is required}"
 SERVICE=app
 
 cd "$DEPLOY_PATH"
 
-if [ ! -d .git ]; then
-  echo "::error::$DEPLOY_PATH is not a git repository" >&2
+revision_of() {
+  docker inspect -f '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$1" 2>/dev/null || echo unknown
+}
+
+# compose.yaml が、まだサーバでビルドする形(build:)のままなら、何も変えずに止める
+if ! docker compose config --images 2>/dev/null | grep -qx "$IMAGE:custom"; then
+  echo "::error::compose.yaml の $SERVICE が image: $IMAGE:custom になっていない(docs/deploy.md の移行手順を参照)" >&2
   exit 1
 fi
 
-prev="$(git rev-parse HEAD)"
+prev_cid="$(docker compose ps -q "$SERVICE" 2>/dev/null || true)"
+prev="$( [ -n "$prev_cid" ] && revision_of "$prev_cid" || echo none)"
 echo "==> $prev -> $SHA"
 
-git fetch --quiet origin custom
-git checkout --quiet custom
-git merge --ff-only "$SHA"
+echo "==> docker compose pull"
+docker compose pull --quiet "$SERVICE"
 
 echo "==> docker compose up"
-docker compose up -d --build --remove-orphans
+docker compose up -d --remove-orphans
+
+cid="$(docker compose ps -q "$SERVICE")"
+rev="$(revision_of "$cid")"
+if [ "$rev" != "$SHA" ]; then
+  echo "::error::running image is $rev, expected $SHA" >&2
+  exit 1
+fi
 
 echo "==> waiting for container"
-cid="$(docker compose ps -q "$SERVICE")"
 for i in $(seq 1 15); do
   sleep 2
   running="$(docker inspect -f '{{.State.Running}}' "$cid" 2>/dev/null || echo false)"
@@ -39,5 +52,6 @@ done
 
 echo "::error::container did not become stable" >&2
 docker compose logs --tail 50 "$SERVICE" >&2 || true
-echo "previous commit was $prev (rollback: git revert, then push)" >&2
+echo "previous revision was $prev" >&2
+echo "rollback: compose.yaml の image を $IMAGE:sha-$prev にして docker compose up -d、または git revert して push" >&2
 exit 1
