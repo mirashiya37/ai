@@ -1,6 +1,7 @@
 import { bindThis } from '@/decorators.js';
 import loki from 'lokijs';
 import Module from '@/module.js';
+import Message from '@/message.js';
 import config from '@/config.js';
 import serifs from '@/serifs.js';
 import { mecab } from './mecab.js';
@@ -39,7 +40,64 @@ export default class extends Module {
 		setInterval(this.learn, 1000 * 60 * 30);
 		setInterval(this.forget, 1000 * 60);
 
-		return {};
+		this.log(`Morph analyzer: ${config.morphAnalyzer ?? 'mecab'}`);
+
+		return {
+			mentionHook: this.mentionHook
+		};
+	}
+
+	/** 覚えないようにした語句(/forget で追加する) */
+	private getIgnored(): string[] {
+		return this.getData().ignored ?? [];
+	}
+
+	private setIgnored(ignored: string[]) {
+		this.setData({ ...this.getData(), ignored });
+	}
+
+	/**
+	 * マスター専用のコマンド
+	 * /keywords          覚えている語句の数と、最近覚えた語句を返す
+	 * /forget 語句       語句を忘れて、以後も覚えないようにする
+	 * /unforget 語句     覚えないようにした語句を、また覚えられるようにする
+	 */
+	@bindThis
+	private async mentionHook(msg: Message) {
+		// 他のサーバの同名ユーザーを弾くため、ローカルユーザー(host が無い)に限る
+		if (!msg.text || !config.master || msg.user.username !== config.master || msg.user.host != null) return false;
+
+		const text = msg.extractedText;
+
+		if (text === '/keywords') {
+			const recent = this.learnedKeywords.chain().simplesort('learnedAt', true).limit(10).data();
+			msg.reply([
+				`覚えている語句: ${this.learnedKeywords.count()}個(覚えないようにした語句: ${this.getIgnored().length}個)`,
+				recent.length > 0 ? `最近覚えた語句: ${recent.map(doc => doc.keyword).join('、')}` : '',
+			].filter(line => line !== '').join('\n'), { immediate: true });
+			return true;
+		}
+
+		const command = text.match(/^\/(forget|unforget)\s+(.+)$/);
+		if (command == null) return false;
+
+		const keyword = command[2].trim().replace(/^「(.*)」$/, '$1');
+		const ignored = this.getIgnored();
+
+		if (command[1] === 'forget') {
+			const exist = this.learnedKeywords.findOne({ keyword });
+			if (exist) this.learnedKeywords.remove(exist);
+			if (!ignored.includes(keyword)) this.setIgnored([...ignored, keyword]);
+			msg.reply(`「${keyword}」を${exist ? '忘れて、' : ''}覚えないようにしました`, { immediate: true });
+			this.log(`Forgot by master: ${keyword}`);
+		} else if (ignored.includes(keyword)) {
+			this.setIgnored(ignored.filter(k => k !== keyword));
+			msg.reply(`「${keyword}」をまた覚えられるようにしました`, { immediate: true });
+		} else {
+			msg.reply(`「${keyword}」は、覚えないようにしていません`, { immediate: true });
+		}
+
+		return true;
 	}
 
 	/**
@@ -73,6 +131,32 @@ export default class extends Module {
 			const examples = forgotten.slice(0, 5).map(doc => doc.keyword).join(', ');
 			this.log(`Forgot ${forgotten.length} keywords (e.g. ${examples}${forgotten.length > 5 ? ', ...' : ''})`);
 		}
+
+		this.report(forgotten.length);
+	}
+
+	/**
+	 * 日付が変わったときに、学習の状況をマスターにチャットで送る
+	 * (マスターが設定されていない場合や、送れなかった場合は何もしない)
+	 */
+	@bindThis
+	private async report(forgottenCount: number) {
+		if (!config.master) return;
+
+		try {
+			const user: any = await this.ai.api('users/show', { username: config.master });
+			const learnedCount = this.learnedKeywords.find({ learnedAt: { $gte: Date.now() - 1000 * 60 * 60 * 24 } }).length;
+
+			await this.ai.sendMessage(user.id, {
+				text: [
+					'語句の学習のレポートです',
+					`覚えた: ${learnedCount}個 / 忘れた: ${forgottenCount}個 / いま覚えている: ${this.learnedKeywords.count()}個`,
+					`形態素解析: ${config.morphAnalyzer ?? 'mecab'}`,
+				].join('\n'),
+			});
+		} catch (e) {
+			this.log(`Failed to send report: ${e}`);
+		}
 	}
 
 	@bindThis
@@ -88,6 +172,7 @@ export default class extends Module {
 			note.cw == null);
 
 		let keywords: string[][] = [];
+		const ignored = this.getIgnored();
 
 		// Sudachi は起動のたびに辞書を読み込むので、まとめて解析しておく
 		const sudachiTokens = config.morphAnalyzer === 'sudachi'
@@ -97,7 +182,7 @@ export default class extends Module {
 		for (const [i, note] of interestedNotes.entries()) {
 			const tokens = sudachiTokens ? sudachiTokens[i] : await mecab(note.text, config.mecab, config.mecabDic);
 			// 人名は、名字・名前(姓・名)だけを除く。キャラクター名など辞書にフルネームで載っている名前(一般)は覚える
-			const keywordsInThisNote = tokens.filter(token => token[2] == '固有名詞' && (token[3] !== '人名' || token[4] === '一般') && token[8] != null);
+			const keywordsInThisNote = tokens.filter(token => token[2] == '固有名詞' && (token[3] !== '人名' || token[4] === '一般') && token[8] != null && !ignored.includes(token[0]));
 			keywords = keywords.concat(keywordsInThisNote);
 		}
 

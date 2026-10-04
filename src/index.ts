@@ -74,6 +74,7 @@ promiseRetry(retry => {
 	// 藍起動
 	new 藍(account, [
 		new CoreModule(),
+		new KeywordModule(), // マスター用コマンドが、トークなどの反応より先に処理されるようにここに置く
 		new AiChatModule(),
 		new ReminderModule(),
 		new TalkModule(),
@@ -92,7 +93,6 @@ promiseRetry(retry => {
 		new FollowModule(),
 		new BirthdayModule(),
 		new ValentineModule(),
-		new KeywordModule(),
 		new MazeModule(),
 		new ChartModule(),
 		new SleepReportModule(),
