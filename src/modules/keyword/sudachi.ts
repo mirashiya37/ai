@@ -1,4 +1,30 @@
-import { cmd } from './mecab.js';
+import { spawn } from 'child_process';
+
+/** 解析が終わらないままになるのを防ぐための時間切れ(ミリ秒) */
+const TIMEOUT = 1000 * 60;
+
+/**
+ * コマンドを実行して、標準出力を行ごとに返す。
+ * mecab.ts の cmd() は、出力が大きい(約16KB以上)と終わらなくなるので、ここでは使わない。
+ * タイムラインの100件をまとめて解析すると、出力が大きくなる。
+ */
+function run(command: string, args: string[], stdin: string): Promise<string[]> {
+	return new Promise((resolve, reject) => {
+		const child = spawn(command, args, { timeout: TIMEOUT });
+		const chunks: Buffer[] = [];
+
+		child.stdout.on('data', chunk => chunks.push(chunk));
+		child.stderr.resume(); // 読み捨てる(読まないと、詰まって止まることがある)
+		child.stdin.on('error', () => { /* 先に終了した場合の EPIPE は、close で扱う */ });
+		child.on('error', reject);
+		child.on('close', (code, signal) => {
+			if (code === 0) resolve(Buffer.concat(chunks).toString('utf8').split(/\r?\n/));
+			else reject(new Error(`${command} exited with ${signal ?? `code ${code}`}`));
+		});
+
+		child.stdin.end(stdin);
+	});
+}
 
 /**
  * Run Sudachi (sudachipy) and return tokens in the same layout as MeCab (IPADIC).
@@ -12,7 +38,7 @@ import { cmd } from './mecab.js';
  */
 export async function sudachi(texts: string[], sudachi = 'sudachipy', dict = 'full'): Promise<string[][][]> {
 	const input = texts.map(text => text.replace(/[\n\s\t]/g, ' ')).join('\n') + '\n';
-	const lines = await cmd(sudachi, ['tokenize', '-m', 'C', '-a', '-s', dict], input);
+	const lines = await run(sudachi, ['tokenize', '-m', 'C', '-a', '-s', dict], input);
 
 	const results: string[][][] = [];
 	let tokens: string[][] = [];
