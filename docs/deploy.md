@@ -188,6 +188,15 @@ Actions のどのジョブで失敗したか(`ci` → `build` → `deploy`)で�
 - **何も覚えなくなった(ログに `Uncaught exception: spawn mecab ENOENT` が30分ごとに出る)**: イメージに MeCab が無いのに、
   `config.json` の `morphAnalyzer` が `sudachi` になっていない。Bot は落ちずに動き続けるので、気づきにくい。
   起動時のログが `Morph analyzer: mecab` なら設定漏れ。[morph-analyzer.md](morph-analyzer.md) を参照
+- **語句を覚えない(「覚えました」の投稿が出ない)**: まず、学習が動いているかをログで確かめる。
+
+  ```sh
+  docker compose logs --since 6h app 2>&1 | grep -E "\[keyword\]|Uncaught"
+  ```
+
+  `Learn:` の行が30分おきに出ていれば動いている。`already known` なら、選ばれた語がすでに覚えていた語で、何も起きていない
+  (覚えている語が増えるほど、新しい語に当たりにくい)。`Uncaught exception` が出ていれば、その内容が原因。
+  詳しいログの見方は [features.md](features.md) の「学習の経過(ログ)」を参照
 - **`config.json` を変えたのに反映されない**: `config.json` はファイル単体でマウントしているため、
   エディタが保存時にファイルを置き換えると、`docker compose restart` では古い内容のまま。
   `docker compose up -d --force-recreate` でコンテナを作り直す

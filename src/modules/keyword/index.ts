@@ -197,6 +197,11 @@ export default class extends Module {
 		// チャートが無効だと数がリセットされず増え続けるので、そのときは数えない
 		if (config.chartEnabled !== false) countKeywords(this.ai, trendNotes);
 
+		// 学習したかどうかが投稿以外に分からないので、毎回の経過をログに残す
+		const uniqueKeywords = [...new Set(keywords.map(token => token[0]))];
+		const newKeywords = uniqueKeywords.filter(keyword => this.learnedKeywords.findOne({ keyword }) == null);
+		this.log(`Learn: ${interestedNotes.length} notes, ${uniqueKeywords.length} keywords (${newKeywords.length} not yet learned)`);
+
 		if (keywords.length === 0) return;
 
 		const rnd = Math.floor((1 - Math.sqrt(Math.random())) * keywords.length);
@@ -209,6 +214,7 @@ export default class extends Module {
 		let text: string;
 
 		if (exist) {
+			this.log(`Learn: "${keyword[0]}" is already known`);
 			return;
 		} else {
 			this.learnedKeywords.insertOne({
@@ -221,6 +227,8 @@ export default class extends Module {
 				text = serifs.keyword.learned(keyword[0], kanaToHira(keyword[8]));
 			}
 		}
+
+		this.log(`Learned: "${keyword[0]}"`);
 
 		this.ai.post({
 			text: text
