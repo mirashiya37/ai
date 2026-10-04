@@ -4,6 +4,13 @@ import Module from '@/module.js';
 import config from '@/config.js';
 import serifs from '@/serifs.js';
 import { mecab } from './mecab.js';
+import getDate from '@/utils/get-date.js';
+
+/** 覚えてから忘れ始めるまでの日数 */
+const FORGET_AFTER_DAYS = 30;
+
+/** 忘れ始めてから、1日ごとに忘れる確率 */
+const FORGET_RATE = 0.05;
 
 function kanaToHira(str: string) {
 	return str.replace(/[\u30a1-\u30f6]/g, match => {
@@ -29,8 +36,42 @@ export default class extends Module {
 		});
 
 		setInterval(this.learn, 1000 * 60 * 30);
+		setInterval(this.forget, 1000 * 60);
 
 		return {};
+	}
+
+	/**
+	 * 覚えてから FORGET_AFTER_DAYS 日を過ぎた語句を、1日ごとに FORGET_RATE の確率で忘れる。
+	 * おみくじの結果が1日の途中で変わらないよう、日付が変わったときにだけ行う。
+	 */
+	@bindThis
+	private forget() {
+		const today = getDate();
+		const data = this.getData();
+		if (data.lastForgotOn === today) return;
+
+		const isFirstTime = data.lastForgotOn == null;
+		data.lastForgotOn = today;
+		this.setData(data);
+
+		// 初回(この機能を入れた日)は、その日のおみくじを変えないよう翌日から始める
+		if (isFirstTime) return;
+
+		const threshold = Date.now() - 1000 * 60 * 60 * 24 * FORGET_AFTER_DAYS;
+		const forgotten = this.learnedKeywords
+			.find({ learnedAt: { $lt: threshold } })
+			.filter(() => Math.random() < FORGET_RATE);
+
+		for (const doc of forgotten) {
+			this.learnedKeywords.remove(doc);
+		}
+
+		if (forgotten.length > 0) {
+			// 一度に大量に忘れることもあるので、語句は先頭の数個だけ出す
+			const examples = forgotten.slice(0, 5).map(doc => doc.keyword).join(', ');
+			this.log(`Forgot ${forgotten.length} keywords (e.g. ${examples}${forgotten.length > 5 ? ', ...' : ''})`);
+		}
 	}
 
 	@bindThis
