@@ -58,7 +58,5 @@
   サーバは `compose.yaml` の `image:` で pull するだけ。スタックには `compose.yaml`・`config.json`・`data/`・`font.ttf`・`.env` だけを置く。
 - イメージは public なので、秘密の値をイメージに入れない(`.dockerignore` で `config.json` などを除外している。Dockerfile で COPY しない)。
 - イメージに MeCab は入れていない(ビルド引数 `enable_mecab=0`)。サーバの `config.json` の `"morphAnalyzer": "sudachi"` は消さない。
-- `config.json`・`data/`・`font.ttf` が無い状態で起動すると、Docker が空のディレクトリを作ってコンテナが起動しなくなる(実際に起きた)。
-  サーバでファイルを整理する前にバックアップする。復旧は `docs/deploy.md` の「つまずきやすい点」。
 - `config.json` を変えたら `docker compose up -d --force-recreate` で反映する(`restart` では反映されないことがある)。
 - `docker compose` は、スタックのディレクトリで実行する(プロジェクト名がディレクトリ名と一致するため)。

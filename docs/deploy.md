@@ -80,7 +80,7 @@ ACLは既存の内容(`grants` で全許可、`ssh` で `autogroup:member` → �
    - タグ: `tag:ci`
    - 発行された Client ID / Secret を控える
 
-## 2. サーバ側の準備(Dockgeのスタックをイメージで動かす)
+## 2. サーバ側の構成(Dockgeのスタックをイメージで動かす)
 
 Dockgeのスタック(以下 `<スタックの絶対パス>`)の `compose.yaml` は、`build:` ではなく `image:` でイメージを指定します。
 DNSなど環境固有の設定は、`compose.yaml` に書いたままにします。
@@ -106,46 +106,21 @@ networks: {}
 
 SSHユーザーが `docker` グループに入っていること。
 
-### 以前の構成(スタックがGitのclone)から移行する
+スタックのディレクトリに置くのは、次だけです(ソースやDockerfileはイメージに入っているので置かない)。
 
-以前は、スタックのディレクトリをこのリポジトリのcloneにして、サーバでビルドしていました。
-一度だけ、サーバで次を実行して移行します(`STACK` はスタックのパスに置き換える)。
-先に、移行後の `deploy.yml` を push してイメージを GHCR に置き、パッケージを public にしておきます(「3. GitHub側の設定」)。
-このときのデプロイは、`compose.yaml` が `image:` になっていないため、何も変えずに失敗します。
+| ファイル | 中身 |
+|---|---|
+| `compose.yaml` | スタックの定義(上の例) |
+| `config.json` | トークンなどの設定 |
+| `font.ttf` | フォント(チャートや迷路の画像に使う) |
+| `data/` | Botの記憶(`memory.json`) |
+| `.env` | Dockgeの環境変数(あれば) |
 
-> **注意: `config.json` `data/` `font.ttf` を消さないこと。**
-> これらが無い状態で `docker compose up` すると、Dockerがマウント元の名前で**空のディレクトリ**を作り、
-> コンテナが `ERR_UNSUPPORTED_DIR_IMPORT` で起動しません(実際に起きた)。必ず先にバックアップします。
+動いているイメージがどのコミットのものかは、次で確かめられます。
 
 ```bash
-STACK=<スタックの絶対パス>
-cd "$STACK"
-
-# 0. バックアップ(ディレクトリごと)
-cp -a "$STACK" "$STACK.bak-$(date +%Y%m%d)"
-
-# 1. compose.yaml を上の例のように書き換える(build: の4行を image: の1行にする。dns などはそのまま)
-
-# 2. イメージを取得して起動し直す(ソースはまだ残っているが、もう使われない)
-docker compose pull
-docker compose up -d
-docker compose ps                                     # app が running であること
 docker inspect -f '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$(docker compose ps -q app)"
-                                                      # custom の最新コミットのSHAが出ること
-
-# 3. Gitのclone(ソースと .git)を片付ける。残すのは compose.yaml config.json font.ttf data .env だけ
-find . -mindepth 1 -maxdepth 1 \
-  ! -name compose.yaml ! -name config.json ! -name font.ttf ! -name data ! -name .env \
-  -print                                              # まず消える対象を確認する
-find . -mindepth 1 -maxdepth 1 \
-  ! -name compose.yaml ! -name config.json ! -name font.ttf ! -name data ! -name .env \
-  -exec rm -rf {} +
-ls -la config.json font.ttf data/memory.json          # 先頭が - (ファイル)であること。d(ディレクトリ)ならNG
-docker compose up -d                                  # 設定は変わらないので、そのまま動き続ける
 ```
-
-最後に、Actions → Deploy → Run workflow で手動実行し、デプロイが通ることを確かめます。
-バックアップ(`$STACK.bak-…`)は、しばらく問題がなければ消します。トークン入りの `config.json` を含むので、放置しないこと。
 
 ## 3. GitHub側の設定
 
@@ -172,43 +147,55 @@ Change visibility → Public)。private のままだと、サーバのpullが `d
 ## 4. 動作確認
 
 1. Actions → Deploy → Run workflow(`custom` を選択)で手動実行する
-2. 失敗したら、下の「つまずきやすい点」を確認する
+2. 失敗したら、どのジョブで止まったかを見て、下の「つまずきやすい点」を探す
 
 ## つまずきやすい点
+
+Actions のどのジョブで失敗したか(`ci` → `build` → `deploy`)で探します。
+コンテナが入れ替わるのは、`deploy` の `docker compose up` 以降だけです。
+それより前の段階(`ci`・`build`・Tailscale / SSH・pull)で止まったときは、**動いているコンテナは変更されません**。
+
+### `ci` / `build` ジョブで失敗する
+
+- **型エラーでは落ちない**: upstream 時点で多数あり、CI も Dockerfile も、終了コードではなく `built/index.js` の存在と構文で判定している。
+  落ちるのは、成果物が無いか、構文が壊れているとき
+- **`build` が遅い・失敗する**: Sudachi の辞書(約140MB)のダウンロードと展開が走る。初回やキャッシュが無いときは時間がかかる。
+  辞書の取得先(PyPI など)に届かないと失敗する。ログで `pip install` の行を確認する
+- **`build` は通るのに、Bot が動かない**: イメージの中身は CI では動かしていない。デプロイ後に「動いているBotの問題」を確認する
+
+### `deploy` ジョブ: Tailscale / SSH で失敗する
 
 - **`tailscale ssh` が権限エラー / プロンプトで止まる**: CI用の `ssh` ルールが `accept` になっているか(`check` だと止まる)、
   `src: tag:ci` / `dst: tag:server` / `users` にSSHユーザーが入っているかを確認する
 - **サーバに繋がらない**: Actionの `ping` が待機しているのはtailnetへの反映待ち(最大3分)。
   サーバに `tag:server` が付いているか、`grants` で `tag:ci` の通信を制限していないかを確認する
-- **サーバのタグを付けたら他のサービスが止まった**: `--advertise-tags` は一覧を置き換える。
+- **サーバのタグを付けたら他のサービスが止まった**(初回の設定時): `--advertise-tags` は一覧を置き換える。
   元のタグ(例: `tag:既存のタグ`)も含めて指定し直す
-- **コンテナが `ERR_UNSUPPORTED_DIR_IMPORT` で起動しない / `not a directory` でマウントに失敗する**:
-  `config.json` `data/` `font.ttf` のいずれかが、Dockerの作った空のディレクトリになっている。復旧は次のとおり
-  (元のファイルは、バックアップ(`<スタックの絶対パス>.bak-…`)から戻す)
 
-  ```bash
-  cd "<スタックの絶対パス>"
-  docker compose stop
-  sudo rmdir config.json data font.ttf          # 空のディレクトリだけが消える(中身があれば失敗して安全)
-  cp -a "<バックアップのパス>"/config.json "<バックアップのパス>"/font.ttf "<バックアップのパス>"/data .
-  docker compose down && docker compose up -d   # 古いコンテナの中身も作り直す。upだけだと同じエラーが出る
-  ```
+### `deploy` ジョブ: サーバでの処理(`scripts/deploy.sh`)で失敗する
 
-  `docker compose down` が必要なのは、前回の失敗時にコンテナ内の `/ai/config.json` もディレクトリとして作られており、
-  `up -d` だけではそのコンテナが再利用されるため。
-- **ビルドの型エラー**: upstream時点で多数あり、DockerfileもCIも成果物の有無で判定している
+どのメッセージで止まったかで判断します。
+
+| メッセージ | 原因 | 対処 |
+|---|---|---|
+| `compose.yaml の app が image: … になっていない` | サーバの `compose.yaml` の `image:` が `ghcr.io/mirashiya37/ai:custom` ではない(ロールバックで `:sha-…` にしたまま、など) | `:custom` に戻す |
+| pull が `denied` / `unauthorized` | GHCR のパッケージが private になっている | 「3. GitHub側の設定」の手順で public にする |
+| `running image is …, expected …` | pull したイメージが、デプロイしたコミットのものではない | `build` ジョブが成功しているか、`compose.yaml` の `image:` のタグが `:custom` かを確認する |
+| `container did not become stable` | 起動後に落ちて再起動を繰り返している | ログに出る直前の50行を見る。下の「動いているBotの問題」も参照 |
+
+### 動いているBotの問題
+
+- **起動直後、または学習のタイミング(30分ごと)で落ちる**: イメージに MeCab が無いのに、`config.json` の
+  `morphAnalyzer` が `sudachi` になっていない。[morph-analyzer.md](morph-analyzer.md) を参照
 - **`config.json` を変えたのに反映されない**: `config.json` はファイル単体でマウントしているため、
   エディタが保存時にファイルを置き換えると、`docker compose restart` では古い内容のまま。
   `docker compose up -d --force-recreate` でコンテナを作り直す
-- **デプロイが `compose.yaml の app が image: … になっていない` で止まる**: サーバの `compose.yaml` がまだ `build:` のまま。
-  「以前の構成から移行する」を行う。このとき、動いているコンテナは変更されていない
-- **pullが `denied` / `unauthorized` で失敗する**: GHCRのパッケージが private のまま。「3. GitHub側の設定」で public にする
-- **デプロイが `running image is …, expected …` で止まる**: pullしたイメージが、デプロイしたコミットのものではない。
-  build ジョブが成功しているか、`compose.yaml` の `image:` のタグが `:custom` かを確認する
-- **Dockerfileを変えた後のビルドが遅い**: Sudachiの辞書(約140MB)のダウンロードと展開が走るため。
-  ビルドはCI(build ジョブ)で行うので、失敗した場合はデプロイまで進まず、動いているコンテナはそのまま残る
-- **コンテナが起動直後に落ちる(学習のタイミングで落ちる)**: イメージに MeCab が無いのに、`config.json` の
-  `morphAnalyzer` が `sudachi` になっていない。[morph-analyzer.md](morph-analyzer.md) を参照
+- **どのコミットのイメージが動いているか分からない**: 「2. サーバ側の構成」のコマンドで、イメージのコミットを確かめられる
+
+### 運用で気をつけること
+
+- **ドキュメントだけの変更でデプロイを動かしたくない**: コミットメッセージに `[skip ci]` を付けて push する
+- **`custom` への push は、そのまま本番に出る**: push の前に、本番に出してよい変更か確認する(CLAUDE.md にも記載)
 
 ## ロールバック
 

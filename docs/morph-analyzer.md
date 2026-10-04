@@ -17,47 +17,36 @@
 そのため、サーバの `config.json` には `"morphAnalyzer": "sudachi"` が必須。
 無いと MeCab を起動しようとして、学習のタイミングで Bot が落ちる。
 
-## Sudachi に切り替える
+## 設定(`config.json`)
 
-本番はすでに Sudachi を使っている。以下は、MeCab から切り替えたときの手順(新しく環境を作るときにも使う)。
+| 項目 | 既定 | 内容 |
+|---|---|---|
+| `morphAnalyzer` | `mecab` | `sudachi` にすると Sudachi を使う。**本番では必須** |
+| `sudachi` | `sudachipy` | sudachipy のコマンド |
+| `sudachiDict` | `full` | 辞書の種類(`small` / `core` / `full`)。イメージに入っているのは `full` だけ |
+
+`config.json` を変えたら、`docker compose up -d --force-recreate` でコンテナを作り直す
+(ファイル単体でマウントしているため、`docker compose restart` では反映されないことがある)。
+
+## 動作を確かめる
+
+どちらの解析を使っているかはログに出ないため、次で確かめる。
+
+```sh
+cd <スタックの絶対パス>
+docker compose exec app grep morphAnalyzer /ai/config.json      # "morphAnalyzer": "sudachi" が見えること
+echo '東京ドームで初音ミクのライブ' | docker compose exec -T app sudachipy tokenize -m C -a -s full
+```
+
+`東京ドーム	名詞,固有名詞,一般,…	トウキョウドーム` のような行のあと、最後に `EOS` が出ればよい。
+Bot は `EOS` で文の区切りを判断するので、出ていないと何も学習しなくなる。
+学習は30分ごとなので、`docker compose logs --tail 50 app` にエラーや再起動がないことも確かめる。
+
+## MeCab に戻す
+
 `Dockerfile` は `enable_mecab` / `enable_sudachi` で、それぞれを入れるかを選べる。
-
-1. 新しいイメージでコンテナが動いていることを確認し、コンテナの中で Sudachi が動くか試す。
-
-   ```sh
-   cd <スタックの絶対パス>
-   echo '東京ドームで初音ミクのライブ' | docker compose exec -T app sudachipy tokenize -m C -a -s full
-   ```
-
-   `東京ドーム	名詞,固有名詞,一般,…	トウキョウドーム` のような行のあと、最後に `EOS` が出ればよい。
-   Bot は `EOS` で文の区切りを判断するので、出ていないと何も学習しなくなる。
-   コマンドが無い状態で切り替えると、学習のたびに Bot が落ちるので、必ず先に確かめる。
-
-2. サーバの `config.json` をバックアップしてから、
-   次を足して、コンテナを作り直す(`docker compose up -d --force-recreate`)。
-   `config.json` はファイル単体でマウントしているため、エディタが保存時にファイルを置き換えると、
-   `docker compose restart` では古い内容のまま反映されない。
-
-   ```json
-   "morphAnalyzer": "sudachi"
-   ```
-
-   | 項目 | 既定 | 内容 |
-   |---|---|---|
-   | `morphAnalyzer` | `mecab` | `sudachi` にすると Sudachi を使う |
-   | `sudachi` | `sudachipy` | sudachipy のコマンド |
-   | `sudachiDict` | `full` | 辞書の種類(`small` / `core` / `full`)。イメージに入っているのは `full` だけ |
-
-3. コンテナ側で設定が見えていることを確認する。どちらの解析を使っているかはログに出ないため、これで判断する。
-
-   ```sh
-   docker compose exec app grep morphAnalyzer /ai/config.json
-   ```
-
-   学習は30分ごとなので、しばらくして `docker compose logs --tail 50 app` にエラーや再起動がないことも確かめる。
-
-MeCab に戻すときは、先に `deploy.yml` のビルド引数を `enable_mecab=1` にして push し、MeCab 入りのイメージにする。
-そのあと `morphAnalyzer` を消して、同じくコンテナを作り直す。
+先に `deploy.yml` のビルド引数を `enable_mecab=1` にして push し、MeCab 入りのイメージにする。
+そのあと `config.json` から `morphAnalyzer` を消して、コンテナを作り直す。
 
 ## 辞書を更新する
 
