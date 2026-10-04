@@ -2,7 +2,7 @@ import { bindThis } from '@/decorators.js';
 import Message from '@/message.js';
 import Module from '@/module.js';
 import serifs from '@/serifs.js';
-import { genItem } from '@/vocabulary.js';
+import { getLearnedKeywords, genItemWithKeyword } from '@/utils/gen-item-with-keyword.js';
 import config from '@/config.js';
 import type { Note } from '@/misskey/note.js';
 
@@ -66,11 +66,12 @@ export default class extends Module {
 
 		const poll = polls[Math.floor(Math.random() * polls.length)];
 
+		const keywords = getLearnedKeywords(this.ai);
 		const choices = [
-			genItem(),
-			genItem(),
-			genItem(),
-			genItem(),
+			genItemWithKeyword(keywords),
+			genItemWithKeyword(keywords),
+			genItemWithKeyword(keywords),
+			genItemWithKeyword(keywords),
 		];
 
 		const note = await this.ai.post({
