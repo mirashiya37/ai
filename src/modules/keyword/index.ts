@@ -96,7 +96,8 @@ export default class extends Module {
 
 		for (const [i, note] of interestedNotes.entries()) {
 			const tokens = sudachiTokens ? sudachiTokens[i] : await mecab(note.text, config.mecab, config.mecabDic);
-			const keywordsInThisNote = tokens.filter(token => token[2] == '固有名詞' && token[3] !== '人名' && token[8] != null);
+			// 人名は、名字・名前(姓・名)だけを除く。キャラクター名など辞書にフルネームで載っている名前(一般)は覚える
+			const keywordsInThisNote = tokens.filter(token => token[2] == '固有名詞' && (token[3] !== '人名' || token[4] === '一般') && token[8] != null);
 			keywords = keywords.concat(keywordsInThisNote);
 		}
 
