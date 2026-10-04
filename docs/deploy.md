@@ -176,6 +176,13 @@ Settings → Environments → `production` を作成し、次を設定します�
   `docker compose down` が必要なのは、前回の失敗時にコンテナ内の `/ai/config.json` もディレクトリとして作られており、
   `up -d` だけではそのコンテナが再利用されるため。
 - **ビルドの型エラー**: upstream時点で多数あり、DockerfileもCIも成果物の有無で判定している
+- **`config.json` を変えたのに反映されない**: `config.json` はファイル単体でマウントしているため、
+  エディタが保存時にファイルを置き換えると、`docker compose restart` では古い内容のまま。
+  `docker compose up -d --force-recreate` でコンテナを作り直す
+- **`Found multiple config files` という警告が出る**: Dockgeの `compose.yaml` とリポジトリの `docker-compose.yml` が
+  両方あるため。`compose.yaml` が使われるので無害。消したい場合は、スタックの `.env` に `COMPOSE_FILE=compose.yaml` を足す
+- **Dockerfileを変えた後のビルドが遅い**: Sudachiの辞書(約140MB)のダウンロードと展開が走るため。
+  Dockerfileの変更はCIでは確かめていない。ビルドに失敗した場合はデプロイが止まり、動いているコンテナはそのまま残る
 
 ## ロールバック
 

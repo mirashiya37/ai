@@ -23,7 +23,12 @@ Docker イメージには、両方が入っている(`Dockerfile` の `enable_me
    echo '東京ドームで初音ミクのライブ' | docker compose exec -T app sudachipy tokenize -m C -a -s full
    ```
 
-2. サーバの `config.json` に次を足して、コンテナを作り直す(`docker compose up -d --force-recreate`)。
+   `東京ドーム	名詞,固有名詞,一般,…	トウキョウドーム` のような行のあと、最後に `EOS` が出ればよい。
+   Bot は `EOS` で文の区切りを判断するので、出ていないと何も学習しなくなる。
+   コマンドが無い状態で切り替えると、学習のたびに Bot が落ちるので、必ず先に確かめる。
+
+2. サーバの `config.json` を、スタックの外にバックアップしてから(スタックは Git の作業ディレクトリのため)、
+   次を足して、コンテナを作り直す(`docker compose up -d --force-recreate`)。
    `config.json` はファイル単体でマウントしているため、エディタが保存時にファイルを置き換えると、
    `docker compose restart` では古い内容のまま反映されない。
 
@@ -36,6 +41,14 @@ Docker イメージには、両方が入っている(`Dockerfile` の `enable_me
    | `morphAnalyzer` | `mecab` | `sudachi` にすると Sudachi を使う |
    | `sudachi` | `sudachipy` | sudachipy のコマンド |
    | `sudachiDict` | `full` | 辞書の種類(`small` / `core` / `full`)。イメージに入っているのは `full` だけ |
+
+3. コンテナ側で設定が見えていることを確認する。どちらの解析を使っているかはログに出ないため、これで判断する。
+
+   ```sh
+   docker compose exec app grep morphAnalyzer /ai/config.json
+   ```
+
+   学習は30分ごとなので、しばらくして `docker compose logs --tail 50 app` にエラーや再起動がないことも確かめる。
 
 MeCab に戻すときは、`morphAnalyzer` を消して、同じくコンテナを作り直す。
 

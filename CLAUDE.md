@@ -3,6 +3,7 @@
 `syuilo/ai`(Misskey のBot「藍」)を、自サーバ向けに改修した Fork。
 詳しいデプロイ手順は [docs/deploy.md](docs/deploy.md)、バージョンの付け方は [docs/versioning.md](docs/versioning.md)、
 形態素解析(MeCab / Sudachi)の切り替えは [docs/morph-analyzer.md](docs/morph-analyzer.md) を参照。
+独自機能の一覧は [docs/features.md](docs/features.md)、バージョンごとの変更は [docs/changelog.md](docs/changelog.md)。
 
 ## ブランチと本番反映
 
@@ -34,11 +35,21 @@
 - 自サーバ固有の値(除外するユーザー ID、カスタム絵文字名、投稿時刻など)は、既存の独自改修と同じ場所に置く。
 - コミットは機能ごとに分け、日本語で `type(scope): 内容` の形式にする(例: `feat(reversi): …`、`fix(core): …`、`chore: …`)。
   本文には変更の理由を書く。
+- 機能を追加・変更したら、[docs/features.md](docs/features.md) も更新する。
+
+## 学習した語句(キーワード)を使うとき
+
+- 語句を混ぜたアイテム名は `src/utils/gen-item-with-keyword.ts` の `genItemWithKeyword()` で作る。
+  `vocabulary.ts` の `genItem()` は upstream のファイルで、引き継ぎコードにも使われるため変更しない。
+- おみくじは「同じ人・同じ日なら同じ結果」を保つ。候補の語句は `getLearnedKeywords(ai, その日の0時)` で固定し、
+  乱数の消費順も変えない。語句を消す処理(忘却など)は、日付が変わったときにだけ行う。
+- 人名は、細分類が「姓」「名」のものだけを学習しない(キャラクター名は覚える)。条件は `src/modules/keyword/index.ts`。
 
 ## バージョン
 
 - バージョンは `package.json` の `_v`(`<upstream>-mk<X>.<Y>.<Z>`、例: `2.0.1-mk2.1.0`)。X は破壊的変更、Y は機能追加、Z は不具合修正。
-- 機能や修正を入れたときは、同じコミットか別の `chore:` コミットで `_v` を上げる。`docs`・`chore`・`ci` では上げない。Git のタグは付けない。
+- 機能や修正を入れたときは、同じコミットか別の `chore:` コミットで `_v` を上げ、[docs/changelog.md](docs/changelog.md) に追記する。
+  `docs`・`chore`・`ci` では上げない。Git のタグは付けない。
 - 破壊的変更の定義や、複数の種類が混ざるときの扱いは [docs/versioning.md](docs/versioning.md) を参照。
 
 ## サーバ運用(Dockge)
