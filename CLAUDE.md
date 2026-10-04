@@ -1,13 +1,14 @@
 # CLAUDE.md
 
 `syuilo/ai`(Misskey のBot「藍」)を、自サーバ向けに改修した Fork。
-詳しいデプロイ手順は [docs/deploy.md](docs/deploy.md) を参照。
+詳しいデプロイ手順は [docs/deploy.md](docs/deploy.md)、バージョンの付け方は [docs/versioning.md](docs/versioning.md) を参照。
 
 ## ブランチと本番反映
 
 - `custom` が本番用。`master` は upstream(`syuilo/ai`)と同じ内容で、触らない。
 - **`custom` への push は、CI を通った後に本番へ自動デプロイされる。** push の前に、本番に出してよい変更か確認する。
 - upstream の取り込みは `git fetch upstream && git merge upstream/master`(rebase や force push はしない)。
+  `package.json` の `_v` が競合したら、upstream の部分だけを書き換える(フォーク側の番号は変えない)。
 
 ## 公開範囲(Fork は public)
 
@@ -32,6 +33,12 @@
 - 自サーバ固有の値(除外するユーザー ID、カスタム絵文字名、投稿時刻など)は、既存の独自改修と同じ場所に置く。
 - コミットは機能ごとに分け、日本語で `type(scope): 内容` の形式にする(例: `feat(reversi): …`、`fix(core): …`、`chore: …`)。
   本文には変更の理由を書く。
+
+## バージョン
+
+- バージョンは `package.json` の `_v`(`<upstream>-mk<X>.<Y>.<Z>`、例: `2.0.1-mk2.1.0`)。X は破壊的変更、Y は機能追加、Z は不具合修正。
+- 機能や修正を入れたときは、同じコミットか別の `chore:` コミットで `_v` を上げる。`docs`・`chore`・`ci` では上げない。Git のタグは付けない。
+- 破壊的変更の定義や、複数の種類が混ざるときの扱いは [docs/versioning.md](docs/versioning.md) を参照。
 
 ## サーバ運用(Dockge)
 
