@@ -5,6 +5,7 @@ import Message from '@/message.js';
 import { getLearnedKeywords, genItemWithKeyword } from '@/utils/gen-item-with-keyword.js';
 import serifs, { getSerif } from '@/serifs.js';
 import getDate from '@/utils/get-date.js';
+import { safeForInterpolate } from '@/utils/safe-for-interpolate.js';
 
 export default class extends Module {
 	public readonly name = 'talk';
@@ -13,6 +14,7 @@ export default class extends Module {
 	public install() {
 		return {
 			mentionHook: this.mentionHook,
+			contextHook: this.contextHook,
 		};
 	}
 
@@ -421,12 +423,49 @@ export default class extends Module {
 	}
 
 	@bindThis
-	private adana(msg: Message): boolean | HandlerResult {  // いつかそのまま名前を覚えさせられたらいいね
+	private adana(msg: Message): boolean | HandlerResult {
 		if (!msg.includes(['あだな', 'あだ名', '渾名', 'あだにゃ'])) return false;
-		const item = genItemWithKeyword(getLearnedKeywords(this.ai));
+		const keywords = getLearnedKeywords(this.ai);
 
-		msg.reply(serifs.core.adana(item, msg.friend.name));
+		// 呼び名にできるあだ名が出るまで何度か考える(条件はcoreの「〇〇って呼んで」と同じ)
+		let item = '';
+		for (let i = 0; i < 10; i++) {
+			item = genItemWithKeyword(keywords);
+			if (item.length <= 10 && safeForInterpolate(item)) break;
+		}
 
+		if (item.length <= 10 && safeForInterpolate(item)) {
+			msg.reply(serifs.core.adanaAsk(item, msg.friend.name)).then(reply => {
+				this.subscribeReply(msg.userId, msg.isChat, msg.isChat ? msg.userId : reply.id, {
+					name: item
+				});
+			});
+		} else {
+			msg.reply(serifs.core.adana(item, msg.friend.name));
+		}
+
+		return {
+			reaction: '🙌'
+		};
+	}
+
+	@bindThis
+	private async contextHook(key: any, msg: Message, data: any) {
+		if (msg.text == null) return;
+
+		// 「ううん」は「うん」を含むので、否定を先に判定する
+		if (msg.includes(['いいえ', 'ううん', 'やだ', '嫌', 'だめ', 'やめ'])) {
+			msg.reply(serifs.core.adanaNo(msg.friend.name));
+		} else if (msg.includes(['はい', 'いいよ', 'うん', 'それで', 'お願い', 'おねがい'])) {
+			msg.friend.updateName(data.name);
+			msg.reply(serifs.core.setNameOk(data.name));
+		} else {
+			// あだ名への返事ではなさそうなので、待ち受けをやめて普段の会話として扱う
+			this.unsubscribeReply(key);
+			return false;
+		}
+
+		this.unsubscribeReply(key);
 		return {
 			reaction: '🙌'
 		};

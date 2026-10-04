@@ -190,8 +190,9 @@ export default {
 
 		adana: (item, name) => item ? name ? `${name}、「${item}」とかいかがでしょうか？` : `「${item}」とかいかがでしょうか？` : "すみません、いまはあだ名が思い浮かばないです・・・",
 
-		// adana: (item, name) => item ? name ? `${name}、${item}と呼んでもいいですか？` : `${item}と呼んでもいいですか？` : "すみません、いまはちょっと思い浮かばないです・・・",  名前をそのまんま言えるようになったらね。
+		adanaAsk: (item, name) => name ? `${name}、「${item}」とお呼びしてもいいですか？` : `「${item}」とお呼びしてもいいですか？`,
 
+		adanaNo: name => name ? `わかりました、これからも${name}とお呼びしますね！` : 'わかりました、またいいあだ名を考えておきますね！',
 		otukare: name => name ? `${name}、お疲れ様です！！` : 'お疲れ様です！！',
 
 		higntouch: {
