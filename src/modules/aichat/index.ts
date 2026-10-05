@@ -244,7 +244,8 @@ export default class extends Module {
 			json: geminiOptions,
 		};
 
-		this.log(JSON.stringify(options));
+		// APIキーがログに残らないよう、リクエストの本文だけを出す
+		this.log(JSON.stringify(options.json));
 		let res_data:any = null;
 		let responseText:string = '';
 		try {
@@ -320,7 +321,8 @@ export default class extends Module {
 				],
 			},
 		};
-		this.log(JSON.stringify(options));
+		// APIキーがログに残らないよう、リクエストの本文だけを出す
+		this.log(JSON.stringify(options.json));
 		let res_data:any = null;
 		try {
 			res_data = await got.post(options,
