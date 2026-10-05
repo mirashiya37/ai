@@ -7,6 +7,7 @@ import serifs from '@/serifs.js';
 import { mecab } from './mecab.js';
 import { sudachi } from './sudachi.js';
 import { isLearnableCommonNoun } from './token-filter.js';
+import { kindOf, pickCandidate, resolveProperRate } from './pick-candidate.js';
 import getDate from '@/utils/get-date.js';
 import { countKeywords } from '@/utils/keyword-trend.js';
 
@@ -29,6 +30,8 @@ export default class extends Module {
 	private learnedKeywords: loki.Collection<{
 		keyword: string;
 		learnedAt: number;
+		/** 固有名詞か普通名詞か(この項目を入れる前に覚えた語にはない) */
+		kind?: 'proper' | 'common';
 	}>;
 
 	@bindThis
@@ -150,12 +153,15 @@ export default class extends Module {
 
 		try {
 			const user: any = await this.ai.api('users/show', { username: config.master });
-			const learnedCount = this.learnedKeywords.find({ learnedAt: { $gte: Date.now() - 1000 * 60 * 60 * 24 } }).length;
+			const learned = this.learnedKeywords.find({ learnedAt: { $gte: Date.now() - 1000 * 60 * 60 * 24 } });
+			const learnedCount = learned.length;
+			const properCount = learned.filter(doc => doc.kind === 'proper').length;
+			const commonCount = learned.filter(doc => doc.kind === 'common').length;
 
 			await this.ai.sendMessage(user.id, {
 				text: [
 					'語句の学習のレポートです',
-					`覚えた: ${learnedCount}個 / 忘れた: ${forgottenCount}個 / いま覚えている: ${this.learnedKeywords.count()}個`,
+					`覚えた: ${learnedCount}個${properCount + commonCount > 0 ? `(固有名詞 ${properCount} / 普通名詞 ${commonCount})` : ''} / 忘れた: ${forgottenCount}個 / いま覚えている: ${this.learnedKeywords.count()}個`,
 					`形態素解析: ${config.morphAnalyzer ?? 'mecab'}`,
 				].join('\n'),
 			});
@@ -208,16 +214,16 @@ export default class extends Module {
 		// 学習したかどうかが投稿以外に分からないので、毎回の経過をログに残す
 		const uniqueKeywords = [...new Set(keywords.map(token => token[0]))];
 		const newKeywords = uniqueKeywords.filter(keyword => this.learnedKeywords.findOne({ keyword }) == null);
-		this.log(`Learn: ${interestedNotes.length} notes, ${uniqueKeywords.length} keywords (${newKeywords.length} not yet learned)`);
 
 		// すでに覚えている語を選ぶと、その回は何も起きないので、まだ覚えていない語の中から選ぶ
 		const newSet = new Set(newKeywords);
 		const candidates = keywords.filter(token => newSet.has(token[0]));
 
-		if (candidates.length === 0) return;
+		const kinds = (kind: string) => new Set(candidates.filter(token => kindOf(token) === kind).map(token => token[0])).size;
+		this.log(`Learn: ${interestedNotes.length} notes, ${uniqueKeywords.length} keywords (${newKeywords.length} not yet learned: ${kinds('proper')} proper, ${kinds('common')} common)`);
 
-		const rnd = Math.floor((1 - Math.sqrt(Math.random())) * candidates.length);
-		const keyword = candidates.sort((a, b) => a[0].length < b[0].length ? 1 : -1)[rnd];
+		const keyword = pickCandidate(candidates, resolveProperRate(config.keywordProperRate));
+		if (keyword == null) return;
 
 		const exist = this.learnedKeywords.findOne({
 			keyword: keyword[0]
@@ -230,7 +236,8 @@ export default class extends Module {
 		} else {
 			this.learnedKeywords.insertOne({
 				keyword: keyword[0],
-				learnedAt: Date.now()
+				learnedAt: Date.now(),
+				kind: kindOf(keyword)
 			});
 			if (/^[ぁ-んァ-ヴー]*$/.test(keyword[0]) == true) {
 				text = serifs.keyword.learned(keyword[0], null);
@@ -239,7 +246,7 @@ export default class extends Module {
 			}
 		}
 
-		this.log(`Learned: "${keyword[0]}"`);
+		this.log(`Learned: "${keyword[0]}" (${kindOf(keyword)})`);
 
 		this.ai.post({
 			text: text

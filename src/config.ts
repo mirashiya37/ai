@@ -6,6 +6,7 @@ type Config = {
 	wsUrl: string;
 	apiUrl: string;
 	keywordEnabled: boolean;
+	keywordProperRate?: number | string;
 	reversiEnabled: boolean;
 	notingEnabled: boolean;
 	chartEnabled: boolean;
