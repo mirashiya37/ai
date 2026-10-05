@@ -33,7 +33,8 @@ RUN if [ $enable_sudachi -ne 0 ]; then apt-get update \
 COPY . /ai
 
 WORKDIR /ai
-RUN npm install && npm run build || test -f ./built/index.js
+# 依存は package-lock.json のとおりに入れる(入れられなければ失敗させる)。型エラーはビルド成果物の有無で判定する
+RUN npm ci && (npm run build || test -f ./built/index.js)
 
 ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD npm start

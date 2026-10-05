@@ -39,6 +39,9 @@
 	},
 	"devDependencies": {
 	},
+	"allowScripts": {
+		"canvas@3.0.0": true
+	},
 	"nodemonConfig": {
     "ignore": ["memory.json"]
   }

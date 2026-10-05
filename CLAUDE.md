@@ -28,7 +28,11 @@
 
 ## ビルドと CI
 
-- ビルドは `npm run build`(`tspc`)、起動は `node ./built`。依存は `npm install`(ロックファイルなし)。
+- ビルドは `npm run build`(`tspc`)、起動は `node ./built`。依存は `package-lock.json` で固定していて、CI と Dockerfile は `npm ci` で入れる。
+- **`package.json` の依存を変えたら、ロックファイルも同じコミットで更新する。** 手元の npm と本番(`node:lts`)の npm は版が違うことがあるので、
+  `node_modules` の無い `ai` ディレクトリに `package.json` と `.npmrc` だけを置き、`node:lts` のコンテナで `npm install --package-lock-only` して作る
+  (`node_modules` があるディレクトリで作ると、`integrity` が欠ける)。upstream の取り込みで依存が変わったときも同じ。
+- `canvas` のインストールスクリプトは、`package.json` の `allowScripts` で許可している(npm 12 以降は、許可がないと実行されず、`canvas` が動かない)。
 - **型エラーは upstream の時点で多数あり、直さない。** Dockerfile も CI も、終了コードではなく
   `built/index.js` の存在と構文で判定する。型エラーの修正は、頼まれたときだけ行う。
 - ただし、自分の改修では新しい型エラーを増やさない。変更前後で `npx tsc --noEmit` のエラー件数を比べ、増えていたら直す。

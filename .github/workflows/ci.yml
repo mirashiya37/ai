@@ -19,7 +19,7 @@ jobs:
           node-version: lts/*
 
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
       # DockerfileのRUNと同じく、型エラーでは落とさず成果物の有無で判定する
       - name: Build

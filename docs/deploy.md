@@ -4,7 +4,7 @@
 
 ```
 push (custom)
-  └─ ci.yml      : npm install → build → built/index.js の存在と構文を確認
+  └─ ci.yml      : npm ci → build → built/index.js の存在と構文を確認
   └─ deploy.yml  : build  : Dockerイメージをビルド → ghcr.io/mirashiya37/ai に push(:custom と :sha-<コミット>)
                    deploy : Tailscaleに参加(tag:ci) → Tailscale SSHでサーバへ入る
                      └─ scripts/deploy.sh : docker compose pull → up -d → イメージのコミットと起動を確認
