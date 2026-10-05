@@ -102,7 +102,8 @@ export default class extends Module {
 
 	@bindThis
 	private async mentionHook(msg: Message) {
-		if (!msg.or(['/poll']) || msg.user.username !== config.master) {
+		// 他のサーバの同名ユーザーを弾くため、ローカルユーザー(host が無い)に限る
+		if (!msg.or(['/poll']) || msg.user.username !== config.master || msg.user.host != null) {
 			return false;
 		} else {
 			this.log('Manualy poll requested');
