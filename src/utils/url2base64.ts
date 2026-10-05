@@ -1,9 +1,9 @@
 import log from '@/utils/log.js';
-import got from 'got';
+import { downloadBuffer } from '@/utils/safe-download.js';
 
 export default async function(url: string): Promise<string> {
 	try {
-			const buffer = await got(url).buffer();
+			const buffer = await downloadBuffer(url);
 			const base64File = buffer.toString('base64');
 			return base64File;
 	} catch (err: unknown) {
