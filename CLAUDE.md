@@ -3,7 +3,8 @@
 `syuilo/ai`(Misskey のBot「藍」)を、自サーバ向けに改修した Fork。
 バージョンの付け方は [docs/versioning.md](docs/versioning.md)、
 形態素解析(MeCab / Sudachi)の切り替えは [docs/morph-analyzer.md](docs/morph-analyzer.md) を参照。
-独自機能の一覧は [docs/features.md](docs/features.md)、バージョンごとの変更は [docs/changelog.md](docs/changelog.md)。
+独自機能の一覧は [docs/features.md](docs/features.md)、バージョンごとの変更は [docs/changelog.md](docs/changelog.md)、
+テストは [docs/testing.md](docs/testing.md)。
 
 ## ブランチと本番反映
 
@@ -38,6 +39,12 @@
   `built/index.js` の存在と構文で判定する。型エラーの修正は、頼まれたときだけ行う。
 - ただし、自分の改修では新しい型エラーを増やさない。変更前後で `npx tsc --noEmit` のエラー件数を比べ、増えていたら直す。
 - `config.json` が無くてもビルドは通る(実行時に必要)。
+
+## テスト
+
+- 単体テストは `test/`(`node:test`)。`npm run build && node --test 'test/*.test.mjs'` で実行する。詳しくは [docs/testing.md](docs/testing.md)。
+- 機能を追加・変更したら、テストも足すか直す。コミットの前に実行して、全部通ることを確かめる。
+- `@bindThis` のメソッドに代入しない(クラス共通の関数が書き換わる)。テストで差し替えるときは `Object.defineProperty` を使う。
 
 ## 改修の方針
 
