@@ -51,7 +51,8 @@ for i in $(seq 1 15); do
 done
 
 echo "::error::container did not become stable" >&2
-docker compose logs --tail 50 "$SERVICE" >&2 || true
+# ログは、リポジトリが public でActionsのログが誰にでも見えるため、ここには出さない
+echo "ログはサーバで確認する: docker compose logs --tail 50 $SERVICE" >&2
 echo "previous revision was $prev" >&2
 echo "rollback: compose.yaml の image を $IMAGE:sha-$prev にして docker compose up -d、または git revert して push" >&2
 exit 1
