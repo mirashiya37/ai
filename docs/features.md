@@ -111,7 +111,7 @@ upstream(`syuilo/ai`)に対して、このフォークで追加・変更した�
 
 ## 定期投稿の時刻(日本標準時)
 
-コンテナを `TZ=Asia/Tokyo` で動かす前提で、コード中の時刻は日本時間で書く([deploy.md](deploy.md))。
+コンテナを `TZ=Asia/Tokyo` で動かす前提で、コード中の時刻は日本時間で書く([CLAUDE.md](../CLAUDE.md) の「実行環境」)。
 
 | 機能 | 時刻 | upstream からの変更 |
 |---|---|---|

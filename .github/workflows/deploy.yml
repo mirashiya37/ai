@@ -79,7 +79,6 @@ jobs:
           tags: tag:ci
           ping: ${{ secrets.DEPLOY_SSH_HOST }}
 
-      # Tailscale SSHを使うので、SSH鍵やknown_hostsの管理は不要
       - name: Deploy over Tailscale SSH
         run: |
           tailscale ssh "$SSH_USER@$SSH_HOST" \

@@ -17,7 +17,7 @@ revision_of() {
 
 # compose.yaml が、まだサーバでビルドする形(build:)のままなら、何も変えずに止める
 if ! docker compose config --images 2>/dev/null | grep -qx "$IMAGE:custom"; then
-  echo "::error::compose.yaml の $SERVICE が image: $IMAGE:custom になっていない(docs/deploy.md の移行手順を参照)" >&2
+  echo "::error::compose.yaml の $SERVICE が image: $IMAGE:custom になっていない" >&2
   exit 1
 fi
 
@@ -28,11 +28,8 @@ echo "==> $prev -> $SHA"
 echo "==> docker compose pull"
 docker compose pull --quiet "$SERVICE"
 
-# コンテナは一般ユーザー(uid 1000)で動く。マウントするファイルを読み書きできないと、起動し直した後に動かなくなるので、
-# 動いているコンテナを止める前に、新しいイメージ(pull済み)で、実際のマウントのとおりに確かめる。
-# stdin はこのスクリプト自身なので、docker には渡さない(</dev/null)
-# memory.json は、一時ファイル(memory.json~)に書いて置き換えて保存される。
-# 動いている旧コンテナ(root)が保存し直すたびに root 所有に戻るが、data/ に書ければ保存できるので、読めればよい
+# 入れ替える前に、新しいイメージでマウントの権限を確かめる(stdin はこのスクリプトなので渡さない)。
+# memory.json は置き換えで保存されるので、読めればよい
 echo "==> docker compose run (permission check)"
 if ! docker compose run --rm --no-deps -T --entrypoint sh "$SERVICE" -c '
   ng=0
@@ -44,7 +41,7 @@ if ! docker compose run --rm --no-deps -T --entrypoint sh "$SERVICE" -c '
   [ ! -e /ai/data/memory.json~ ] || [ -w /ai/data/memory.json~ ] || { echo "  書けない: /ai/data/memory.json~" >&2; ng=1; }
   exit $ng
 ' </dev/null; then
-  echo "::error::コンテナの実行ユーザー(uid 1000)の権限が足りない。上に出た項目を直す(docs/deploy.md の「一般ユーザー(uid 1000)で動かす」を参照)" >&2
+  echo "::error::権限が足りない(上に出た項目)" >&2
   echo "動いているコンテナは、そのままにしてある" >&2
   exit 1
 fi
@@ -72,7 +69,6 @@ for i in $(seq 1 15); do
 done
 
 echo "::error::container did not become stable" >&2
-# ログは、リポジトリが public でActionsのログが誰にでも見えるため、ここには出さない
 echo "ログはサーバで確認する: docker compose logs --tail 50 $SERVICE" >&2
 echo "previous revision was $prev" >&2
 echo "rollback: compose.yaml の image を $IMAGE:sha-$prev にして docker compose up -d、または git revert して push" >&2

@@ -102,7 +102,7 @@ export default class extends Module {
 
 	@bindThis
 	private async mentionHook(msg: Message) {
-		// 他のサーバの同名ユーザーを弾くため、ローカルユーザー(host が無い)に限る
+		// ローカルユーザー(host が無い)に限る
 		if (!msg.or(['/poll']) || msg.user.username !== config.master || msg.user.host != null) {
 			return false;
 		} else {

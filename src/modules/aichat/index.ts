@@ -244,7 +244,6 @@ export default class extends Module {
 			json: geminiOptions,
 		};
 
-		// APIキーがログに残らないよう、リクエストの本文だけを出す
 		this.log(JSON.stringify(options.json));
 		let res_data:any = null;
 		let responseText:string = '';
@@ -321,7 +320,6 @@ export default class extends Module {
 				],
 			},
 		};
-		// APIキーがログに残らないよう、リクエストの本文だけを出す
 		this.log(JSON.stringify(options.json));
 		let res_data:any = null;
 		try {

@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 `syuilo/ai`(Misskey のBot「藍」)を、自サーバ向けに改修した Fork。
-詳しいデプロイ手順は [docs/deploy.md](docs/deploy.md)、バージョンの付け方は [docs/versioning.md](docs/versioning.md)、
+バージョンの付け方は [docs/versioning.md](docs/versioning.md)、
 形態素解析(MeCab / Sudachi)の切り替えは [docs/morph-analyzer.md](docs/morph-analyzer.md) を参照。
 独自機能の一覧は [docs/features.md](docs/features.md)、バージョンごとの変更は [docs/changelog.md](docs/changelog.md)。
 
@@ -20,11 +20,10 @@
 ## 公開範囲(Fork は public)
 
 - 実環境の値は、コード・ドキュメント・コミットメッセージのどこにもコミットしない。
-  対象はホスト名、サーバのパス、SSH ユーザー名、メールアドレス、トークン、API キー、内部 IP。
+  対象は、接続先、パス、ユーザー名、メールアドレス、認証情報など。
   必要なときは `<スタックの絶対パス>` のようなプレースホルダーで書く。
 - Git 管理外のファイル(`.gitignore` 済み): `config.json`、`data/`、`font.ttf`、`.env`、`docker-compose.override.yml`。
   これらを `git add -f` で追加しない。
-- 接続先やトークンは GitHub の Secrets(Environment `production`)で管理している。
 
 ## ビルドと CI
 
@@ -32,7 +31,7 @@
 - **`package.json` の依存を変えたら、ロックファイルも同じコミットで更新する。** 手元の npm と本番(`node:lts`)の npm は版が違うことがあるので、
   `node_modules` の無い `ai` ディレクトリに `package.json` と `.npmrc` だけを置き、`node:lts` のコンテナで `npm install --package-lock-only` して作る
   (`node_modules` があるディレクトリで作ると、`integrity` が欠ける)。upstream の取り込みで依存が変わったときも同じ。
-- ベースイメージ(`Dockerfile` の `FROM`)は、ダイジェストで固定している。サードパーティの Actions(特に Tailscale には OAuth の Secret を渡す)は、
+- ベースイメージ(`Dockerfile` の `FROM`)は、ダイジェストで固定している。サードパーティの Actions は、
   タグでなくコミットの SHA で固定していて、コメントに版を書いている。更新するときは、新しい版を調べて SHA を差し替える(勝手には上がらない)。
 - `canvas` のインストールスクリプトは、`package.json` の `allowScripts` で許可している(npm 12 以降は、許可がないと実行されず、`canvas` が動かない)。
 - **型エラーは upstream の時点で多数あり、直さない。** Dockerfile も CI も、終了コードではなく
@@ -71,15 +70,10 @@
   `docs`・`chore`・`ci` では上げない。Git のタグは付けない。
 - 破壊的変更の定義や、複数の種類が混ざるときの扱いは [docs/versioning.md](docs/versioning.md) を参照。
 
-## サーバ運用(Dockge)
+## 実行環境
 
-- Bot は Dockge のスタックで動く。イメージは CI(`deploy.yml` の build ジョブ)でビルドして GHCR(public)に置き、
-  サーバは `compose.yaml` の `image:` で pull するだけ。スタックには `compose.yaml`・`config.json`・`data/`・`font.ttf`・`.env` だけを置く。
 - イメージは public なので、秘密の値をイメージに入れない(`.dockerignore` で `config.json` などを除外している。Dockerfile で COPY しない)。
-- コンテナ内の Bot は、一般ユーザー(`node`、uid 1000)で動く。スタックの `data/`(書き込み)、`config.json`・`font.ttf`(読み取り)は、
-  uid 1000 が使える権限にしておく([docs/deploy.md](docs/deploy.md))。足りないと、`deploy.sh` が、コンテナを入れ替える前に止める。
+- コンテナの Bot は一般ユーザー(`node`)で動く。書き込めるのは `data/` だけ。ほかの場所にファイルを書く処理を足さない。
 - イメージに MeCab は入れていない(ビルド引数 `enable_mecab=0`)。サーバの `config.json` の `"morphAnalyzer": "sudachi"` は消さない。
-- コンテナは `TZ=Asia/Tokyo` で動かす(サーバの `compose.yaml` の `environment`)。コード中の時刻(定期投稿の `getHours()` など)は日本時間で書き、
+- コンテナは `TZ=Asia/Tokyo` で動かす。コード中の時刻(定期投稿の `getHours()` など)は日本時間で書き、
   UTC から逆算した数字にしない。TZ を外すと日付の区切りと定期投稿が9時間ずれる。
-- `config.json` を変えたら `docker compose up -d --force-recreate` で反映する(`restart` では反映されないことがある)。
-- `docker compose` は、スタックのディレクトリで実行する(プロジェクト名がディレクトリ名と一致するため)。
