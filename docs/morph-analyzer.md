@@ -16,7 +16,7 @@
 本番のイメージ(CI でビルドして GHCR に置くもの)は、Sudachi だけを入れている(`deploy.yml` のビルド引数 `enable_mecab=0`)。
 そのため、サーバの `config.json` には `"morphAnalyzer": "sudachi"` が必須。
 無いと MeCab を起動しようとして失敗する。Bot は落ちずに動き続けるが、学習が毎回失敗して、何も覚えなくなる
-(ログに `Uncaught exception: spawn mecab ENOENT` が30分ごとに出る)。
+(ログに `Uncaught exception: spawn mecab ENOENT` が15〜45分ごとに出る)。
 起動時のログに `Morph analyzer: mecab` と出ていたら、この設定漏れ。`Morph analyzer: sudachi` なら正しい。
 
 ## 設定(`config.json`)
@@ -42,7 +42,7 @@ echo '東京ドームで初音ミクのライブ' | docker compose exec -T app s
 
 `東京ドーム	名詞,固有名詞,一般,…	トウキョウドーム` のような行のあと、最後に `EOS` が出ればよい。
 Bot は `EOS` で文の区切りを判断するので、出ていないと何も学習しなくなる。
-学習は30分ごとなので、`docker compose logs --tail 50 app` にエラーや再起動がないことも確かめる。
+学習は15〜45分ごとなので、`docker compose logs --tail 50 app` にエラーや再起動がないことも確かめる。
 
 ## MeCab に戻す
 

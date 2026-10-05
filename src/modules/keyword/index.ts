@@ -8,6 +8,7 @@ import { mecab } from './mecab.js';
 import { sudachi } from './sudachi.js';
 import { isLearnableCommonNoun } from './token-filter.js';
 import { kindOf, pickCandidate, resolveProperRate } from './pick-candidate.js';
+import { nextLearnDelay } from './learn-interval.js';
 import getDate from '@/utils/get-date.js';
 import { countKeywords } from '@/utils/keyword-trend.js';
 
@@ -42,7 +43,7 @@ export default class extends Module {
 			indices: ['userId']
 		});
 
-		setInterval(this.learn, 1000 * 60 * 30);
+		this.scheduleLearn();
 		setInterval(this.forget, 1000 * 60);
 
 		this.log(`Morph analyzer: ${config.morphAnalyzer ?? 'mecab'}`);
@@ -50,6 +51,24 @@ export default class extends Module {
 		return {
 			mentionHook: this.mentionHook
 		};
+	}
+
+	/**
+	 * 学習を、毎回少しずらした間隔で行う(固定の間隔だと、投稿がいつも同じ時刻に並ぶので)。
+	 * 学習が失敗しても、次の予約は止めない(エラーは、これまでどおり外に出す)
+	 */
+	@bindThis
+	private scheduleLearn() {
+		const delay = nextLearnDelay();
+		this.log(`Next learn in ${(delay / 1000 / 60).toFixed(1)} min`);
+
+		setTimeout(async () => {
+			try {
+				await this.learn();
+			} finally {
+				this.scheduleLearn();
+			}
+		}, delay);
 	}
 
 	/** 覚えないようにした語句(/forget で追加する) */
