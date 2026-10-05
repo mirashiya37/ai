@@ -23,6 +23,8 @@ jobs:
   # イメージはCIでビルドしてGHCRに置き、サーバはpullするだけにする
   build:
     needs: ci
+    # 手動実行(workflow_dispatch)で別のブランチを選んでも、:custom のイメージを上書きさせない
+    if: github.ref == 'refs/heads/custom'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
