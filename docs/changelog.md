@@ -3,6 +3,22 @@
 このフォークのバージョン(`package.json` の `_v`)ごとの変更。付け方は [versioning.md](versioning.md)。
 機能の詳細は [features.md](features.md)。
 
+## 2.0.1-mk3.0.0
+
+- **破壊的変更: コンテナの中の Bot を、root ではなく一般ユーザー(`node`、uid 1000)で動かすようにした。**
+  依存パッケージが乗っ取られたときの被害を小さくするため。**デプロイの前に、サーバで次を行う**
+  (詳しくは [deploy.md](deploy.md) の「一般ユーザー(uid 1000)で動かす」)。
+
+  ```sh
+  cd <スタックの絶対パス>
+  sudo chown -R 1000:1000 data
+  sudo chown 1000:1000 config.json font.ttf
+  ```
+
+  `scripts/deploy.sh` は、コンテナを入れ替える前に、新しいイメージでこの権限を確かめる。足りないときはそこで止まり、
+  動いているコンテナはそのまま残る(権限を直して、デプロイをやり直す)。`config.json` の `memoryDir` は `"data"` にしておく。
+- 依存を `package-lock.json` で固定した(`npm ci`)。ベースイメージと GitHub Actions も、ダイジェストと SHA で固定した。
+
 ## 2.0.1-mk2.8.2
 
 - **修正: `ws` を 8.22.0 に上げた**(8.18.1 には、メモリの内容が漏れる問題と、細かい断片でメモリを使い切らされる問題があった)。

@@ -28,6 +28,19 @@ echo "==> $prev -> $SHA"
 echo "==> docker compose pull"
 docker compose pull --quiet "$SERVICE"
 
+# コンテナは一般ユーザー(uid 1000)で動く。マウントするファイルを読み書きできないと、起動し直した後に動かなくなるので、
+# 動いているコンテナを止める前に、新しいイメージ(pull済み)で、実際のマウントのとおりに確かめる。
+# stdin はこのスクリプト自身なので、docker には渡さない(</dev/null)
+echo "==> docker compose run (permission check)"
+if ! docker compose run --rm --no-deps -T --entrypoint sh "$SERVICE" -c '
+  test -r /ai/config.json && test -r /ai/font.ttf && test -w /ai/data &&
+  { [ ! -e /ai/data/memory.json ] || { test -r /ai/data/memory.json && test -w /ai/data/memory.json; }; }
+' </dev/null; then
+  echo "::error::コンテナの実行ユーザー(uid 1000)が config.json / font.ttf を読めない、または data/ に書けない(docs/deploy.md の「一般ユーザーで動かす」を参照)" >&2
+  echo "動いているコンテナは、そのままにしてある" >&2
+  exit 1
+fi
+
 echo "==> docker compose up"
 docker compose up -d --remove-orphans
 

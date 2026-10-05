@@ -76,6 +76,8 @@
 - Bot は Dockge のスタックで動く。イメージは CI(`deploy.yml` の build ジョブ)でビルドして GHCR(public)に置き、
   サーバは `compose.yaml` の `image:` で pull するだけ。スタックには `compose.yaml`・`config.json`・`data/`・`font.ttf`・`.env` だけを置く。
 - イメージは public なので、秘密の値をイメージに入れない(`.dockerignore` で `config.json` などを除外している。Dockerfile で COPY しない)。
+- コンテナ内の Bot は、一般ユーザー(`node`、uid 1000)で動く。スタックの `data/`(書き込み)、`config.json`・`font.ttf`(読み取り)は、
+  uid 1000 が使える権限にしておく([docs/deploy.md](docs/deploy.md))。足りないと、`deploy.sh` が、コンテナを入れ替える前に止める。
 - イメージに MeCab は入れていない(ビルド引数 `enable_mecab=0`)。サーバの `config.json` の `"morphAnalyzer": "sudachi"` は消さない。
 - コンテナは `TZ=Asia/Tokyo` で動かす(サーバの `compose.yaml` の `environment`)。コード中の時刻(定期投稿の `getHours()` など)は日本時間で書き、
   UTC から逆算した数字にしない。TZ を外すと日付の区切りと定期投稿が9時間ずれる。

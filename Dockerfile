@@ -38,5 +38,10 @@ WORKDIR /ai
 # 依存は package-lock.json のとおりに入れる(入れられなければ失敗させる)。型エラーはビルド成果物の有無で判定する
 RUN npm ci && (npm run build || test -f ./built/index.js)
 
+# 実行は一般ユーザー(node, uid 1000)で行い、依存や built/ はroot所有のまま(アプリが自分のコードを書き換えられないように)にする。
+# data/ に書けるよう、ここだけ node の所有にする。マウントする data/ と config.json も、サーバ側で uid 1000 が使える権限にしておく(docs/deploy.md)
+RUN mkdir -p /ai/data && chown node:node /ai/data
+USER node
+
 ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD npm start

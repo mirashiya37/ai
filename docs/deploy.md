@@ -122,6 +122,28 @@ SSHユーザーが `docker` グループに入っていること。
 | `data/` | Botの記憶(`memory.json`) |
 | `.env` | Dockgeの環境変数(あれば) |
 
+### 一般ユーザー(uid 1000)で動かす
+
+コンテナの中の Bot は、root ではなく一般ユーザー(`node`、uid 1000)で動きます(万一、依存パッケージが乗っ取られても、
+被害を小さくするため)。そのため、スタックのディレクトリに置くファイルは、uid 1000 が使える権限にしておく必要があります。
+
+| ファイル | 必要な権限 |
+|---|---|
+| `data/` | uid 1000 が書ける(`memory.json` を保存する)。中の `memory.json` も、読み書きできる |
+| `config.json` `font.ttf` | uid 1000 が読める(`:ro` でマウントしているので、書けなくてよい) |
+
+```bash
+cd <スタックの絶対パス>
+sudo chown -R 1000:1000 data
+sudo chown 1000:1000 config.json font.ttf
+sudo chmod 600 config.json        # トークンが入っているので、他のユーザーには読ませない
+```
+
+- SSH ユーザーの uid が 1000 なら、`sudo` は要りません。`id -u` で確かめられます。uid が違う場合は、`config.json` を編集するときにも `sudo` が要ります。
+- `config.json` の `memoryDir` は `"data"` にする(未設定だと、書けない `/ai` に保存しようとして失敗する)。
+- **`scripts/deploy.sh` は、pull の後・コンテナを入れ替える前に、この権限を新しいイメージで確かめる。**
+  足りないときはそこで止まり、動いているコンテナはそのまま残る。初めてこのイメージを入れる前に、上の設定を済ませておく。
+
 動いているイメージがどのコミットのものかは、次で確かめられます。
 
 ```bash
@@ -187,7 +209,8 @@ Actions のどのジョブで失敗したか(`ci` → `build` → `deploy`)で�
 | `compose.yaml の app が image: … になっていない` | サーバの `compose.yaml` の `image:` が `ghcr.io/mirashiya37/ai:custom` ではない(ロールバックで `:sha-…` にしたまま、など) | `:custom` に戻す |
 | pull が `denied` / `unauthorized` | GHCR のパッケージが private になっている | 「3. GitHub側の設定」の手順で public にする |
 | `running image is …, expected …` | pull したイメージが、デプロイしたコミットのものではない | `build` ジョブが成功しているか、`compose.yaml` の `image:` のタグが `:custom` かを確認する |
-| `container did not become stable` | 起動後に落ちて再起動を繰り返している | ログに出る直前の50行を見る。下の「動いているBotの問題」も参照 |
+| `コンテナの実行ユーザー(uid 1000)が … 読めない、または data/ に書けない` | `config.json` `font.ttf` `data/` の権限が足りない。動いているコンテナは入れ替わっていない | 「一般ユーザー(uid 1000)で動かす」の `chown` / `chmod` を行って、デプロイをやり直す(`gh workflow run deploy.yml --ref custom`) |
+| `container did not become stable` | 起動後に落ちて再起動を繰り返している | リポジトリが public なので、ログは Actions に出さない。サーバで `docker compose logs --tail 50 app` を見る。下の「動いているBotの問題」も参照 |
 
 ### 動いているBotの問題
 
