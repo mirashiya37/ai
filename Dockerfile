@@ -1,4 +1,6 @@
-FROM node:lts
+# ベースイメージはダイジェストで固定する(タグが指す中身が、知らないうちに変わらないように)。
+# 更新するときは `docker buildx imagetools inspect node:lts` で新しいダイジェストを調べ、ビルドして確かめてから差し替える
+FROM node:lts@sha256:64af3819f9275802414d7cdc38c27e9d82bd564dec4d4da87d008255d36c63b4
 
 RUN apt-get update && apt-get install tini --no-install-recommends -y && apt-get clean && rm -rf /var/lib/apt-get/lists/*
 

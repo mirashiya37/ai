@@ -32,6 +32,8 @@
 - **`package.json` の依存を変えたら、ロックファイルも同じコミットで更新する。** 手元の npm と本番(`node:lts`)の npm は版が違うことがあるので、
   `node_modules` の無い `ai` ディレクトリに `package.json` と `.npmrc` だけを置き、`node:lts` のコンテナで `npm install --package-lock-only` して作る
   (`node_modules` があるディレクトリで作ると、`integrity` が欠ける)。upstream の取り込みで依存が変わったときも同じ。
+- ベースイメージ(`Dockerfile` の `FROM`)は、ダイジェストで固定している。サードパーティの Actions(特に Tailscale には OAuth の Secret を渡す)は、
+  タグでなくコミットの SHA で固定していて、コメントに版を書いている。更新するときは、新しい版を調べて SHA を差し替える(勝手には上がらない)。
 - `canvas` のインストールスクリプトは、`package.json` の `allowScripts` で許可している(npm 12 以降は、許可がないと実行されず、`canvas` が動かない)。
 - **型エラーは upstream の時点で多数あり、直さない。** Dockerfile も CI も、終了コードではなく
   `built/index.js` の存在と構文で判定する。型エラーの修正は、頼まれたときだけ行う。
