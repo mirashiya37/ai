@@ -5,3 +5,4 @@ memory.json
 font.ttf
 .env
 docker-compose.override.yml
+data/
