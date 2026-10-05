@@ -31,12 +31,20 @@ docker compose pull --quiet "$SERVICE"
 # コンテナは一般ユーザー(uid 1000)で動く。マウントするファイルを読み書きできないと、起動し直した後に動かなくなるので、
 # 動いているコンテナを止める前に、新しいイメージ(pull済み)で、実際のマウントのとおりに確かめる。
 # stdin はこのスクリプト自身なので、docker には渡さない(</dev/null)
+# memory.json は、一時ファイル(memory.json~)に書いて置き換えて保存される。
+# 動いている旧コンテナ(root)が保存し直すたびに root 所有に戻るが、data/ に書ければ保存できるので、読めればよい
 echo "==> docker compose run (permission check)"
 if ! docker compose run --rm --no-deps -T --entrypoint sh "$SERVICE" -c '
-  test -r /ai/config.json && test -r /ai/font.ttf && test -w /ai/data &&
-  { [ ! -e /ai/data/memory.json ] || { test -r /ai/data/memory.json && test -w /ai/data/memory.json; }; }
+  ng=0
+  for f in /ai/config.json /ai/font.ttf; do
+    { [ -f "$f" ] && [ -r "$f" ]; } || { echo "  読めない(または、ファイルでない): $f" >&2; ng=1; }
+  done
+  [ -w /ai/data ] || { echo "  書けない: /ai/data" >&2; ng=1; }
+  [ ! -e /ai/data/memory.json ] || [ -r /ai/data/memory.json ] || { echo "  読めない: /ai/data/memory.json" >&2; ng=1; }
+  [ ! -e /ai/data/memory.json~ ] || [ -w /ai/data/memory.json~ ] || { echo "  書けない: /ai/data/memory.json~" >&2; ng=1; }
+  exit $ng
 ' </dev/null; then
-  echo "::error::コンテナの実行ユーザー(uid 1000)が config.json / font.ttf を読めない、または data/ に書けない(docs/deploy.md の「一般ユーザーで動かす」を参照)" >&2
+  echo "::error::コンテナの実行ユーザー(uid 1000)の権限が足りない。上に出た項目を直す(docs/deploy.md の「一般ユーザー(uid 1000)で動かす」を参照)" >&2
   echo "動いているコンテナは、そのままにしてある" >&2
   exit 1
 fi
