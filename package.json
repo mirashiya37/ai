@@ -1,5 +1,5 @@
 {
-	"_v": "2.0.1-mk2.8.1",
+	"_v": "2.0.1-mk2.8.2",
 	"type": "module",
 	"main": "./built/index.js",
 	"scripts": {
@@ -35,7 +35,7 @@
 		"typescript": "5.8.2",
 		"typescript-transform-paths": "3.5.5",
 		"uuid": "9.0.1",
-		"ws": "8.18.1"
+		"ws": "8.22.0"
 	},
 	"devDependencies": {
 	},
