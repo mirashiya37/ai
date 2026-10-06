@@ -200,7 +200,7 @@ export default {
 
 		otukare: name => name ? `${name}、お疲れ様です！！` : 'お疲れ様です！！',
 
-		higntouch: {
+		hightouch: {
 			normal: name => name ? `${name}！ハイターッチ！! ` : "ハイターッチ！！",
 
 			hate: '触りたくないです...'

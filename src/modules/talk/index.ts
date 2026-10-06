@@ -41,8 +41,8 @@ export default class extends Module {
 			this.mom(msg) ||
 			this.baby(msg) ||
 			this.diet(msg) ||
-			this.sleep(msg) ||
 			this.nade(msg) ||
+			this.sleep(msg) ||
 			this.otukare(msg) ||
 			this.hightouch(msg) ||
 			this.adana(msg) ||
@@ -368,7 +368,7 @@ export default class extends Module {
 	}
 
 	@bindThis
-	private sleep(msg: Message): boolean | HandlerResult {
+	private nade(msg: Message): boolean | HandlerResult {
 		if (!msg.includes(['慰めて', 'なぐさめて'])) return false;
 
 		msg.reply(serifs.core.nade);
@@ -390,7 +390,7 @@ export default class extends Module {
 	}
 
 	@bindThis
-	private nade(msg: Message): boolean {
+	private sleep(msg: Message): boolean {
 		if (!msg.includes(['眠い', 'ねむい', '寝たい', 'ねたい'])) return false;
 
 		msg.reply(getSerif(byLove(msg.friend, serifs.core.sleep, { love: 15, hate: -6 })));
@@ -402,7 +402,7 @@ export default class extends Module {
 	private hightouch(msg: Message): boolean | HandlerResult {
 		if (!msg.includes(['ハイタッチ', 'はいたっち'])) return false;
 
-		msg.reply(getSerif(byLove(msg.friend, serifs.core.higntouch)));
+		msg.reply(getSerif(byLove(msg.friend, serifs.core.hightouch)));
 
 		return {
 			reaction: '🙌'
