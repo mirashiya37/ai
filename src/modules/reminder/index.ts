@@ -150,39 +150,27 @@ export default class extends Module {
 				text: serifs.reminder.notifyWithThing(remind.thing, friend.name)
 			});
 		} else {
-			try {  // 
-				if (remind.times > 60) {  // 2ヶ月放置
-					let forget: number = Math.floor(Math.random() * 10)
-					if (forget == 1) {
-						reply = await this.ai.post({
-							renoteId: remind.thing == null && remind.quoteId ? remind.quoteId : remind.id,
-							text: acct(friend.doc.user) + ' ' + serifs.reminder.forget
-						});
-						this.unsubscribeReply(remind.thing == null && remind.quoteId ? remind.quoteId : remind.id);
-						this.reminds.remove(remind);
-						return;
-					} else {
-						reply = await this.ai.post({
-							renoteId: remind.thing == null && remind.quoteId ? remind.quoteId : remind.id,
-							text: acct(friend.doc.user) + ' ' + serifs.reminder.month(friend.name)
-						});
-					}
-				} else if (remind.times > 30) {  // 1ヶ月放置
-					reply = await this.ai.post({
-						renoteId: remind.thing == null && remind.quoteId ? remind.quoteId : remind.id,
-						text: acct(friend.doc.user) + ' ' + serifs.reminder.month(friend.name)
+			const renoteId = remind.thing == null && remind.quoteId ? remind.quoteId : remind.id;
+			try {
+				// 放っておかれた日数(催促は1日1回)に応じて、言い方を変える。2ヶ月を過ぎると、ときどき忘れてしまう
+				if (remind.times > 60 && Math.floor(Math.random() * 10) == 1) {
+					await this.ai.post({
+						renoteId,
+						text: acct(friend.doc.user) + ' ' + serifs.reminder.forget
 					});
-				} else if (remind.times > 7) {  // 1週間放置
-					reply = await this.ai.post({
-						renoteId: remind.thing == null && remind.quoteId ? remind.quoteId : remind.id,
-						text: acct(friend.doc.user) + ' ' + serifs.reminder.week(friend.name)
-					});
-				} else {  // それ以外
-					reply = await this.ai.post({
-						renoteId: remind.thing == null && remind.quoteId ? remind.quoteId : remind.id,
-						text: acct(friend.doc.user) + ' ' + serifs.reminder.notify(friend.name)
-					});
+					this.unsubscribeReply(renoteId);
+					this.reminds.remove(remind);
+					return;
 				}
+
+				const notify =
+					remind.times > 30 ? serifs.reminder.month : // 1ヶ月放置
+					remind.times > 7 ? serifs.reminder.week : // 1週間放置
+					serifs.reminder.notify;
+				reply = await this.ai.post({
+					renoteId,
+					text: acct(friend.doc.user) + ' ' + notify(friend.name)
+				});
 			} catch (err: any) {
 				// renote対象が消されていたらリマインダー解除
 				if (err.statusCode === 400) {
