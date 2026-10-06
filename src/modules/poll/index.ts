@@ -4,6 +4,7 @@ import Module from '@/module.js';
 import serifs from '@/serifs.js';
 import { getLearnedKeywords, genItemWithKeyword, KEYWORD_MAX_LENGTH } from '@/utils/gen-item-with-keyword.js';
 import config from '@/config.js';
+import { isMaster } from '@/utils/is-master.js';
 import type { Note } from '@/misskey/note.js';
 
 export default class extends Module {
@@ -102,8 +103,7 @@ export default class extends Module {
 
 	@bindThis
 	private async mentionHook(msg: Message) {
-		// ローカルユーザー(host が無い)に限る
-		if (!msg.or(['/poll']) || msg.user.username !== config.master || msg.user.host != null) {
+		if (!msg.or(['/poll']) || !isMaster(msg.user, config.master)) {
 			return false;
 		} else {
 			this.log('Manualy poll requested');

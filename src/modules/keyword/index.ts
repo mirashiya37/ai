@@ -12,6 +12,7 @@ import { nextLearnDelay } from './learn-interval.js';
 import { stripMfm } from './strip-mfm.js';
 import { isBotNote } from './note-filter.js';
 import getDate from '@/utils/get-date.js';
+import { isMaster } from '@/utils/is-master.js';
 import { countKeywords } from '@/utils/keyword-trend.js';
 
 /** 覚えてから忘れ始めるまでの日数 */
@@ -90,8 +91,7 @@ export default class extends Module {
 	 */
 	@bindThis
 	private async mentionHook(msg: Message) {
-		// ローカルユーザー(host が無い)に限る
-		if (!msg.text || !config.master || msg.user.username !== config.master || msg.user.host != null) return false;
+		if (!msg.text || !isMaster(msg.user, config.master)) return false;
 
 		const text = msg.extractedText;
 
