@@ -3,7 +3,7 @@ import loki from 'lokijs';
 import Module from '@/module.js';
 import Message from '@/message.js';
 import serifs from '@/serifs.js';
-import getDate from '@/utils/get-date.js';
+import { incLoveOncePerDay } from '@/utils/inc-love-once-a-day.js';
 
 export default class extends Module {
 	public readonly name = 'guessingGame';
@@ -117,15 +117,8 @@ export default class extends Module {
 			exist.endedAt = Date.now();
 			this.unsubscribeReply(key);
 
-			//#region 当てたら1日に1回だけ親愛度を上げる
-			const today = getDate();
-			const data = msg.friend.getPerModulesData(this);
-			if (data.lastWonAt != today) {
-				data.lastWonAt = today;
-				msg.friend.setPerModulesData(this, data);
-				msg.friend.incLove();
-			}
-			//#endregion
+			// 当てたら1日に1回だけ親愛度を上げる
+			incLoveOncePerDay(msg.friend, this, 'lastWonAt');
 		}
 
 		this.guesses.update(exist);

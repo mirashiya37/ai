@@ -5,7 +5,7 @@ import Message from '@/message.js';
 import serifs from '@/serifs.js';
 import type { User } from '@/misskey/user.js';
 import { acct } from '@/utils/acct.js';
-import getDate from '@/utils/get-date.js';
+import { incLoveOncePerDay } from '@/utils/inc-love-once-a-day.js';
 
 type Game = {
 	votes: {
@@ -198,17 +198,8 @@ export default class extends Module {
 		const winnerFriend = winner ? this.ai.lookupFriend(winner.id) : null;
 		const name = winnerFriend ? winnerFriend.name : null;
 
-		//#region 勝ったら1日に1回だけ親愛度を上げる
-		if (winnerFriend) {
-			const today = getDate();
-			const data = winnerFriend.getPerModulesData(this);
-			if (data.lastWonAt != today) {
-				data.lastWonAt = today;
-				winnerFriend.setPerModulesData(this, data);
-				winnerFriend.incLove();
-			}
-		}
-		//#endregion
+		// 勝ったら1日に1回だけ親愛度を上げる
+		if (winnerFriend) incLoveOncePerDay(winnerFriend, this, 'lastWonAt');
 
 		const text = results.join('\n') + '\n\n' + (winner
 			? serifs.kazutori.finishWithWinner(acct(winner), name)
