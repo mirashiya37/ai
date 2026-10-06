@@ -173,7 +173,8 @@ export default class extends Module {
 				});
 			} catch (err: any) {
 				// renote対象が消されていたらリマインダー解除
-				if (err.statusCode === 400) {
+				// got のエラーは、ステータスを response に持つ
+				if (err.response?.statusCode === 400) {
 					this.unsubscribeReply(remind.id);
 					this.reminds.remove(remind);
 					return;

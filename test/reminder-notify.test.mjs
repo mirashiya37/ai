@@ -95,7 +95,8 @@ test('引用だけのリマインダーでも、消すときは登録したキ�
 
 		// 引用元が消されていたとき
 		unsubscribed.length = 0;
-		setFailPost(Object.assign(new Error('gone'), { statusCode: 400 }));
+		// got の HTTPError と同じく、ステータスは response に入る(err.statusCode は無い)
+		setFailPost(Object.assign(new Error('Response code 400 (Bad Request)'), { response: { statusCode: 400 } }));
 		await nthNotify(1, { id: 'r2', thing: null, quoteId: 'q2' });
 		assert.deepEqual(unsubscribed, ['r2']);
 		assert.equal(reminds.findOne({ id: 'r2' }), null);
