@@ -3,6 +3,19 @@
 このフォークで追加した処理の単体テストは `test/` にある。Node 標準の `node:test` で書いていて、追加の依存はない。
 ビルドした `built/` を読み込んで確かめる(パスの別名 `@/` を、ビルドで解決するため)。
 
+## 方針
+
+1. **単体テスト**(`test/`)で、変えた処理を確かめる。
+2. **機能試験**: 変えた機能ごとに、実際の Misskey と藍を動かして確かめる。単体テストを書いた機能も、試験した内容を抜粋して、必ず実際に動くかを確かめる。
+   - 環境は Docker のコンテナで、本番に近い形で作る。藍は本番と同じ `Dockerfile`(同じビルド引数)でビルドしたイメージ、Misskey は本番と同じ版・設定にする。
+     そうしないほうがよい場合は、理由を示して、承認を得てから行う。
+   - 待ち時間(数十分〜1日)は、コードを変えずに縮める。藍の記憶の時刻を過去にずらす、タイマーの間隔を縮める細工を読み込む(`NODE_OPTIONS=--require`)、タイムゾーンをずらす、など。
+3. **偽物を作らない。** 形態素解析(Sudachi・MeCab)のような外部コマンドは、決まった出力を返す偽物で代用せず、本物を使う。
+   入っていない環境では、そのテストは skip する(入れるかは、その都度決める)。
+   ライブラリのエラーなど、どうしても形を真似る場合は、実物と同じ形にする(例: got のエラーは、ステータスを `err.response.statusCode` に持つ。
+   `err.statusCode` で真似たテストは通っても、本番では動いていなかった)。
+4. 機能試験で分かったことは、テストに足す(実物と違う前提で書かれたテストを直す)。
+
 ## 実行
 
 ```sh
@@ -15,6 +28,8 @@ node --test 'test/*.test.mjs'
   モジュールが読み込み時に `config.json` を読むため。
 - `package.json` の `test`(`jest`)は upstream のもので、使っていない。
 - `test/` は `.dockerignore` で除外しているので、イメージには入らない。CI ではまだ実行していない。
+- 形態素解析のテスト(`keyword-morph.test.mjs`)は、本物の `sudachipy`(本番のイメージと同じ版・full 辞書)が `PATH` に要る。
+  無ければ skip する。手元に入れるなら、venv に `pip install sudachipy==<版> sudachidict_full==<版>`(版は `Dockerfile` の `sudachipy_version`・`sudachidict_version`)。
 
 ## テストの一覧
 
@@ -22,7 +37,7 @@ node --test 'test/*.test.mjs'
 |---|---|---|
 | `keyword-pick-candidate.test.mjs` | 学習: 覚える語の選び方(`pick-candidate.ts`) | 固有名詞の割合が設定どおりになる、片方が空のときの切り替え、長い語の優先、`keywordProperRate` の解釈 |
 | `keyword-token-filter.test.mjs` | 学習: 覚える語の判定と分類(`token-filter.ts`) | 人名は姓・名だけ除く、普通名詞の条件、読みが無い語と `/forget` した語の除外、固有名詞と普通名詞の見分け、「今日よく見かけた言葉」は固有名詞だけ |
-| `keyword-morph.test.mjs` | 学習: 形態素解析の切り替え(`morph.ts`) | 設定で MeCab と Sudachi を使い分け、テキストごとに同じ並びのトークンを返す(解析の代わりに、決まった形で出力するスクリプトを使う。要 config.json) |
+| `keyword-morph.test.mjs` | 学習: 形態素解析の切り替え(`morph.ts`) | 本物の Sudachi で解析し、テキストごとに MeCab と同じ並びのトークンを返す、覚える語の判定(固有名詞・人名の姓・普通名詞)。MeCab は入っている環境でだけ(要 config.json と sudachipy) |
 | `keyword-strip-mfm.test.mjs` | 学習: MFM の取り除き(`strip-mfm.ts`) | 関数・装飾・リンク・URL・メンション・ハッシュタグ・引用・コード・絵文字・`<plain>` の扱い、閉じていない MFM、長い本文 |
 | `keyword-note-filter.test.mjs` | 学習: Bot の投稿の除外(`note-filter.ts`) | Bot の投稿は除く、Bot でない・情報が無い投稿は除かない |
 | `keyword-learn-interval.test.mjs` | 学習: 間隔(`learn-interval.ts`)と予約 | 15〜45分の一様で平均30分、乱数の端の値、学習が失敗しても予約が続く(要 config.json) |

@@ -44,6 +44,9 @@
 
 - 単体テストは `test/`(`node:test`)。`npm run build && node --test 'test/*.test.mjs'` で実行する。詳しくは [docs/testing.md](docs/testing.md)。
 - 機能を追加・変更したら、テストも足すか直す。コミットの前に実行して、全部通ることを確かめる。
+- 単体テストのあとは、試験した内容を抜粋して、**実際の Misskey と藍を Docker のコンテナで動かして**確かめる(本番と同じ Dockerfile のイメージ、本番と同じ版・設定の Misskey)。
+  コンテナを使わないほうがよい場合は、理由を示して承認を得る。
+- Sudachi・MeCab などの外部コマンドは、偽物を作って代用しない。手元に無ければ、入れるかを先に確認する。方針の詳細は [docs/testing.md](docs/testing.md) の「方針」。
 - `@bindThis` のメソッドに代入しない(クラス共通の関数が書き換わる)。テストで差し替えるときは `Object.defineProperty` を使う。
 
 ## 改修の方針
