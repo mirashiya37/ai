@@ -28,6 +28,7 @@ node --test 'test/*.test.mjs'
 | `keyword-learn-interval.test.mjs` | 学習: 間隔(`learn-interval.ts`)と予約 | 15〜45分の一様で平均30分、乱数の端の値、学習が失敗しても予約が続く(要 config.json) |
 | `noting-pick-note.test.mjs` | 独り言(`pick-note.ts`、`noting` モジュール) | 語句を使うテンプレートが30%、均等に選ばれる、1日に平均21.6件(要 config.json) |
 | `reminder-notify.test.mjs` | リマインダーの催促(`reminder` モジュール) | 放っておかれた回数に応じた言い方、2ヶ月を過ぎたら 10% で忘れる(要 config.json) |
+| `message-reply-visibility.test.mjs` | 返信の公開範囲(`src/message.ts`) | 元の投稿と同じ範囲、フォロワー限定はダイレクト(要 config.json) |
 | `utils-choose-pool.test.mjs` | 2つの候補のどちらから選ぶか(`src/utils/choose-pool.ts`) | 割合どおりに選ぶ、片方が空のときの切り替え、乱数を1回だけ使う |
 | `utils-is-master.test.mjs` | マスターの判定(`src/utils/is-master.ts`) | ローカルで同じユーザー名だけ、他のサーバの同名は除く、未設定なら誰もマスターではない |
 | `utils-inc-love-once-a-day.test.mjs` | 親愛度を1日1回だけ上げる(`src/utils/inc-love-once-a-day.ts`) | 同じ日は1回だけ、日付が変われば再び上げる、モジュールのほかのデータは残す |

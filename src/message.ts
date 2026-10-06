@@ -93,25 +93,9 @@ export default class Message {
 				fileId: opts?.file?.id
 			});
 		} else {
-			let visibility, visibleUserIds;  // 公開範囲に応じて返信の範囲を変更する
-			switch (this.note.visibility) {
-				case "public":
-					visibility = "public";
-					break;
-				case "home":
-					visibility = "home";
-					break;
-				case "followers":
-					visibility = "specified"; // フォローされているとは限らないため、ダイレクト投稿に
-					visibleUserIds = [this.note.userId];
-					break;
-				case "specified":
-					visibility = "specified";
-					visibleUserIds = [this.note.userId];
-					break;
-				default:
-					break;
-			}
+			// 公開範囲に応じて返信の範囲を変える。フォロワー限定は、フォローされているとは限らないため、ダイレクト投稿にする
+			const visibility = this.note.visibility === 'followers' ? 'specified' : this.note.visibility;
+			const visibleUserIds = visibility === 'specified' ? [this.note.userId] : undefined;
 			return await this.ai.post({
 				replyId: this.note.id,
 				text: text,
