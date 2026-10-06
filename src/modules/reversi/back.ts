@@ -428,20 +428,9 @@ class Session {
 	 * 対局が始まったことをMisskeyに投稿します
 	 */
 	private postGameStarted = async () => {
-		let difficulty: string
-		if (this.strength == 0) {
-			difficulty = "接待"
-		} else if (this.strength == 2) {
-			difficulty = "やさしい"
-		} else if (this.strength == 3) {
-			difficulty = "ふつう"
-		} else if (this.strength == 4) {
-			difficulty = "つよい"
-		} else if (this.strength == 5) {
-			difficulty = "藍の本気"
-		} else {
-			difficulty = "えらー"
-		}
+		// 藍から見た強さで書く(選択画面の「かんたん」「むずかしい」は相手から見た難しさなので、あえて表記を変えている)
+		const strengthLabels: Record<number, string> = { 0: '接待', 2: 'やさしい', 3: 'ふつう', 4: 'つよい', 5: '藍の本気' };
+		const difficulty = strengthLabels[this.strength] ?? 'えらー';
 		const text = this.isSettai
 			? serifs.reversi.startedSettai(this.userName)
 			: serifs.reversi.started(this.userName, difficulty);
