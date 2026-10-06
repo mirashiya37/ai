@@ -1,3 +1,5 @@
+import { choosePool } from '@/utils/choose-pool.js';
+
 /** 固有名詞を覚える確率の初期値(config.json の keywordProperRate で変える) */
 export const DEFAULT_PROPER_RATE = 0.6;
 
@@ -30,8 +32,7 @@ export function pickCandidate(candidates: string[][], properRate: number, random
 	const proper = candidates.filter(token => kindOf(token) === 'proper');
 	const common = candidates.filter(token => kindOf(token) === 'common');
 
-	const wantProper = random() < properRate;
-	const pool = (wantProper ? proper : common).length > 0 ? (wantProper ? proper : common) : (wantProper ? common : proper);
+	const pool = choosePool(proper, common, properRate, random);
 	if (pool.length === 0) return undefined;
 
 	const rnd = Math.floor((1 - Math.sqrt(random())) * pool.length);
