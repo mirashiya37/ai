@@ -9,6 +9,7 @@ import { sudachi } from './sudachi.js';
 import { isLearnableCommonNoun } from './token-filter.js';
 import { kindOf, pickCandidate, resolveProperRate } from './pick-candidate.js';
 import { nextLearnDelay } from './learn-interval.js';
+import { stripMfm } from './strip-mfm.js';
 import getDate from '@/utils/get-date.js';
 import { countKeywords } from '@/utils/keyword-trend.js';
 
@@ -205,12 +206,8 @@ export default class extends Module {
 		const ignored = this.getIgnored();
 		const trendNotes: { id: string; keywords: string[] }[] = [];
 
-		// URL は「https」やドメイン・パスの一部が、カスタム絵文字の記法(:meow_sushi: や :name@host:)は「meow」などが、
-		// 固有名詞と判定されてしまうので、解析の前に取り除く(絵文字の記法は、直前が英数字のもの=時刻の 12:30:45 などは残す)。
-		// URL は、後ろに空白なしで日本語が続くこともあるので、URL に使える ASCII の文字だけを取り除く
-		const texts: string[] = interestedNotes.map(note => note.text
-			.replace(/https?:\/\/[\w\-.~:/?#\[\]@!$&'()*+,;=%]+/g, ' ')
-			.replace(/(?<![A-Za-z0-9]):[\w+\-]+(?:@[\w.\-]+)?:/g, ' '));
+		// MFM の記法や URL、絵文字の名前(「meow」「https」など)が、固有名詞と判定されてしまうので、解析の前に取り除く(strip-mfm.ts)
+		const texts: string[] = interestedNotes.map(note => stripMfm(note.text));
 
 		// Sudachi は起動のたびに辞書を読み込むので、まとめて解析しておく
 		const sudachiTokens = config.morphAnalyzer === 'sudachi'
