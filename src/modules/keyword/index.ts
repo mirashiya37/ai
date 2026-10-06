@@ -6,8 +6,8 @@ import config from '@/config.js';
 import serifs from '@/serifs.js';
 import { mecab } from './mecab.js';
 import { sudachi } from './sudachi.js';
-import { isLearnableCommonNoun } from './token-filter.js';
-import { kindOf, pickCandidate, resolveProperRate, trendKeywordsOf } from './pick-candidate.js';
+import { isLearnableToken, kindOf, trendKeywordsOf } from './token-filter.js';
+import { pickCandidate, resolveProperRate } from './pick-candidate.js';
 import { nextLearnDelay } from './learn-interval.js';
 import { stripMfm } from './strip-mfm.js';
 import { isBotNote } from './note-filter.js';
@@ -208,7 +208,7 @@ export default class extends Module {
 		const botNoteCount = publicNotes.length - interestedNotes.length;
 
 		let keywords: string[][] = [];
-		const ignored = this.getIgnored();
+		const ignored = new Set(this.getIgnored());
 		const trendNotes: { id: string; keywords: string[] }[] = [];
 
 		// MFM の記法や URL、絵文字の名前(「meow」「https」など)が、固有名詞と判定されてしまうので、解析の前に取り除く(strip-mfm.ts)
@@ -221,9 +221,8 @@ export default class extends Module {
 
 		for (const [i, note] of interestedNotes.entries()) {
 			const tokens = sudachiTokens ? sudachiTokens[i] : await mecab(texts[i], config.mecab, config.mecabDic);
-			// 人名は、名字・名前(姓・名)だけを除く。キャラクター名など辞書にフルネームで載っている名前(一般)は覚える。
-			// 普通名詞は、一般的すぎる語を除いた一部だけ覚える(token-filter.ts)
-			const keywordsInThisNote = tokens.filter(token => (token[2] == '固有名詞' && (token[3] !== '人名' || token[4] === '一般') || isLearnableCommonNoun(token)) && token[8] != null && !ignored.includes(token[0]));
+			// 人名(姓・名)と一般的すぎる普通名詞は覚えない(token-filter.ts)
+			const keywordsInThisNote = tokens.filter(token => isLearnableToken(token, ignored));
 			keywords = keywords.concat(keywordsInThisNote);
 			trendNotes.push({ id: note.id, keywords: trendKeywordsOf(keywordsInThisNote) });
 		}

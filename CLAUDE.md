@@ -60,7 +60,7 @@
   `vocabulary.ts` の `genItem()` は upstream のファイルで、引き継ぎコードにも使われるため変更しない。
 - おみくじは「同じ人・同じ日なら同じ結果」を保つ。候補の語句は `getLearnedKeywords(ai, その日の0時)` で固定し、
   乱数の消費順も変えない。語句を消す処理(忘却など)は、日付が変わったときにだけ行う。
-- 人名は、細分類が「姓」「名」のものだけを学習しない(キャラクター名は覚える)。条件は `src/modules/keyword/index.ts`。
+- 人名は、細分類が「姓」「名」のものだけを学習しない(キャラクター名は覚える)。条件は `src/modules/keyword/token-filter.ts` の `isLearnableToken`。
 - 普通名詞は、細分類が「一般」・3文字以上・英数字だけでもひらがなだけでもない語に限って覚える(`src/modules/keyword/token-filter.ts`)。
   固有名詞の語を埋もれさせないため。条件を緩める(1〜2文字、サ変可能など)と、「天気」「発見」のような語が大量に混ざる。
 - 覚える語は、まず固有名詞と普通名詞のどちらから選ぶかを、`config.json` の `keywordProperRate`(既定 0.6=固有名詞 60%)で決める(`src/modules/keyword/pick-candidate.ts`)。

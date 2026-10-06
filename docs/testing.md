@@ -20,7 +20,8 @@ node --test 'test/*.test.mjs'
 
 | ファイル | 対象 | 内容 |
 |---|---|---|
-| `keyword-pick-candidate.test.mjs` | 学習: 覚える語の選び方(`pick-candidate.ts`) | 固有名詞の割合が設定どおりになる、「今日よく見かけた言葉」は固有名詞だけ、片方が空のときの切り替え、長い語の優先、`keywordProperRate` の解釈 |
+| `keyword-pick-candidate.test.mjs` | 学習: 覚える語の選び方(`pick-candidate.ts`) | 固有名詞の割合が設定どおりになる、片方が空のときの切り替え、長い語の優先、`keywordProperRate` の解釈 |
+| `keyword-token-filter.test.mjs` | 学習: 覚える語の判定と分類(`token-filter.ts`) | 人名は姓・名だけ除く、普通名詞の条件、読みが無い語と `/forget` した語の除外、固有名詞と普通名詞の見分け、「今日よく見かけた言葉」は固有名詞だけ |
 | `keyword-strip-mfm.test.mjs` | 学習: MFM の取り除き(`strip-mfm.ts`) | 関数・装飾・リンク・URL・メンション・ハッシュタグ・引用・コード・絵文字・`<plain>` の扱い、閉じていない MFM、長い本文 |
 | `keyword-note-filter.test.mjs` | 学習: Bot の投稿の除外(`note-filter.ts`) | Bot の投稿は除く、Bot でない・情報が無い投稿は除かない |
 | `keyword-learn-interval.test.mjs` | 学習: 間隔(`learn-interval.ts`)と予約 | 15〜45分の一様で平均30分、乱数の端の値、学習が失敗しても予約が続く(要 config.json) |
