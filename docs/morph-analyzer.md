@@ -11,6 +11,7 @@
 | 本番のイメージ | 入っていない | ○ |
 
 どちらも、品詞は IPADIC と同じ並びで扱う(`src/modules/keyword/sudachi.ts` で変換している)。
+切り替えは `src/modules/keyword/morph.ts` の `analyze()` で行う(Sudachi はまとめて1回、MeCab は1件ずつ解析する)。
 学習の条件(固有名詞または一部の普通名詞・名字や名前だけの人名ではない・読みがある)は共通。
 
 本番のイメージ(CI でビルドして GHCR に置くもの)は、Sudachi だけを入れている(`deploy.yml` のビルド引数 `enable_mecab=0`)。

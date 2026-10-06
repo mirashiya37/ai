@@ -53,8 +53,15 @@
 
 - upstream のファイルへの変更は最小限にする。merge の競合を減らすため、整形・インデント・空行だけの変更はしない。
 - 自サーバ固有の値(除外するユーザー ID、カスタム絵文字名、投稿時刻など)は、既存の独自改修と同じ場所に置く。
-- コミットは機能ごとに分け、日本語で `type(scope): 内容` の形式にする(例: `feat(reversi): …`、`fix(core): …`、`chore: …`)。
+- コミットは機能ごとに分け、日本語で `type(scope): 内容` の形式にする(例: `feat(reversi): …`、`fix(core): …`、`refactor(talk): …`、`test(keyword): …`、`chore: …`)。
+  挙動を変える修正(`fix`)と、変えない整理(`refactor`)は、同じコミットに混ぜない。
   本文には変更の理由を書く。
+- upstream のコードの不具合は、直すかを確認したうえで、`fix` のコミットで直してよい(独自の修正として扱い、`_v` を上げる)。
+  不具合ではない upstream のコードは、同じ処理があっても共通にしない(upstream の挨拶・リバーシなどの「1日1回」の処理など)。
+- 独自の処理で同じことを書くときは、すでにある共通の関数を使う。
+  - `src/utils/`: `choose-pool.ts`(割合でどちらの候補から選ぶか)、`is-master.ts`(マスターの判定)、`inc-love-once-a-day.ts`(親愛度を1日1回上げる)
+  - `src/modules/talk/`: `by-love.ts`(親愛度でセリフを選ぶ。境目の既定は 5 / -3)、`nickname.ts`(あだ名を考える・呼び名にできるか)
+  - `src/modules/keyword/`: `morph.ts`(形態素解析の切り替え)、`token-filter.ts`(覚える語の判定と分類)
 - 機能を追加・変更したら、[docs/features.md](docs/features.md) も更新する。
 
 ## 学習した語句(キーワード)を使うとき
