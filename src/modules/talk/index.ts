@@ -523,7 +523,7 @@ export default class extends Module {
 	private thanks(msg: Message): boolean {
 		if (!msg.includes(["ありがとう", "ありがたい"])) return false;
 
-		msg.reply(getSerif(byLove(msg.friend, serifs.core.thanks, { hate: 3 })));
+		msg.reply(getSerif(byLove(msg.friend, serifs.core.thanks)));
 
 		return true;
 	}

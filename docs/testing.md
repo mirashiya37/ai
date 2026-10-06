@@ -30,6 +30,7 @@ node --test 'test/*.test.mjs'
 | `reminder-notify.test.mjs` | リマインダーの催促(`reminder` モジュール) | 放っておかれた回数に応じた言い方、2ヶ月を過ぎたら 10% で忘れる(要 config.json) |
 | `message-reply-visibility.test.mjs` | 返信の公開範囲(`src/message.ts`) | 元の投稿と同じ範囲、フォロワー限定はダイレクト(要 config.json) |
 | `talk-by-love.test.mjs` | トーク: 親愛度に応じたセリフ(`src/modules/talk/by-love.ts`) | 既定の境目(5 / -3)、反応ごとの境目、love・hate が無いとき、呼び名の受け渡し |
+| `talk-thanks.test.mjs` | トーク: 「ありがとう」への返事 | 親愛度 5 以上で好き、-3 以下で嫌い、そのあいだは普通(要 config.json) |
 | `utils-choose-pool.test.mjs` | 2つの候補のどちらから選ぶか(`src/utils/choose-pool.ts`) | 割合どおりに選ぶ、片方が空のときの切り替え、乱数を1回だけ使う |
 | `utils-is-master.test.mjs` | マスターの判定(`src/utils/is-master.ts`) | ローカルで同じユーザー名だけ、他のサーバの同名は除く、未設定なら誰もマスターではない |
 | `utils-inc-love-once-a-day.test.mjs` | 親愛度を1日1回だけ上げる(`src/utils/inc-love-once-a-day.ts`) | 同じ日は1回だけ、日付が変われば再び上げる、モジュールのほかのデータは残す |
