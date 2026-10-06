@@ -6,6 +6,7 @@ import { getLearnedKeywords, genItemWithKeyword } from '@/utils/gen-item-with-ke
 import serifs, { getSerif } from '@/serifs.js';
 import getDate from '@/utils/get-date.js';
 import { safeForInterpolate } from '@/utils/safe-for-interpolate.js';
+import { byLove } from './by-love.js';
 
 export default class extends Module {
 	public readonly name = 'talk';
@@ -334,9 +335,7 @@ export default class extends Module {
 	private mom(msg: Message): boolean {
 		if (!msg.includes(['ママ', 'まま', 'マンマ', 'ばぶ', 'バブ', '母上', 'お母さん'])) return false;
 
-		msg.reply(getSerif(msg.friend.love >= 5 ? serifs.core.mom.love(msg.friend.name) :
-			msg.friend.love <= -3 ? serifs.core.mom.hate :
-				serifs.core.mom.normal(msg.friend.name)));
+		msg.reply(getSerif(byLove(msg.friend, serifs.core.mom)));
 
 		return true;
 	}
@@ -345,9 +344,7 @@ export default class extends Module {
 	private hold(msg: Message): boolean {
 		if (!msg.includes(['だっこ', '抱っこ'])) return false;
 
-		msg.reply(msg.friend.love >= 5 ? serifs.core.hold.love :
-			msg.friend.love <= -3 ? serifs.core.hold.hate :
-				serifs.core.hold.normal);
+		msg.reply(getSerif(byLove(msg.friend, serifs.core.hold)));
 
 		return true;
 	}
@@ -356,10 +353,7 @@ export default class extends Module {
 	private baby(msg: Message): boolean {
 		if (!msg.includes(['よちよち', 'よしよし'])) return false;
 
-		msg.reply(
-			msg.friend.love >= 5 ? serifs.core.baby.love :
-				msg.friend.love <= -3 ? serifs.core.baby.hate :
-					serifs.core.baby.normal);
+		msg.reply(getSerif(byLove(msg.friend, serifs.core.baby)));
 
 		return true;
 	}
@@ -368,10 +362,7 @@ export default class extends Module {
 	private diet(msg: Message): boolean {
 		if (!msg.includes(['ご飯', 'ごはん'])) return false;
 
-		msg.reply(getSerif(
-			msg.friend.love >= 10 ? serifs.core.diet.love(msg.friend.name) :
-				msg.friend.love <= -10 ? serifs.core.diet.hate :
-					serifs.core.diet.normal));
+		msg.reply(getSerif(byLove(msg.friend, serifs.core.diet, { love: 10, hate: -10 })));
 
 		return true;
 	}
@@ -402,10 +393,7 @@ export default class extends Module {
 	private nade(msg: Message): boolean {
 		if (!msg.includes(['眠い', 'ねむい', '寝たい', 'ねたい'])) return false;
 
-		msg.reply(
-			msg.friend.love >= 15 ? serifs.core.sleep.love(msg.friend.name) :
-				msg.friend.love <= -6 ? serifs.core.sleep.hate :
-					serifs.core.sleep.normal);
+		msg.reply(getSerif(byLove(msg.friend, serifs.core.sleep, { love: 15, hate: -6 })));
 
 		return true;
 	}
@@ -414,9 +402,7 @@ export default class extends Module {
 	private hightouch(msg: Message): boolean | HandlerResult {
 		if (!msg.includes(['ハイタッチ', 'はいたっち'])) return false;
 
-		msg.reply(
-			msg.friend.love <= -3 ? serifs.core.higntouch.hate :
-				serifs.core.higntouch.normal(msg.friend.name));
+		msg.reply(getSerif(byLove(msg.friend, serifs.core.higntouch)));
 
 		return {
 			reaction: '🙌'
@@ -429,13 +415,14 @@ export default class extends Module {
 		const keywords = getLearnedKeywords(this.ai);
 
 		// 呼び名にできるあだ名が出るまで何度か考える(条件はcoreの「〇〇って呼んで」と同じ)
+		const canBeName = (name: string) => name.length <= 10 && safeForInterpolate(name);
 		let item = '';
 		for (let i = 0; i < 10; i++) {
 			item = genItemWithKeyword(keywords);
-			if (item.length <= 10 && safeForInterpolate(item)) break;
+			if (canBeName(item)) break;
 		}
 
-		if (item.length <= 10 && safeForInterpolate(item)) {
+		if (canBeName(item)) {
 			msg.reply(serifs.core.adanaAsk(item, msg.friend.name)).then(reply => {
 				this.subscribeReply(msg.userId, msg.isChat, msg.isChat ? msg.userId : reply.id, {
 					name: item
@@ -527,9 +514,7 @@ export default class extends Module {
 	private sugoi(msg: Message): boolean {
 		if (!msg.includes(["えらい", "すごい"])) return false;
 
-		msg.reply(getSerif(
-			msg.friend.love >= 5 ? serifs.core.sugoi.love(msg.friend.name) :
-				serifs.core.sugoi.normal));
+		msg.reply(getSerif(byLove(msg.friend, serifs.core.sugoi)));
 
 		return true;
 	}
@@ -538,10 +523,7 @@ export default class extends Module {
 	private thanks(msg: Message): boolean {
 		if (!msg.includes(["ありがとう", "ありがたい"])) return false;
 
-		msg.reply(getSerif(
-			msg.friend.love >= 5 ? serifs.core.thanks.love(msg.friend.name) :
-			msg.friend.love <= 3 ? serifs.core.thanks.hate :
-				serifs.core.thanks.normal(msg.friend.name)));
+		msg.reply(getSerif(byLove(msg.friend, serifs.core.thanks, { hate: 3 })));
 
 		return true;
 	}
@@ -550,9 +532,7 @@ export default class extends Module {
 	private sorry(msg: Message): boolean | HandlerResult {
 		if (!msg.includes(['ごめん', 'ゴメン', "sorry"])) return false;
 
-		msg.reply(
-			msg.friend.love <= -3 ? serifs.core.sorry.hate :
-				serifs.core.sorry.normal);
+		msg.reply(getSerif(byLove(msg.friend, serifs.core.sorry)));
 
 		return {
 			reaction: 'confused'
@@ -563,9 +543,7 @@ export default class extends Module {
 	private nuge(msg: Message): boolean | HandlerResult {
 		if (!msg.includes(['脱げ', '脱いで', "ぬげ", "ぬいで"])) return false;
 
-		msg.reply(
-			msg.friend.love <= -3 ? serifs.core.nuge.hate :
-				serifs.core.nuge.normal);
+		msg.reply(getSerif(byLove(msg.friend, serifs.core.nuge)));
 
 		return {
 			reaction: 'confused'
