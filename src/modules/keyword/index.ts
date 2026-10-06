@@ -4,8 +4,7 @@ import Module from '@/module.js';
 import Message from '@/message.js';
 import config from '@/config.js';
 import serifs from '@/serifs.js';
-import { mecab } from './mecab.js';
-import { sudachi } from './sudachi.js';
+import { analyze, morphAnalyzerName } from './morph.js';
 import { isLearnableToken, kindOf, trendKeywordsOf } from './token-filter.js';
 import { pickCandidate, resolveProperRate } from './pick-candidate.js';
 import { nextLearnDelay } from './learn-interval.js';
@@ -49,7 +48,7 @@ export default class extends Module {
 		this.scheduleLearn();
 		setInterval(this.forget, 1000 * 60);
 
-		this.log(`Morph analyzer: ${config.morphAnalyzer ?? 'mecab'}`);
+		this.log(`Morph analyzer: ${morphAnalyzerName}`);
 
 		return {
 			mentionHook: this.mentionHook
@@ -183,7 +182,7 @@ export default class extends Module {
 				text: [
 					'語句の学習のレポートです',
 					`覚えた: ${learnedCount}個${properCount + commonCount > 0 ? `(固有名詞 ${properCount} / 普通名詞 ${commonCount})` : ''} / 忘れた: ${forgottenCount}個 / いま覚えている: ${this.learnedKeywords.count()}個`,
-					`形態素解析: ${config.morphAnalyzer ?? 'mecab'}`,
+					`形態素解析: ${morphAnalyzerName}`,
 				].join('\n'),
 			});
 		} catch (e) {
@@ -214,13 +213,10 @@ export default class extends Module {
 		// MFM の記法や URL、絵文字の名前(「meow」「https」など)が、固有名詞と判定されてしまうので、解析の前に取り除く(strip-mfm.ts)
 		const texts: string[] = interestedNotes.map(note => stripMfm(note.text));
 
-		// Sudachi は起動のたびに辞書を読み込むので、まとめて解析しておく
-		const sudachiTokens = config.morphAnalyzer === 'sudachi'
-			? await sudachi(texts, config.sudachi, config.sudachiDict)
-			: null;
+		const tokensOfNotes = await analyze(texts);
 
 		for (const [i, note] of interestedNotes.entries()) {
-			const tokens = sudachiTokens ? sudachiTokens[i] : await mecab(texts[i], config.mecab, config.mecabDic);
+			const tokens = tokensOfNotes[i];
 			// 人名(姓・名)と一般的すぎる普通名詞は覚えない(token-filter.ts)
 			const keywordsInThisNote = tokens.filter(token => isLearnableToken(token, ignored));
 			keywords = keywords.concat(keywordsInThisNote);
@@ -233,7 +229,8 @@ export default class extends Module {
 
 		// 学習したかどうかが投稿以外に分からないので、毎回の経過をログに残す
 		const uniqueKeywords = [...new Set(keywords.map(token => token[0]))];
-		const newKeywords = uniqueKeywords.filter(keyword => this.learnedKeywords.findOne({ keyword }) == null);
+		const learned = new Set(this.learnedKeywords.find().map(doc => doc.keyword));
+		const newKeywords = uniqueKeywords.filter(keyword => !learned.has(keyword));
 
 		// すでに覚えている語を選ぶと、その回は何も起きないので、まだ覚えていない語の中から選ぶ
 		const newSet = new Set(newKeywords);
