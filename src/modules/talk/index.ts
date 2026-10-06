@@ -5,8 +5,8 @@ import Message from '@/message.js';
 import { getLearnedKeywords, genItemWithKeyword } from '@/utils/gen-item-with-keyword.js';
 import serifs, { getSerif } from '@/serifs.js';
 import getDate from '@/utils/get-date.js';
-import { safeForInterpolate } from '@/utils/safe-for-interpolate.js';
 import { byLove } from './by-love.js';
+import { pickNickname, REROLL_WORDS } from './nickname.js';
 
 export default class extends Module {
 	public readonly name = 'talk';
@@ -414,22 +414,19 @@ export default class extends Module {
 		if (!msg.includes(['あだな', 'あだ名', '渾名', 'あだにゃ'])) return false;
 		const keywords = getLearnedKeywords(this.ai);
 
-		// 呼び名にできるあだ名が出るまで何度か考える(条件はcoreの「〇〇って呼んで」と同じ)
-		const canBeName = (name: string) => name.length <= 10 && safeForInterpolate(name);
-		let item = '';
-		for (let i = 0; i < 10; i++) {
-			item = genItemWithKeyword(keywords);
-			if (canBeName(item)) break;
-		}
+		const item = pickNickname(() => genItemWithKeyword(keywords));
 
-		if (canBeName(item)) {
+		if (item != null) {
 			msg.reply(serifs.core.adanaAsk(item, msg.friend.name)).then(reply => {
+				// seen: これまでに出したあだ名、rerolls: 引き直した回数(引き直しで使う)
 				this.subscribeReply(msg.userId, msg.isChat, msg.isChat ? msg.userId : reply.id, {
-					name: item
+					name: item,
+					seen: [item],
+					rerolls: 0
 				});
 			});
 		} else {
-			msg.reply(serifs.core.adana(item, msg.friend.name));
+			msg.reply(serifs.core.adana('', msg.friend.name));
 		}
 
 		return {
@@ -440,6 +437,9 @@ export default class extends Module {
 	@bindThis
 	private async contextHook(key: any, msg: Message, data: any) {
 		if (msg.text == null) return;
+
+		// 「やだ、別の」のように否定と一緒に言われても、引き直しとして扱う
+		if (msg.includes(REROLL_WORDS)) return this.rerollNickname(key, msg, data);
 
 		// 「ううん」は「うん」を含むので、否定を先に判定する
 		if (msg.includes(['いいえ', 'ううん', 'やだ', '嫌', 'だめ', 'やめ'])) {
@@ -457,6 +457,34 @@ export default class extends Module {
 		return {
 			reaction: '🙌'
 		};
+	}
+
+	/**
+	 * あだ名を引き直す。すでに出したあだ名は出さない。
+	 * 待ち受けのデータは、出したあだ名(seen)と引き直した回数(rerolls)を引き継ぐ
+	 */
+	@bindThis
+	private rerollNickname(key: any, msg: Message, data: any): HandlerResult {
+		const seen: string[] = data.seen ?? [data.name];
+		const keywords = getLearnedKeywords(this.ai);
+		const item = pickNickname(() => genItemWithKeyword(keywords), seen);
+
+		this.unsubscribeReply(key);
+
+		if (item == null) {
+			msg.reply(serifs.core.adana('', msg.friend.name));
+			return { reaction: 'confused' };
+		}
+
+		msg.reply(serifs.core.adanaAgain(item, msg.friend.name)).then(reply => {
+			this.subscribeReply(msg.userId, msg.isChat, msg.isChat ? msg.userId : reply.id, {
+				name: item,
+				seen: [...seen, item],
+				rerolls: (data.rerolls ?? 0) + 1
+			});
+		});
+
+		return { reaction: '🙌' };
 	}
 
 	@bindThis

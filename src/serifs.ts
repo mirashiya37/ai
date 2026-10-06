@@ -192,6 +192,8 @@ export default {
 
 		adanaAsk: (item, name) => name ? `${name}、「${item}」とお呼びしてもいいですか？` : `「${item}」とお呼びしてもいいですか？`,
 
+		adanaAgain: (item, name) => name ? `${name}、それなら「${item}」はどうでしょうか？` : `それなら「${item}」はどうでしょうか？`,
+
 		adanaNo: name => name ? `わかりました、これからも${name}とお呼びしますね！` : 'わかりました、またいいあだ名を考えておきますね！',
 
 		learnedKeywords: (keywords: string[]) => keywords.length > 0
