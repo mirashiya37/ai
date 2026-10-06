@@ -1,52 +1,57 @@
-// 学習: 形態素解析の切り替え(src/modules/keyword/morph.ts)
-// MeCab と Sudachi の代わりに、決まった形で出力するスクリプトを使う
+// 学習: 形態素解析の切り替え(src/modules/keyword/morph.ts)と、本物の解析結果での語の判定(token-filter.ts)
+// 本物の Sudachi(sudachipy、full 辞書)を使う。入っていなければ skip する。
+// MeCab は本番で使っていないので、入っている環境でだけ確かめる
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { existsSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 
 const ROOT = new URL('..', import.meta.url).pathname;
 const hasConfig = existsSync(ROOT + 'config.json');
+const has = command => spawnSync('sh', ['-c', `command -v ${command}`]).status === 0;
+const skipReason = command => !hasConfig ? 'config.json がない' : !has(command) ? `${command} が入っていない` : false;
 
-// 1行を読んで、その行を1語の固有名詞として返す(MeCab の出力の形)
-const FAKE_MECAB = `#!/bin/sh
-read line
-printf '%s\\t名詞,固有名詞,一般,*,*,*,%s,ヨミ,ヨミ\\nEOS\\n' "$line" "$line"
-`;
+// 「田中さん」は full 辞書に1語(固有名詞,一般)で載っているので、例文は敬称を付けない
+const TEXTS = ['初音ミクと東京へ行った', '田中は武勇伝を語った', ''];
 
-// 行ごとに、その行を1語の固有名詞として返す(Sudachi の -a の出力の形)
-const FAKE_SUDACHI = `#!/bin/sh
-while IFS= read -r line; do
-	printf '%s\\t名詞,固有名詞,一般,*,*,*\\t%s\\t%s\\tヨミ\\t0\\t[]\\nEOS\\n' "$line" "$line" "$line"
-done
-`;
-
-test('設定に応じて MeCab と Sudachi を使い分け、テキストごとに同じ並びのトークンを返す', { skip: !hasConfig && 'config.json がない' }, async () => {
+async function analyzeWith(settings) {
 	const config = (await import('../built/config.js')).default;
 	const { analyze } = await import('../built/modules/keyword/morph.js');
-
-	const dir = mkdtempSync(join(tmpdir(), 'ai-morph-'));
 	const saved = { ...config };
 	try {
-		writeFileSync(join(dir, 'mecab'), FAKE_MECAB, { mode: 0o755 });
-		writeFileSync(join(dir, 'sudachi'), FAKE_SUDACHI, { mode: 0o755 });
-		const texts = ['ずんだもん', '初音ミク', '東京'];
-
-		Object.assign(config, { morphAnalyzer: 'mecab', mecab: join(dir, 'mecab'), mecabDic: undefined });
-		const byMecab = await analyze(texts);
-
-		Object.assign(config, { morphAnalyzer: 'sudachi', sudachi: join(dir, 'sudachi'), sudachiDict: 'full' });
-		const bySudachi = await analyze(texts);
-
-		for (const result of [byMecab, bySudachi]) {
-			assert.equal(result.length, texts.length);
-			assert.deepEqual(result.map(tokens => tokens.map(token => token[0])), texts.map(text => [text]));
-			assert.deepEqual(result.map(tokens => [tokens[0][2], tokens[0][8]]), texts.map(() => ['固有名詞', 'ヨミ']));
-		}
+		Object.assign(config, settings);
+		return await analyze(TEXTS);
 	} finally {
 		for (const key of Object.keys(config)) if (!(key in saved)) delete config[key];
 		Object.assign(config, saved);
-		rmSync(dir, { recursive: true, force: true });
 	}
+}
+
+async function assertTokens(result) {
+	const { isLearnableToken, kindOf } = await import('../built/modules/keyword/token-filter.js');
+	const none = new Set();
+
+	assert.equal(result.length, TEXTS.length, 'テキストごとに結果がある');
+	assert.deepEqual(result[2], [], '空のテキストは語なし');
+
+	const find = (tokens, surface) => tokens.find(token => token[0] === surface);
+	const miku = find(result[0], '初音ミク');
+	const tokyo = find(result[0], '東京');
+	const tanaka = find(result[1], '田中');
+	const buyuden = find(result[1], '武勇伝');
+
+	// 並びは MeCab(IPADIC)と同じ: [表層形, 品詞, 細分類1, 細分類2, 細分類3, 活用型, 活用形, 原形, 読み]
+	assert.deepEqual([miku[1], miku[2], miku[8]], ['名詞', '固有名詞', 'ハツネミク']);
+
+	const learnable = result.flat().filter(token => isLearnableToken(token, none)).map(token => [token[0], kindOf(token)]);
+	assert.deepEqual(learnable, [['初音ミク', 'proper'], ['東京', 'proper'], ['武勇伝', 'common']], '人名の姓(田中)は覚えない');
+	assert.ok(tanaka && tokyo && buyuden);
+}
+
+test('Sudachi: テキストごとに MeCab と同じ並びのトークンを返し、覚える語を正しく判定できる', { skip: skipReason('sudachipy') }, async () => {
+	await assertTokens(await analyzeWith({ morphAnalyzer: 'sudachi', sudachi: 'sudachipy', sudachiDict: 'full' }));
+});
+
+test('MeCab: テキストごとにトークンを返し、覚える語を正しく判定できる', { skip: skipReason('mecab') }, async () => {
+	await assertTokens(await analyzeWith({ morphAnalyzer: 'mecab', mecab: 'mecab', mecabDic: undefined }));
 });
