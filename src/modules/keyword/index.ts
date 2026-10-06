@@ -10,6 +10,7 @@ import { isLearnableCommonNoun } from './token-filter.js';
 import { kindOf, pickCandidate, resolveProperRate, trendKeywordsOf } from './pick-candidate.js';
 import { nextLearnDelay } from './learn-interval.js';
 import { stripMfm } from './strip-mfm.js';
+import { isBotNote } from './note-filter.js';
 import getDate from '@/utils/get-date.js';
 import { countKeywords } from '@/utils/keyword-trend.js';
 
@@ -196,11 +197,15 @@ export default class extends Module {
 			limit: 100
 		});
 
-		const interestedNotes = tl.filter(note =>
+		const publicNotes = tl.filter(note =>
 			note.userId !== this.ai.account.id &&
 			note.text != null &&
 			note.visibility == "public" &&
 			note.cw == null);
+
+		// Bot の投稿は、学習にも「今日よく見かけた言葉」にも使わない(note-filter.ts)
+		const interestedNotes = publicNotes.filter(note => !isBotNote(note));
+		const botNoteCount = publicNotes.length - interestedNotes.length;
 
 		let keywords: string[][] = [];
 		const ignored = this.getIgnored();
@@ -236,7 +241,7 @@ export default class extends Module {
 		const candidates = keywords.filter(token => newSet.has(token[0]));
 
 		const kinds = (kind: string) => new Set(candidates.filter(token => kindOf(token) === kind).map(token => token[0])).size;
-		this.log(`Learn: ${interestedNotes.length} notes, ${uniqueKeywords.length} keywords (${newKeywords.length} not yet learned: ${kinds('proper')} proper, ${kinds('common')} common)`);
+		this.log(`Learn: ${interestedNotes.length} notes (${botNoteCount} bot notes skipped), ${uniqueKeywords.length} keywords (${newKeywords.length} not yet learned: ${kinds('proper')} proper, ${kinds('common')} common)`);
 
 		const keyword = pickCandidate(candidates, resolveProperRate(config.keywordProperRate));
 		if (keyword == null) return;
