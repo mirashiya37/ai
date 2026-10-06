@@ -8,6 +8,11 @@ export function kindOf(token: string[]): KeywordKind {
 	return token[2] === '固有名詞' ? 'proper' : 'common';
 }
 
+/** 「今日よく見かけた言葉」に数える語。固有名詞だけにする(普通名詞は、一般的すぎる語が上位に混ざるので数えない) */
+export function trendKeywordsOf(tokens: string[][]): string[] {
+	return tokens.filter(token => kindOf(token) === 'proper').map(token => token[0]);
+}
+
 /** 0〜1 の数でなければ初期値にする(config.json には文字列で書かれることもあるので、数に直す) */
 export function resolveProperRate(value: unknown): number {
 	const rate = typeof value === 'string' && value.trim() !== '' ? Number(value) : value;

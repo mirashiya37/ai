@@ -1,7 +1,7 @@
 // 学習: 覚える語の選び方(src/modules/keyword/pick-candidate.ts)
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { pickCandidate, resolveProperRate, kindOf, DEFAULT_PROPER_RATE } from '../built/modules/keyword/pick-candidate.js';
+import { pickCandidate, resolveProperRate, kindOf, trendKeywordsOf, DEFAULT_PROPER_RATE } from '../built/modules/keyword/pick-candidate.js';
 
 // Sudachi 形式のトークン: [表層形, 品詞, 品詞細分類1, 品詞細分類2, 品詞細分類3, ...]
 const proper = s => [s, '名詞', '固有名詞', '一般', '*', '*', s, 'ヨミ'];
@@ -19,6 +19,12 @@ const properShare = (cands, rate, n = 40000) => {
 test('kindOf は固有名詞と普通名詞を見分ける', () => {
 	assert.equal(kindOf(proper('初音ミク')), 'proper');
 	assert.equal(kindOf(common('武勇伝')), 'common');
+});
+
+test('「今日よく見かけた言葉」には、固有名詞だけを数える', () => {
+	assert.deepEqual(trendKeywordsOf([proper('初音ミク'), common('武勇伝'), proper('東京'), common('ジンギスカン')]), ['初音ミク', '東京']);
+	assert.deepEqual(trendKeywordsOf([common('武勇伝')]), []);
+	assert.deepEqual(trendKeywordsOf([]), []);
 });
 
 test('固有名詞が選ばれる割合は、設定した確率になる', () => {

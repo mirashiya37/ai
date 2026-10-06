@@ -7,7 +7,7 @@ import serifs from '@/serifs.js';
 import { mecab } from './mecab.js';
 import { sudachi } from './sudachi.js';
 import { isLearnableCommonNoun } from './token-filter.js';
-import { kindOf, pickCandidate, resolveProperRate } from './pick-candidate.js';
+import { kindOf, pickCandidate, resolveProperRate, trendKeywordsOf } from './pick-candidate.js';
 import { nextLearnDelay } from './learn-interval.js';
 import { stripMfm } from './strip-mfm.js';
 import getDate from '@/utils/get-date.js';
@@ -220,7 +220,7 @@ export default class extends Module {
 			// 普通名詞は、一般的すぎる語を除いた一部だけ覚える(token-filter.ts)
 			const keywordsInThisNote = tokens.filter(token => (token[2] == '固有名詞' && (token[3] !== '人名' || token[4] === '一般') || isLearnableCommonNoun(token)) && token[8] != null && !ignored.includes(token[0]));
 			keywords = keywords.concat(keywordsInThisNote);
-			trendNotes.push({ id: note.id, keywords: keywordsInThisNote.map(token => token[0]) });
+			trendNotes.push({ id: note.id, keywords: trendKeywordsOf(keywordsInThisNote) });
 		}
 
 		// 「今日よく見かけた言葉」(チャートの投稿に添える)のために数える。
