@@ -27,7 +27,7 @@ node --test 'test/*.test.mjs'
 | `keyword-note-filter.test.mjs` | 学習: Bot の投稿の除外(`note-filter.ts`) | Bot の投稿は除く、Bot でない・情報が無い投稿は除かない |
 | `keyword-learn-interval.test.mjs` | 学習: 間隔(`learn-interval.ts`)と予約 | 15〜45分の一様で平均30分、乱数の端の値、学習が失敗しても予約が続く(要 config.json) |
 | `noting-pick-note.test.mjs` | 独り言(`pick-note.ts`、`noting` モジュール) | 語句を使うテンプレートが30%、均等に選ばれる、1日に平均21.6件(要 config.json) |
-| `reminder-notify.test.mjs` | リマインダーの催促(`reminder` モジュール) | 放っておかれた回数に応じた言い方、2ヶ月を過ぎたら 10% で忘れる(要 config.json) |
+| `reminder-notify.test.mjs` | リマインダーの催促(`reminder` モジュール) | 放っておかれた回数に応じた言い方、2ヶ月を過ぎたら 10% で忘れる、消すときに登録したキーで待ち受けを解除する(要 config.json) |
 | `message-reply-visibility.test.mjs` | 返信の公開範囲(`src/message.ts`) | 元の投稿と同じ範囲、フォロワー限定はダイレクト(要 config.json) |
 | `talk-by-love.test.mjs` | トーク: 親愛度に応じたセリフ(`src/modules/talk/by-love.ts`) | 既定の境目(5 / -3)、反応ごとの境目、love・hate が無いとき、呼び名の受け渡し |
 | `talk-thanks.test.mjs` | トーク: 「ありがとう」への返事 | 親愛度 5 以上で好き、-3 以下で嫌い、そのあいだは普通(要 config.json) |

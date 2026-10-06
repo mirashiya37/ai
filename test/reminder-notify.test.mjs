@@ -18,6 +18,7 @@ async function setup() {
 	const getCollection = (name, opts) => cols[name] ?? (cols[name] = db.addCollection(name, opts));
 	const posts = [];
 	const unsubscribed = [];
+	let failPost = null;
 	const friend = { userId: 'u1', name: 'テスト', doc: { user: { username: 'tester', host: null } } };
 	const ai = {
 		account: { id: 'bot' },
@@ -25,7 +26,11 @@ async function setup() {
 		getCollection,
 		log: () => {},
 		lookupFriend: () => friend,
-		post: async note => { posts.push(note); return { id: 'reply' + posts.length }; },
+		post: async note => {
+			if (failPost) throw failPost;
+			posts.push(note);
+			return { id: 'reply' + posts.length };
+		},
 		subscribeReply: () => {},
 		unsubscribeReply: (module, key) => unsubscribed.push(key),
 		setTimeoutWithPersistence: () => {},
@@ -45,7 +50,9 @@ async function setup() {
 		return posts[0];
 	};
 
-	return { serifs, reminds, unsubscribed, nthNotify };
+	const setFailPost = err => { failPost = err; };
+
+	return { serifs, reminds, unsubscribed, nthNotify, setFailPost };
 }
 
 test('催促の回数に応じて(8回目から week、31回目から month)、催促の言い方を変える', { skip: !hasConfig && 'config.json がない' }, async () => {
@@ -70,6 +77,28 @@ test('61回目からは、10% の確率で忘れて、リマインダーを消�
 		Math.random = () => 0.5;
 		assert.equal((await nthNotify(62)).text, '@tester ' + serifs.reminder.month('テスト'));
 		assert.notEqual(reminds.findOne({ id: 'n62' }), null);
+	} finally {
+		Math.random = random;
+	}
+});
+
+test('引用だけのリマインダーでも、消すときは登録したキー(リマインダーの ID)で待ち受けを解除する', { skip: !hasConfig && 'config.json がない' }, async () => {
+	const { reminds, unsubscribed, nthNotify, setFailPost } = await setup();
+	const random = Math.random;
+	try {
+		// 忘れたとき
+		Math.random = () => 0.15;
+		const post = await nthNotify(61, { id: 'r1', thing: null, quoteId: 'q1' });
+		assert.equal(post.renoteId, 'q1');
+		assert.deepEqual(unsubscribed, ['r1']);
+		assert.equal(reminds.findOne({ id: 'r1' }), null);
+
+		// 引用元が消されていたとき
+		unsubscribed.length = 0;
+		setFailPost(Object.assign(new Error('gone'), { statusCode: 400 }));
+		await nthNotify(1, { id: 'r2', thing: null, quoteId: 'q2' });
+		assert.deepEqual(unsubscribed, ['r2']);
+		assert.equal(reminds.findOne({ id: 'r2' }), null);
 	} finally {
 		Math.random = random;
 	}

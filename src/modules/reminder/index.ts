@@ -158,7 +158,7 @@ export default class extends Module {
 						renoteId,
 						text: acct(friend.doc.user) + ' ' + serifs.reminder.forget
 					});
-					this.unsubscribeReply(renoteId);
+					this.unsubscribeReply(remind.id);
 					this.reminds.remove(remind);
 					return;
 				}
@@ -174,7 +174,7 @@ export default class extends Module {
 			} catch (err: any) {
 				// renote対象が消されていたらリマインダー解除
 				if (err.statusCode === 400) {
-					this.unsubscribeReply(remind.thing == null && remind.quoteId ? remind.quoteId : remind.id);
+					this.unsubscribeReply(remind.id);
 					this.reminds.remove(remind);
 					return;
 				}
