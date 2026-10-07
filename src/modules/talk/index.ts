@@ -413,28 +413,52 @@ export default class extends Module {
 	private adana(msg: Message): boolean | HandlerResult {
 		if (!msg.includes(ADANA_WORDS)) return false;
 
-		// 「〇〇のあだ名」は、送った本人ではなく〇〇のあだ名を考える
+		// 「〇〇さんのあだ名」は、送った本人ではなく〇〇さんのあだ名を考える。
+		// 誰のあだ名かが増えるときは、parseAdanaTarget() の kind と、ここの分岐を増やす
 		const target = parseAdanaTarget(msg.extractedText);
-		if (target.kind === 'ai') {
-			msg.reply(getSerif(byLove(msg.friend, serifs.core.adanaForAi)));
-			return { reaction: 'confused' };
+		switch (target.kind) {
+			case 'ai': return this.adanaForAi(msg);
+			case 'other': return this.adanaForOther(msg, target.name);
+			default: return this.adanaForSelf(msg);
 		}
+	}
 
+	/** 藍自身のあだ名は、やんわり断る */
+	private adanaForAi(msg: Message): HandlerResult {
+		msg.reply(getSerif(byLove(msg.friend, serifs.core.adanaForAi)));
+		return { reaction: 'confused' };
+	}
+
+	/**
+	 * ほかの人のあだ名を提案する。返事を待ち受けて引き直せるが、送った本人の呼び名にはしない
+	 * (待ち受けのデータの target で見分ける)
+	 */
+	private adanaForOther(msg: Message, targetName: string): HandlerResult {
 		const keywords = getLearnedKeywords(this.ai);
-
 		const item = pickNickname(() => genItemWithKeyword(keywords));
 
-		if (item != null && target.kind === 'other') {
-			// 返事を待ち受けるが、ほかの人のあだ名なので、送った本人の呼び名にはしない(target があるかで見分ける)
-			msg.reply(serifs.core.adanaOther(target.name, item)).then(reply => {
-				this.subscribeReply(msg.userId, msg.isChat, msg.isChat ? msg.userId : reply.id, {
-					name: item,
-					seen: [item],
-					rerolls: 0,
-					target: target.name
-				});
+		if (item == null) {
+			msg.reply(serifs.core.adana('', msg.friend.name));
+			return { reaction: '🙌' };
+		}
+
+		msg.reply(serifs.core.adanaOther(targetName, item)).then(reply => {
+			this.subscribeReply(msg.userId, msg.isChat, msg.isChat ? msg.userId : reply.id, {
+				name: item,
+				seen: [item],
+				rerolls: 0,
+				target: targetName
 			});
-		} else if (item != null) {
+		});
+		return { reaction: '🙌' };
+	}
+
+	/** 送った本人のあだ名を提案して、「はい」なら呼び名にする */
+	private adanaForSelf(msg: Message): HandlerResult {
+		const keywords = getLearnedKeywords(this.ai);
+		const item = pickNickname(() => genItemWithKeyword(keywords));
+
+		if (item != null) {
 			msg.reply(serifs.core.adanaAsk(item, msg.friend.name)).then(reply => {
 				// seen: これまでに出したあだ名、rerolls: 引き直した回数(引き直しで使う)
 				this.subscribeReply(msg.userId, msg.isChat, msg.isChat ? msg.userId : reply.id, {
@@ -447,9 +471,7 @@ export default class extends Module {
 			msg.reply(serifs.core.adana('', msg.friend.name));
 		}
 
-		return {
-			reaction: '🙌'
-		};
+		return { reaction: '🙌' };
 	}
 
 	@bindThis

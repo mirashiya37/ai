@@ -36,26 +36,36 @@ test('引き直しの言葉を含む返事を見分ける', () => {
 	for (const text of ['はい', 'いいよ', 'いいえ', 'ううん', 'やだ', 'こんにちは']) assert.ok(!hit(text), text);
 });
 
-test('「〇〇のあだ名」の〇〇が、ほかの人なら other、一人称か〇〇が無ければ self、藍なら ai', () => {
+test('「〇〇さんのあだ名」のように敬称が付いていれば、ほかの人のあだ名', () => {
 	const other = name => ({ kind: 'other', name });
-	assert.deepEqual(parseAdanaTarget('田中のあだ名考えて'), other('田中'));
-	assert.deepEqual(parseAdanaTarget('ねえ、田中さんのあだ名は？'), other('田中さん'));
-	assert.deepEqual(parseAdanaTarget('のび太のあだ名'), other('のび太'));
-	assert.deepEqual(parseAdanaTarget('鈴木の弟のあだ名'), other('鈴木の弟'));
-	assert.deepEqual(parseAdanaTarget('はなこの渾名'), other('はなこ'));
-	assert.deepEqual(parseAdanaTarget('彼のあだ名'), other('彼'), '三人称は、ほかの人');
+	assert.deepEqual(parseAdanaTarget('田中さんのあだ名考えて'), other('田中さん'));
+	assert.deepEqual(parseAdanaTarget('ねえ、のび太くんのあだ名は？'), other('のび太くん'));
+	assert.deepEqual(parseAdanaTarget('はなこちゃんの渾名'), other('はなこちゃん'));
+	assert.deepEqual(parseAdanaTarget('鈴木様のあだな'), other('鈴木様'));
+	assert.deepEqual(parseAdanaTarget('鈴木の弟さんのあだ名'), other('鈴木の弟さん'));
+});
 
-	for (const text of ['あだ名', 'あだ名つけて', '新しいあだ名', 'このあだ名', 'そのあだ名はやだ', '別のあだ名', 'ほかのあだ名がいい', '違うのあだ名', '誰のあだ名？', '何のあだ名', 'わたしのあだ名', '私の渾名', '僕ちゃんのあだ名', 'うちのあだ名', '自分のあだ名', 'ワイのあだな', 'ねえ、俺のあだにゃ']) {
+test('敬称もメンションも無ければ、送った本人のあだ名(一人称のリストは要らない)', () => {
+	for (const text of [
+		'あだ名', 'あだ名つけて', '新しいあだ名', '田中のあだ名', 'わたしのあだ名', '私の渾名', '僕のあだ名', 'うちのあだ名', '自分のあだ名', 'ワイのあだな', 'ねえ、俺のあだにゃ',
+		'このあだ名', 'そのあだ名はやだ', '別のあだ名', 'ほかのあだ名がいい', '違うのあだ名', '誰のあだ名？', '何のあだ名', '彼のあだ名',
+		'さんのあだ名', // 敬称だけで、名前が無い
+		'あ'.repeat(21) + 'さんのあだ名', // 長すぎるものは、文の一部を拾ったとみなす
+	]) {
 		assert.deepEqual(parseAdanaTarget(text), { kind: 'self' }, text);
-	}
-	assert.deepEqual(parseAdanaTarget('あ'.repeat(21) + 'のあだ名'), { kind: 'self' }, '長すぎるものは、文の一部を拾ったとみなす');
-
-	for (const text of ['あなたのあだ名', '君のあだ名', 'おまえのあだ名', '藍のあだ名', '藍ちゃんのあだ名', 'AIのあだ名', 'アイさんのあだ名']) {
-		assert.deepEqual(parseAdanaTarget(text), { kind: 'ai' }, text);
 	}
 });
 
-test('メンションは「@」とサーバーの部分を外す(返信で通知が届かないようにする)', () => {
+test('藍のあだ名: 二人称は敬称が無くても、藍の名前は敬称かメンションが付いたときだけ', () => {
+	for (const text of ['あなたのあだ名', '君のあだ名', 'おまえのあだ名', 'あなたさんのあだ名', '藍ちゃんのあだ名', '藍さんのあだ名', 'AIさんのあだ名', 'アイちゃんのあだ名', '@ai のあだ名', '@ai@misskey.example のあだ名']) {
+		assert.deepEqual(parseAdanaTarget(text), { kind: 'ai' }, text);
+	}
+	for (const text of ['藍のあだ名', 'あいのあだ名']) {
+		assert.deepEqual(parseAdanaTarget(text), { kind: 'self' }, `${text}: 友達の名前かもしれない`);
+	}
+});
+
+test('メンションは、敬称が無くても、ほかの人。「@」とサーバーの部分を外す(返信で通知が届かないようにする)', () => {
 	assert.deepEqual(parseAdanaTarget('@bob のあだ名'), { kind: 'other', name: 'bob' });
 	assert.deepEqual(parseAdanaTarget('@bob@misskey.example のあだ名'), { kind: 'other', name: 'bob' });
 	assert.deepEqual(parseAdanaTarget('@bobのあだ名'), { kind: 'other', name: 'bob' });

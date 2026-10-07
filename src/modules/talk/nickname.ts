@@ -15,29 +15,38 @@ export const ADANA_WORDS = ['あだな', 'あだ名', '渾名', 'あだにゃ'];
 /** 「〇〇のあだ名」の〇〇として受け付ける最大の長さ。長いものは、文の一部を拾ったとみなす */
 const MAX_TARGET_LENGTH = 20;
 
-/** 送った本人を指す言葉(一人称)。敬称を外したあとで、完全に一致したら本人とみなす */
-const FIRST_PERSON = [
-	'私', 'わたし', 'ワタシ', 'わたくし', 'ワタクシ', 'あたし', 'アタシ', 'あたい', 'アタイ',
-	'僕', 'ぼく', 'ボク', '俺', 'おれ', 'オレ', 'おいら', 'オイラ', 'あっし',
-	'うち', 'ウチ', '自分', 'わし', 'ワシ', 'わい', 'ワイ', '我', 'われ', 'ワレ',
-	'拙者', '吾輩', '我輩', 'わがはい', '小生', '某', 'それがし', '余', '朕',
-];
+/** 〇〇の後ろの敬称。「〇〇さんのあだ名」のように敬称が付いたものだけを、ほかの人とみなす */
+const HONORIFIC = /(ちゃん|ちゃま|さん|さま|様|くん|氏|殿)$/;
 
-/** 藍を指す言葉(二人称と、藍の名前) */
-const AI_NAMES = [
+/** 藍を指す言葉(二人称)。敬称が無くても、藍とみなす */
+const SECOND_PERSON = [
 	'あなた', 'アナタ', '貴方', '貴女', 'あんた', 'アンタ', '君', 'きみ', 'キミ',
 	'お前', 'おまえ', 'オマエ', '貴様', 'きさま', 'そなた', 'おぬし', 'お主', '汝', 'てめえ', 'てめぇ',
-	'藍', 'あい', 'アイ', 'ai',
 ];
 
-/**
- * 〇〇のあだ名の〇〇ではない言葉。
- * 「この/その/あの/どのあだ名」(「こ」+「の」に分けてしまう)、「別の/ほかの/違うのあだ名」(引き直し)、「誰の/何のあだ名」
- */
-const NOT_A_PERSON = ['こ', 'そ', 'あ', 'ど', '別', '他', 'ほか', '外', '違う', 'ちがう', '次', '誰', 'だれ', '何', 'なに', 'なん'];
+/** 藍の名前。「藍ちゃん」「@ai」のように、敬称かメンションが付いたときだけ藍とみなす(「藍」「あい」は友達の名前かもしれない) */
+const AI_NAMES = ['藍', 'あい', 'アイ', 'ai'];
 
-/** 〇〇の後ろの敬称。外してから一人称・藍の名前と比べる(「藍ちゃん」「僕ちゃん」など) */
-const HONORIFIC = /(ちゃん|ちゃま|さん|さま|様|くん|たん|氏|殿|どの)$/;
+/** 「〇〇のあだ名」の〇〇。name は、メンションなら「@」とサーバー名を外したもの。敬称は付けたまま */
+export type AdanaTargetWord = { name: string; base: string; honorific: boolean; mention: boolean };
+
+/**
+ * 「〇〇のあだ名」の〇〇を取り出す。なければ null。
+ * 誰のものかの分類は、parseAdanaTarget() で行う。
+ */
+export function findAdanaTarget(text: string): AdanaTargetWord | null {
+	const match = text.match(new RegExp(`([^\\s、。!！?？「」『』]+?)\\s*の(?:${ADANA_WORDS.join('|')})`));
+	if (match == null) return null;
+
+	const mention = match[1].startsWith('@');
+	// 「@user@host」「@user」は「user」にする(返信で、その人に通知が届かないようにする)
+	const name = match[1].replace(/^@?([^@]+)(@.*)?$/, '$1');
+	if (name.length === 0 || name.length > MAX_TARGET_LENGTH) return null;
+
+	const base = name.replace(HONORIFIC, '');
+	const honorific = base !== name && base.length > 0;
+	return { name, base: honorific ? base : name, honorific, mention };
+}
 
 export type AdanaTarget =
 	| { kind: 'self' }
@@ -46,22 +55,19 @@ export type AdanaTarget =
 
 /**
  * 誰のあだ名を考えるかを決める。
- * 「〇〇のあだ名」の〇〇が一人称か、〇〇が無ければ送った本人。〇〇が藍なら ai。それ以外は other。
- * other の name は、メンションの「@」と、ほかのサーバーの部分を外す(返信で、その人に通知が届かないようにする)
+ * - 「〇〇さんのあだ名」「@user のあだ名」(敬称かメンションが付く): ほかの人(other)。藍の名前なら ai
+ * - 「あなたのあだ名」(二人称): ai
+ * - それ以外(「あだ名」「わたしのあだ名」「田中のあだ名」など): 送った本人(self)
+ * 一人称は「〇〇さん」にならないので、見分けるリストは要らない。
  */
 export function parseAdanaTarget(text: string): AdanaTarget {
-	const match = text.match(new RegExp(`([^\\s、。!！?？「」『』]+?)\\s*の(?:${ADANA_WORDS.join('|')})`));
-	if (match == null) return { kind: 'self' };
+	const target = findAdanaTarget(text);
+	if (target == null) return { kind: 'self' };
 
-	// 「@user@host」「@user」は「user」にする
-	const name = match[1].replace(/^@?([^@]+)(@.*)?$/, '$1');
-	if (name.length === 0 || name.length > MAX_TARGET_LENGTH || NOT_A_PERSON.includes(name)) return { kind: 'self' };
-
-	// 敬称だけの語は、そのまま比べる
-	const base = name.replace(HONORIFIC, '') || name;
-	if (FIRST_PERSON.includes(base)) return { kind: 'self' };
-	if (AI_NAMES.includes(base.toLowerCase())) return { kind: 'ai' };
-	return { kind: 'other', name };
+	if (SECOND_PERSON.includes(target.base)) return { kind: 'ai' };
+	if (!target.honorific && !target.mention) return { kind: 'self' };
+	if (AI_NAMES.includes(target.base.toLowerCase())) return { kind: 'ai' };
+	return { kind: 'other', name: target.name };
 }
 
 /** 呼び名にできるか。条件は core の「〇〇って呼んで」と同じ */
