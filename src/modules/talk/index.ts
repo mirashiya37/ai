@@ -508,20 +508,19 @@ export default class extends Module {
 		const master: any = await this.ai.api('users/show', { username: settings.username });
 		const from = msg.friend.name ?? `${msg.user.username}さん`;
 
+		// 呼び名にする設定なら、提案ではなく、決まったこととして伝える(伝えない設定でも、呼び名を変えたことはチャットで知らせる)
+		const renamed = settings.updateName;
+
 		switch (settings.notify) {
 			case 'mention': {
-				await this.ai.post(this.masterMentionParams(msg, master, serifs.core.adanaMasterMention(`@${master.username}`, from, item, settings.updateName)));
-				break;
-			}
-			case 'chat': {
-				await this.ai.sendMessage(master.id, { text: serifs.core.adanaMasterToMaster(from, item, settings.updateName) });
-				await msg.reply(serifs.core.adanaMasterToSender(item));
+				const mention = `@${master.username}`;
+				const text = renamed ? serifs.core.adanaMasterRenamedMention(mention, from, item) : serifs.core.adanaMasterMention(mention, from, item);
+				await this.ai.post(this.masterMentionParams(msg, master, text));
 				break;
 			}
 			default: {
-				// 伝えない設定でも、呼び名を変えたことは、チャットで知らせる
-				await this.ai.sendMessage(master.id, { text: serifs.core.adanaMasterRenamedToMaster(from, item) });
-				await msg.reply(serifs.core.adanaMasterRenamedToSender(item));
+				await this.ai.sendMessage(master.id, { text: renamed ? serifs.core.adanaMasterRenamedToMaster(from, item) : serifs.core.adanaMasterToMaster(from, item) });
+				await msg.reply(renamed ? serifs.core.adanaMasterRenamedToSender(item) : serifs.core.adanaMasterToSender(item));
 				break;
 			}
 		}

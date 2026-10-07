@@ -205,14 +205,17 @@ export default {
 
 		adanaOtherNo: (target: string) => `わかりました、${target}のあだ名は、またいいのを考えておきますね！`,
 
-		/** マスターのあだ名(from は頼んだ人、renamed はマスターの呼び名にしたか) */
-		adanaMasterMention: (master: string, from: string, item: string, renamed: boolean) =>
-			`${master} ${from}に頼まれて、マスターのあだ名を考えました！ 「${item}」とかいかがでしょうか？` +
-			(renamed ? `\nこれからは「${item}」とお呼びしますね！ 戻すときは「〇〇って呼んで」と言ってください` : ''),
+		/**
+		 * マスターのあだ名(from は頼んだ人)。呼び名にしない設定のときは提案、呼び名にする設定のときは、決まったこととして伝える。
+		 * ほかの人のあだ名と違い、呼び名にする設定なら「いかがでしょうか？」とは聞かない
+		 */
+		adanaMasterMention: (master: string, from: string, item: string) =>
+			`${master} ${from}に頼まれて、マスターのあだ名を考えました！ 「${item}」とかいかがでしょうか？`,
 
-		adanaMasterToMaster: (from: string, item: string, renamed: boolean) =>
-			`${from}に頼まれて、マスターのあだ名を考えました！ 「${item}」とかいかがでしょうか？` +
-			(renamed ? `\nこれからは「${item}」とお呼びしますね！ 戻すときは「〇〇って呼んで」と言ってください` : ''),
+		adanaMasterToMaster: (from: string, item: string) => `${from}に頼まれて、マスターのあだ名を考えました！ 「${item}」とかいかがでしょうか？`,
+
+		adanaMasterRenamedMention: (master: string, from: string, item: string) =>
+			`${master} ${from}に頼まれて、マスターの呼び名を「${item}」にしました！ 戻すときは「〇〇って呼んで」と言ってくださいね`,
 
 		adanaMasterRenamedToMaster: (from: string, item: string) => `${from}に頼まれて、マスターの呼び名を「${item}」にしました！ 戻すときは「〇〇って呼んで」と言ってくださいね`,
 
