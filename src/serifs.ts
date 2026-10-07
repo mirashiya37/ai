@@ -196,6 +196,24 @@ export default {
 
 		adanaNo: name => name ? `わかりました、これからも${name}とお呼びしますね！` : 'わかりました、またいいあだ名を考えておきますね！',
 
+		/** ほかの人のあだ名を提案する */
+		adanaOther: (target: string, item: string) => `${target}のあだ名は、「${item}」とかいかがでしょうか？`,
+
+		adanaOtherAgain: (target: string, item: string) => `それなら、${target}のあだ名に「${item}」はどうでしょうか？`,
+
+		adanaOtherOk: (target: string) => `気に入ってもらえてよかったです！ ${target}にも教えてあげてくださいね！`,
+
+		adanaOtherNo: (target: string) => `わかりました、${target}のあだ名は、またいいのを考えておきますね！`,
+
+		/** 藍自身のあだ名を考えてと言われたとき(やんわり断る) */
+		adanaForAi: {
+			normal: ['私のあだ名を、私が考えるんですか・・・？ ちょっと恥ずかしいので、遠慮しておきますね', '自分のあだ名を自分で考えるのは、ちょっと照れちゃいます・・・'],
+
+			love: name => name ? [`${name}、私のあだ名を私が・・・？ ふふ、それなら${name}が考えてくれたほうがうれしいです！`, `うーん、自分のあだ名は思いつかないです・・・${name}がつけてくれませんか？`] : ['私のあだ名を私が・・・？ ふふ、それならあなたが考えてくれたほうがうれしいです！'],
+
+			hate: '自分のあだ名くらい、自分で考えます。'
+		},
+
 		learnedKeywords: (keywords: string[]) => keywords.length > 0
 			? `最近は「${keywords.join('」「')}」を覚えました！`
 			: 'まだ何も覚えていないです…',

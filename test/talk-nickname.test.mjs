@@ -1,9 +1,9 @@
-// トーク: あだ名の提案と引き直し(src/modules/talk/nickname.ts と、talk モジュールの adana・contextHook)
+// トーク: あだ名の提案と引き直し、ほかの人のあだ名(src/modules/talk/nickname.ts と、talk モジュールの adana・contextHook)
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { pickNickname, canBeName, REROLL_WORDS } from '../built/modules/talk/nickname.js';
+import { pickNickname, canBeName, parseAdanaTarget, REROLL_WORDS } from '../built/modules/talk/nickname.js';
 
 const ROOT = new URL('..', import.meta.url).pathname;
 const hasConfig = existsSync(ROOT + 'config.json');
@@ -36,6 +36,31 @@ test('引き直しの言葉を含む返事を見分ける', () => {
 	for (const text of ['はい', 'いいよ', 'いいえ', 'ううん', 'やだ', 'こんにちは']) assert.ok(!hit(text), text);
 });
 
+test('「〇〇のあだ名」の〇〇が、ほかの人なら other、一人称か〇〇が無ければ self、藍なら ai', () => {
+	const other = name => ({ kind: 'other', name });
+	assert.deepEqual(parseAdanaTarget('田中のあだ名考えて'), other('田中'));
+	assert.deepEqual(parseAdanaTarget('ねえ、田中さんのあだ名は？'), other('田中さん'));
+	assert.deepEqual(parseAdanaTarget('のび太のあだ名'), other('のび太'));
+	assert.deepEqual(parseAdanaTarget('鈴木の弟のあだ名'), other('鈴木の弟'));
+	assert.deepEqual(parseAdanaTarget('はなこの渾名'), other('はなこ'));
+	assert.deepEqual(parseAdanaTarget('彼のあだ名'), other('彼'), '三人称は、ほかの人');
+
+	for (const text of ['あだ名', 'あだ名つけて', '新しいあだ名', 'このあだ名', 'そのあだ名はやだ', '別のあだ名', 'ほかのあだ名がいい', '違うのあだ名', '誰のあだ名？', '何のあだ名', 'わたしのあだ名', '私の渾名', '僕ちゃんのあだ名', 'うちのあだ名', '自分のあだ名', 'ワイのあだな', 'ねえ、俺のあだにゃ']) {
+		assert.deepEqual(parseAdanaTarget(text), { kind: 'self' }, text);
+	}
+	assert.deepEqual(parseAdanaTarget('あ'.repeat(21) + 'のあだ名'), { kind: 'self' }, '長すぎるものは、文の一部を拾ったとみなす');
+
+	for (const text of ['あなたのあだ名', '君のあだ名', 'おまえのあだ名', '藍のあだ名', '藍ちゃんのあだ名', 'AIのあだ名', 'アイさんのあだ名']) {
+		assert.deepEqual(parseAdanaTarget(text), { kind: 'ai' }, text);
+	}
+});
+
+test('メンションは「@」とサーバーの部分を外す(返信で通知が届かないようにする)', () => {
+	assert.deepEqual(parseAdanaTarget('@bob のあだ名'), { kind: 'other', name: 'bob' });
+	assert.deepEqual(parseAdanaTarget('@bob@misskey.example のあだ名'), { kind: 'other', name: 'bob' });
+	assert.deepEqual(parseAdanaTarget('@bobのあだ名'), { kind: 'other', name: 'bob' });
+});
+
 async function setup() {
 	const require = createRequire(ROOT);
 	const loki = require('lokijs');
@@ -62,6 +87,7 @@ async function setup() {
 
 const message = (text, replies, love = 0) => ({
 	text,
+	extractedText: text,
 	userId: 'u1',
 	isChat: false,
 	includes: words => words.some(word => text.includes(word)),
@@ -145,4 +171,63 @@ test('以前の形(name だけ)の待ち受けでも、引き直せる', { skip:
 	assert.deepEqual(subscribed[0].data.seen[0], '前のやつ');
 	assert.equal(subscribed[0].data.rerolls, 1);
 	assert.notEqual(subscribed[0].data.name, '前のやつ');
+});
+
+test('ほかの人のあだ名は、その人のあだ名として提案し、誰のものかを持って待ち受ける', { skip: !hasConfig && 'config.json がない' }, async () => {
+	const { mod, serifs, subscribed } = await setup();
+	const replies = [];
+	const msg = message('@bob@misskey.example のあだ名考えて', replies);
+
+	assert.deepEqual(mod.adana(msg), { reaction: '🙌' });
+	await new Promise(r => setTimeout(r, 0));
+
+	const proposed = replies[0].match(/「(.+)」とかいかがでしょうか/)?.[1];
+	assert.ok(proposed, replies[0]);
+	assert.equal(replies[0], serifs.core.adanaOther('bob', proposed));
+	assert.ok(!replies[0].includes('テスト'), '送った本人の呼び名では呼ばない');
+	assert.ok(!replies[0].includes('@'), 'メンションを書かない');
+	assert.deepEqual(subscribed[0].data, { name: proposed, seen: [proposed], rerolls: 0, target: 'bob' });
+});
+
+test('ほかの人のあだ名に「はい」と言われても、送った本人の呼び名は変えない。引き直しでは誰のものかを引き継ぐ', { skip: !hasConfig && 'config.json がない' }, async () => {
+	const { mod, serifs, subscribed } = await setup();
+	const data = { name: '決めるやつ', seen: ['決めるやつ'], rerolls: 0, target: '田中' };
+
+	const yes = [];
+	const yesMsg = message('はい', yes);
+	assert.deepEqual(await mod.contextHook('u1', yesMsg, data), { reaction: '🙌' });
+	assert.equal(yesMsg.friend.name, 'テスト', '呼び名は変えない');
+	assert.deepEqual(yes, [serifs.core.adanaOtherOk('田中')]);
+
+	const no = [];
+	const noMsg = message('いいえ', no);
+	await mod.contextHook('u1', noMsg, data);
+	assert.equal(noMsg.friend.name, 'テスト');
+	assert.deepEqual(no, [serifs.core.adanaOtherNo('田中')]);
+
+	const again = [];
+	await mod.contextHook('u1', message('別のがいい', again), data);
+	await new Promise(r => setTimeout(r, 0));
+	const proposed = subscribed[0].data.name;
+	assert.equal(again[0], serifs.core.adanaOtherAgain('田中', proposed));
+	assert.deepEqual(subscribed[0].data, { name: proposed, seen: ['決めるやつ', proposed], rerolls: 1, target: '田中' });
+});
+
+test('自分のあだ名(一人称)は、これまでどおり本人の呼び名として聞く', { skip: !hasConfig && 'config.json がない' }, async () => {
+	const { mod, subscribed } = await setup();
+	const replies = [];
+	mod.adana(message('わたしのあだ名考えて', replies));
+	await new Promise(r => setTimeout(r, 0));
+	assert.match(replies[0], /^テスト、「.+」とお呼びしてもいいですか？$/);
+	assert.equal(subscribed[0].data.target, undefined);
+});
+
+test('藍のあだ名は、親愛度に応じてやんわり断り、待ち受けない', { skip: !hasConfig && 'config.json がない' }, async () => {
+	const { mod, serifs, subscribed } = await setup();
+	for (const [love, serif] of [[0, serifs.core.adanaForAi.normal], [5, serifs.core.adanaForAi.love('テスト')], [-3, [serifs.core.adanaForAi.hate]]]) {
+		const replies = [];
+		assert.deepEqual(mod.adana(message('藍ちゃんのあだ名は？', replies, love)), { reaction: 'confused' });
+		assert.ok(serif.includes(replies[0]), `${love}: ${replies[0]}`);
+	}
+	assert.deepEqual(subscribed, []);
 });

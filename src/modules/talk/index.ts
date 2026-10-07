@@ -6,7 +6,7 @@ import { getLearnedKeywords, genItemWithKeyword } from '@/utils/gen-item-with-ke
 import serifs, { getSerif } from '@/serifs.js';
 import getDate from '@/utils/get-date.js';
 import { byLove } from './by-love.js';
-import { pickNickname, REROLL_WORDS } from './nickname.js';
+import { pickNickname, parseAdanaTarget, ADANA_WORDS, REROLL_WORDS } from './nickname.js';
 
 export default class extends Module {
 	public readonly name = 'talk';
@@ -411,12 +411,30 @@ export default class extends Module {
 
 	@bindThis
 	private adana(msg: Message): boolean | HandlerResult {
-		if (!msg.includes(['あだな', 'あだ名', '渾名', 'あだにゃ'])) return false;
+		if (!msg.includes(ADANA_WORDS)) return false;
+
+		// 「〇〇のあだ名」は、送った本人ではなく〇〇のあだ名を考える
+		const target = parseAdanaTarget(msg.extractedText);
+		if (target.kind === 'ai') {
+			msg.reply(getSerif(byLove(msg.friend, serifs.core.adanaForAi)));
+			return { reaction: 'confused' };
+		}
+
 		const keywords = getLearnedKeywords(this.ai);
 
 		const item = pickNickname(() => genItemWithKeyword(keywords));
 
-		if (item != null) {
+		if (item != null && target.kind === 'other') {
+			// 返事を待ち受けるが、ほかの人のあだ名なので、送った本人の呼び名にはしない(target があるかで見分ける)
+			msg.reply(serifs.core.adanaOther(target.name, item)).then(reply => {
+				this.subscribeReply(msg.userId, msg.isChat, msg.isChat ? msg.userId : reply.id, {
+					name: item,
+					seen: [item],
+					rerolls: 0,
+					target: target.name
+				});
+			});
+		} else if (item != null) {
 			msg.reply(serifs.core.adanaAsk(item, msg.friend.name)).then(reply => {
 				// seen: これまでに出したあだ名、rerolls: 引き直した回数(引き直しで使う)
 				this.subscribeReply(msg.userId, msg.isChat, msg.isChat ? msg.userId : reply.id, {
@@ -441,12 +459,19 @@ export default class extends Module {
 		// 「やだ、別の」のように否定と一緒に言われても、引き直しとして扱う
 		if (msg.includes(REROLL_WORDS)) return this.rerollNickname(key, msg, data);
 
+		// ほかの人のあだ名を提案したときは、送った本人の呼び名を変えない
+		const target: string | undefined = data.target;
+
 		// 「ううん」は「うん」を含むので、否定を先に判定する
 		if (msg.includes(['いいえ', 'ううん', 'やだ', '嫌', 'だめ', 'やめ'])) {
-			msg.reply(serifs.core.adanaNo(msg.friend.name));
+			msg.reply(target != null ? serifs.core.adanaOtherNo(target) : serifs.core.adanaNo(msg.friend.name));
 		} else if (msg.includes(['はい', 'いいよ', 'うん', 'それで', 'お願い', 'おねがい'])) {
-			msg.friend.updateName(data.name);
-			msg.reply(serifs.core.setNameOk(data.name));
+			if (target != null) {
+				msg.reply(serifs.core.adanaOtherOk(target));
+			} else {
+				msg.friend.updateName(data.name);
+				msg.reply(serifs.core.setNameOk(data.name));
+			}
 		} else {
 			// あだ名への返事ではなさそうなので、待ち受けをやめて普段の会話として扱う
 			this.unsubscribeReply(key);
@@ -461,7 +486,7 @@ export default class extends Module {
 
 	/**
 	 * あだ名を引き直す。すでに出したあだ名は出さない。
-	 * 待ち受けのデータは、出したあだ名(seen)と引き直した回数(rerolls)を引き継ぐ
+	 * 待ち受けのデータは、出したあだ名(seen)と引き直した回数(rerolls)、ほかの人のあだ名なら誰のものか(target)を引き継ぐ
 	 */
 	@bindThis
 	private rerollNickname(key: any, msg: Message, data: any): HandlerResult {
@@ -476,11 +501,15 @@ export default class extends Module {
 			return { reaction: 'confused' };
 		}
 
-		msg.reply(serifs.core.adanaAgain(item, msg.friend.name)).then(reply => {
+		const target: string | undefined = data.target;
+		const text = target != null ? serifs.core.adanaOtherAgain(target, item) : serifs.core.adanaAgain(item, msg.friend.name);
+
+		msg.reply(text).then(reply => {
 			this.subscribeReply(msg.userId, msg.isChat, msg.isChat ? msg.userId : reply.id, {
 				name: item,
 				seen: [...seen, item],
-				rerolls: (data.rerolls ?? 0) + 1
+				rerolls: (data.rerolls ?? 0) + 1,
+				...(target != null ? { target } : {})
 			});
 		});
 
