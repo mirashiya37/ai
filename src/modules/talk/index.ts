@@ -6,7 +6,11 @@ import { getLearnedKeywords, genItemWithKeyword } from '@/utils/gen-item-with-ke
 import serifs, { getSerif } from '@/serifs.js';
 import getDate from '@/utils/get-date.js';
 import { byLove } from './by-love.js';
+import config from '@/config.js';
+import Friend from '@/friend.js';
+import { isMaster } from '@/utils/is-master.js';
 import { pickNickname, parseAdanaTarget, ADANA_WORDS, REROLL_WORDS } from './nickname.js';
+import { resolveMasterNicknameSettings, checkMasterNicknameLimit, nextMasterNicknameUserRecord, MasterNicknameSettings } from './master-nickname.js';
 
 export default class extends Module {
 	public readonly name = 'talk';
@@ -415,9 +419,11 @@ export default class extends Module {
 
 		// 「〇〇さんのあだ名」は、送った本人ではなく〇〇さんのあだ名を考える。
 		// 誰のあだ名かが増えるときは、parseAdanaTarget() の kind と、ここの分岐を増やす
-		const target = parseAdanaTarget(msg.extractedText);
+		const master = resolveMasterNicknameSettings(config);
+		const target = parseAdanaTarget(msg.extractedText, master != null ? { username: master.username, names: master.names, localHost: new URL(config.host).host } : undefined);
 		switch (target.kind) {
 			case 'ai': return this.adanaForAi(msg);
+			case 'master': return this.adanaForMaster(msg, master!);
 			case 'other': return this.adanaForOther(msg, target.name);
 			default: return this.adanaForSelf(msg);
 		}
@@ -451,6 +457,98 @@ export default class extends Module {
 			});
 		});
 		return { reaction: '🙌' };
+	}
+
+	/**
+	 * マスターのあだ名を考えて、マスターに伝える(または呼び名にする)。返事は待ち受けない(一発)。
+	 * 荒らし対策で、同じ人は1日に決まった回数まで、マスターに伝えるのは、誰からかに関わらず決まった間隔まで。
+	 * 制限にかかったら、考えたあだ名だけ返して、伝えられない理由を添える。
+	 */
+	private adanaForMaster(msg: Message, settings: MasterNicknameSettings): HandlerResult {
+		// マスター本人が言ったときは、本人のあだ名
+		if (isMaster(msg.user, config.master)) return this.adanaForSelf(msg);
+
+		const keywords = getLearnedKeywords(this.ai);
+		const item = pickNickname(() => genItemWithKeyword(keywords));
+		if (item == null) {
+			msg.reply(serifs.core.adana('', msg.friend.name));
+			return { reaction: '🙌' };
+		}
+
+		const today = getDate();
+		const now = Date.now();
+		const userData = msg.friend.getPerModulesData(this);
+		const moduleData = this.getData();
+		const limit = checkMasterNicknameLimit(settings, userData.masterNickname ?? {}, moduleData.masterNicknameNotifiedAt, today, now);
+		if (!limit.ok) {
+			msg.reply(limit.reason === 'daily'
+				? serifs.core.adanaMasterLimitDaily(item)
+				: serifs.core.adanaMasterLimitInterval(item, Math.ceil(limit.nextAt / 1000)));
+			return { reaction: '🙌' };
+		}
+
+		// 同時に頼まれても制限を超えないように、伝える前に記録する。伝えられなかったら元に戻す
+		const prevUser = userData.masterNickname;
+		const prevNotifiedAt = moduleData.masterNicknameNotifiedAt;
+		msg.friend.setPerModulesData(this, { ...userData, masterNickname: nextMasterNicknameUserRecord(prevUser ?? {}, today) });
+		this.setData({ ...moduleData, masterNicknameNotifiedAt: now });
+
+		this.tellMaster(msg, settings, item).catch(err => {
+			this.log(`Failed to tell the master a nickname: ${err}`);
+			msg.friend.setPerModulesData(this, { ...msg.friend.getPerModulesData(this), masterNickname: prevUser });
+			this.setData({ ...this.getData(), masterNicknameNotifiedAt: prevNotifiedAt });
+			msg.reply(serifs.core.adanaMasterFailed(item));
+		});
+
+		return { reaction: '🙌' };
+	}
+
+	/** マスターに、頼まれて考えたあだ名を伝える。呼び名にする設定なら、伝えられたあとで呼び名にする */
+	private async tellMaster(msg: Message, settings: MasterNicknameSettings, item: string) {
+		const master: any = await this.ai.api('users/show', { username: settings.username });
+		const from = msg.friend.name ?? `${msg.user.username}さん`;
+
+		switch (settings.notify) {
+			case 'mention': {
+				await this.ai.post(this.masterMentionParams(msg, master, serifs.core.adanaMasterMention(`@${master.username}`, from, item, settings.updateName)));
+				break;
+			}
+			case 'chat': {
+				await this.ai.sendMessage(master.id, { text: serifs.core.adanaMasterToMaster(from, item, settings.updateName) });
+				await msg.reply(serifs.core.adanaMasterToSender(item));
+				break;
+			}
+			default: {
+				// 伝えない設定でも、呼び名を変えたことは、チャットで知らせる
+				await this.ai.sendMessage(master.id, { text: serifs.core.adanaMasterRenamedToMaster(from, item) });
+				await msg.reply(serifs.core.adanaMasterRenamedToSender(item));
+				break;
+			}
+		}
+
+		if (settings.updateName) {
+			const friend = this.ai.lookupFriend(master.id) ?? new Friend(this.ai, { user: master });
+			friend.updateName(item);
+		}
+	}
+
+	/**
+	 * マスターへのメンションの投稿。頼んだ人の投稿への返信にして、公開範囲は msg.reply() と同じ考え方にする。
+	 * チャットで頼まれたときは、チャットの内容が公開されないように、頼んだ人とマスターだけのダイレクト投稿にする
+	 */
+	private masterMentionParams(msg: Message, master: any, text: string) {
+		if (msg.isChat) {
+			const acct = msg.user.host ? `@${msg.user.username}@${msg.user.host}` : `@${msg.user.username}`;
+			return { text: `${acct} ${text}`, visibility: 'specified', visibleUserIds: [msg.userId, master.id] };
+		}
+
+		const visibility = msg.visibility === 'followers' || msg.visibility === 'specified' ? 'specified' : msg.visibility;
+		return {
+			replyId: msg.id,
+			text,
+			visibility,
+			visibleUserIds: visibility === 'specified' ? [msg.userId, master.id] : undefined,
+		};
 	}
 
 	/** 送った本人のあだ名を提案して、「はい」なら呼び名にする */

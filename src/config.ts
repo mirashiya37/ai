@@ -26,6 +26,11 @@ type Config = {
 	sudachi?: string;
 	sudachiDict?: 'small' | 'core' | 'full';
 	memoryDir?: string;
+	masterNicknameNames?: string[];
+	masterNicknameNotify?: 'off' | 'mention' | 'chat';
+	masterNicknameUpdateName?: boolean;
+	masterNicknamePerUserDaily?: number | string;
+	masterNicknameIntervalHours?: number | string;
 };
 
 import config from '../config.json' with { type: 'json' };

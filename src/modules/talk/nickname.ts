@@ -27,8 +27,11 @@ const SECOND_PERSON = [
 /** 藍の名前。「藍ちゃん」「@ai」のように、敬称かメンションが付いたときだけ藍とみなす(「藍」「あい」は友達の名前かもしれない) */
 const AI_NAMES = ['藍', 'あい', 'アイ', 'ai'];
 
-/** 「〇〇のあだ名」の〇〇。name は、メンションなら「@」とサーバー名を外したもの。敬称は付けたまま */
-export type AdanaTargetWord = { name: string; base: string; honorific: boolean; mention: boolean };
+/**
+ * 「〇〇のあだ名」の〇〇。name は、メンションなら「@」とサーバー名を外したもの。敬称は付けたまま。
+ * host は、メンションに付いていたサーバー名(「@user@host」の host。無ければ null)
+ */
+export type AdanaTargetWord = { name: string; base: string; honorific: boolean; mention: boolean; host: string | null };
 
 /**
  * 「〇〇のあだ名」の〇〇を取り出す。なければ null。
@@ -40,34 +43,59 @@ export function findAdanaTarget(text: string): AdanaTargetWord | null {
 
 	const mention = match[1].startsWith('@');
 	// 「@user@host」「@user」は「user」にする(返信で、その人に通知が届かないようにする)
-	const name = match[1].replace(/^@?([^@]+)(@.*)?$/, '$1');
+	const parts = match[1].match(/^@?([^@]+)(?:@(.*))?$/);
+	const name = parts?.[1] ?? match[1];
+	const host = mention ? (parts?.[2] || null) : null;
 	if (name.length === 0 || name.length > MAX_TARGET_LENGTH) return null;
 
 	const base = name.replace(HONORIFIC, '');
 	const honorific = base !== name && base.length > 0;
-	return { name, base: honorific ? base : name, honorific, mention };
+	return { name, base: honorific ? base : name, honorific, mention, host };
 }
 
 export type AdanaTarget =
 	| { kind: 'self' }
 	| { kind: 'ai' }
+	| { kind: 'master' }
 	| { kind: 'other'; name: string };
+
+/** マスターとみなす〇〇。使わないなら parseAdanaTarget() に渡さない */
+export type AdanaMasterNames = {
+	/** マスターのユーザー名。「@ユーザー名」(このサーバーのユーザー)ならマスター */
+	username: string;
+	/** マスターの名前。敬称が付いても付かなくても、マスターとみなす */
+	names: readonly string[];
+	/** このサーバーのホスト名。「@ユーザー名@このサーバー」もマスターとみなす */
+	localHost?: string;
+};
 
 /**
  * 誰のあだ名を考えるかを決める。
  * - 「〇〇さんのあだ名」「@user のあだ名」(敬称かメンションが付く): ほかの人(other)。藍の名前なら ai
  * - 「あなたのあだ名」(二人称): ai
+ * - master を渡したとき、〇〇がマスターの名前(敬称は問わない)か「@マスター」(このサーバーのユーザー): master
  * - それ以外(「あだ名」「わたしのあだ名」「田中のあだ名」など): 送った本人(self)
  * 一人称は「〇〇さん」にならないので、見分けるリストは要らない。
  */
-export function parseAdanaTarget(text: string): AdanaTarget {
+export function parseAdanaTarget(text: string, master?: AdanaMasterNames): AdanaTarget {
 	const target = findAdanaTarget(text);
 	if (target == null) return { kind: 'self' };
+
+	if (master != null && isMasterTarget(target, master)) return { kind: 'master' };
 
 	if (SECOND_PERSON.includes(target.base)) return { kind: 'ai' };
 	if (!target.honorific && !target.mention) return { kind: 'self' };
 	if (AI_NAMES.includes(target.base.toLowerCase())) return { kind: 'ai' };
 	return { kind: 'other', name: target.name };
+}
+
+function isMasterTarget(target: AdanaTargetWord, master: AdanaMasterNames): boolean {
+	if (target.mention) {
+		// ほかのサーバーに同じユーザー名の人がいても、マスターにしない
+		const local = target.host == null || (master.localHost != null && target.host.toLowerCase() === master.localHost.toLowerCase());
+		return local && target.name.toLowerCase() === master.username.toLowerCase();
+	}
+	return master.names.includes(target.name) || master.names.includes(target.base);
 }
 
 /** 呼び名にできるか。条件は core の「〇〇って呼んで」と同じ */

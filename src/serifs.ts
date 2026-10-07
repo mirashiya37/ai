@@ -205,6 +205,28 @@ export default {
 
 		adanaOtherNo: (target: string) => `わかりました、${target}のあだ名は、またいいのを考えておきますね！`,
 
+		/** マスターのあだ名(from は頼んだ人、renamed はマスターの呼び名にしたか) */
+		adanaMasterMention: (master: string, from: string, item: string, renamed: boolean) =>
+			`${master} ${from}に頼まれて、マスターのあだ名を考えました！ 「${item}」とかいかがでしょうか？` +
+			(renamed ? `\nこれからは「${item}」とお呼びしますね！ 戻すときは「〇〇って呼んで」と言ってください` : ''),
+
+		adanaMasterToMaster: (from: string, item: string, renamed: boolean) =>
+			`${from}に頼まれて、マスターのあだ名を考えました！ 「${item}」とかいかがでしょうか？` +
+			(renamed ? `\nこれからは「${item}」とお呼びしますね！ 戻すときは「〇〇って呼んで」と言ってください` : ''),
+
+		adanaMasterRenamedToMaster: (from: string, item: string) => `${from}に頼まれて、マスターの呼び名を「${item}」にしました！ 戻すときは「〇〇って呼んで」と言ってくださいね`,
+
+		adanaMasterToSender: (item: string) => `マスターのあだ名は、「${item}」とかどうでしょう？ マスターに伝えておきますね！`,
+
+		adanaMasterRenamedToSender: (item: string) => `マスターのあだ名は、「${item}」にしてみますね！ マスターには、私から伝えておきます！`,
+
+		adanaMasterLimitDaily: (item: string) => `マスターのあだ名は、「${item}」とかどうでしょう？ ・・・あっ、今日はもう、マスターに伝えたんでした！ また明日、お願いしますね`,
+
+		/** nextAt は、また伝えられるようになる時刻(Unix 時間、秒)。MFM の unixtime で、見る人の時刻で表示する */
+		adanaMasterLimitInterval: (item: string, nextAt: number) => `マスターのあだ名は、「${item}」とかどうでしょう？ ・・・あっ、マスターには、さっき伝えたばかりでした！ $[unixtime ${nextAt}] からなら、また伝えられます`,
+
+		adanaMasterFailed: (item: string) => `マスターのあだ名は、「${item}」とかどうでしょう？ ・・・あれ、マスターにうまく伝えられませんでした・・・`,
+
 		/** 藍自身のあだ名を考えてと言われたとき(やんわり断る) */
 		adanaForAi: {
 			normal: ['私のあだ名を、私が考えるんですか・・・？ ちょっと恥ずかしいので、遠慮しておきますね', '自分のあだ名を自分で考えるのは、ちょっと照れちゃいます・・・'],
