@@ -3,6 +3,7 @@
 `syuilo/ai`(Misskey のBot「藍」)を、自サーバ向けに改修した Fork。
 バージョンの付け方は [docs/versioning.md](docs/versioning.md)、
 形態素解析(MeCab / Sudachi)の切り替えは [docs/morph-analyzer.md](docs/morph-analyzer.md) を参照。
+`config.json` の項目は [docs/config.md](docs/config.md)(**項目を足したら、ここも更新する**)。
 独自機能の一覧は [docs/features.md](docs/features.md)、バージョンごとの変更は [docs/changelog.md](docs/changelog.md)、
 テストは [docs/testing.md](docs/testing.md)。
 

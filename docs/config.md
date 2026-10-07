@@ -1,0 +1,82 @@
+# 設定(`config.json`)
+
+`config.json` は、リポジトリ(Docker ならスタック)のルートに置く。Git 管理外で、イメージにも入れない。
+書き方の見本は `example.json`、各項目の型は `src/config.ts`。**変えたら、Bot を再起動する**
+(Docker は `docker compose up -d --force-recreate`。`restart` では反映されないことがある)。
+
+真偽値は `true` / `false`(二重引用符は付けない)。数値は、数でも、数字の文字列(`"0.5"`)でもよい項目がある(下の表)。
+ドキュメントやコミットには、実際の値(接続先、ユーザー名、トークンなど)を書かない。
+
+## 接続と基本
+
+| 項目 | 既定 | 内容 |
+|---|---|---|
+| `host` | (必須) | Misskey サーバーの URL(`https://` から。末尾の `/` は付けない)。WebSocket と API の URL は、これから作る |
+| `i` | (必須) | 藍として動かすアカウントのアクセストークン。秘密の値 |
+| `master` | なし | マスターのユーザー名(このサーバーのユーザー)。管理コマンド、日次レポート、マスターのあだ名で使う。無ければ、これらは使わない |
+| `serverName` | `このサーバー` | カスタム絵文字チェックの投稿に書く、サーバーの呼び名 |
+| `memoryDir` | `.`(ルート) | 記憶(`memory.json`)の保存先。Docker では `data` にする(書き込めるのは `data/` だけ) |
+
+## 機能の入り切り
+
+| 項目 | 既定 | 内容 |
+|---|---|---|
+| `notingEnabled` | 有効 | `false` で、独り言(ランダムな投稿)をやめる。書かなければ有効 |
+| `chartEnabled` | 有効 | `false` で、チャート機能と、キーワードの集計をやめる。書かなければ有効 |
+| `keywordEnabled` | 無効 | `true` で、語句の学習を使う([features.md](features.md)、形態素解析が要る) |
+| `reversiEnabled` | 無効 | `true` で、リバーシの対局を使う |
+| `serverMonitoring` | 無効 | `true` で、サーバー監視を使う |
+| `checkEmojisEnabled` | 無効 | `true` で、カスタム絵文字チェックを使う。藍のアカウントに管理者権限と「絵文字を見る」権限のトークンが要る |
+| `checkEmojisAtOnce` | `false` | `true` で、絵文字チェックの投稿を1件にまとめる |
+
+## 語句の学習と形態素解析
+
+| 項目 | 既定 | 内容 |
+|---|---|---|
+| `keywordProperRate` | `0.6` | 覚える語を、固有名詞から選ぶ確率(0〜1)。範囲外・数でない値は既定値。[features.md](features.md) の「学習」 |
+| `morphAnalyzer` | `mecab` | `sudachi` で Sudachi を使う。**本番のイメージは MeCab を入れていないので、`sudachi` が必須**([morph-analyzer.md](morph-analyzer.md)) |
+| `sudachi` | `sudachipy` | sudachipy のコマンド |
+| `sudachiDict` | `full` | Sudachi の辞書(`small` / `core` / `full`)。イメージに入っているのは `full` だけ |
+| `mecab` | `mecab` | MeCab のコマンドのパス |
+| `mecabDic` | なし | MeCab の辞書のパス |
+
+## aichat(AI との会話)
+
+| 項目 | 既定 | 内容 |
+|---|---|---|
+| `geminiProApiKey` | なし | Gemini の API キー。秘密の値 |
+| `pLaMoApiKey` | なし | PLaMo の API キー。秘密の値 |
+| `prompt` | 内蔵のプロンプト | aichat のプロンプト(口調や返答のルール)。書けば置き換わる |
+| `aichatRandomTalkEnabled` | 無効 | `true` で、藍からタイムラインの誰かに話しかける |
+| `aichatRandomTalkProbability` | `0.02` | 話しかける確率(0〜1 の小数。1 に近いほど出やすい) |
+| `aichatRandomTalkIntervalMinutes` | `720` | タイムラインを見て、話しかけるかを決める間隔(分) |
+| `aichatGroundingWithGoogleSearchAlwaysEnabled` | 無効 | `true` で、メンションへの返答で、いつも Google 検索を使う |
+
+## マスターのあだ名(独自機能)
+
+「マスターのあだ名」と頼まれたときの動作を決める。**既定はオフ**。動作の詳細は [features.md](features.md) の「マスターのあだ名」。
+`master` が無いか、伝え方が `off` で呼び名にもしないときは、使わない。
+
+| 項目 | 既定 | 内容 |
+|---|---|---|
+| `masterNicknameNames` | `[]` | 「〇〇のあだ名」の〇〇がこれならマスターとみなす名前(文字列の配列。複数可。敬称は付いても付かなくてもよい)。`@<master>`(このサーバーのユーザー)は、書かなくてもマスター |
+| `masterNicknameNotify` | `off` | 伝え方。`off`(伝えない)、`mention`(メンション)、`chat`(チャット) |
+| `masterNicknameUpdateName` | `false` | `true` で、考えたあだ名を、マスターの呼び名にする |
+| `masterNicknamePerUserDaily` | `1` | 同じ人が1日(日本時間の0時区切り)に頼める回数。`0` で制限しない |
+| `masterNicknameIntervalHours` | `3` | マスターに伝える間隔(時間)。誰からの依頼でもまとめて数える。`0` で制限しない |
+
+## 書き方の例(接続先などは仮の値)
+
+```jsonc
+{
+	"host": "https://misskey.example.com",
+	"i": "<アクセストークン>",
+	"master": "<マスターのユーザー名>",
+	"memoryDir": "data",
+	"keywordEnabled": true,
+	"morphAnalyzer": "sudachi",
+	"masterNicknameNames": ["マスター"],
+	"masterNicknameNotify": "mention",
+	"masterNicknameUpdateName": true
+}
+```

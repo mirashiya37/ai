@@ -22,6 +22,8 @@
 
 ## 設定(`config.json`)
 
+(すべての項目は [config.md](config.md))
+
 | 項目 | 既定 | 内容 |
 |---|---|---|
 | `morphAnalyzer` | `mecab` | `sudachi` にすると Sudachi を使う。**本番では必須** |
