@@ -136,6 +136,16 @@ test('〇〇の前の呼びかけ(ねえ・ところで)と、一人称の「の
 	assert.deepEqual(parseAdanaTarget('私の田中のあだ名'), { kind: 'self' });
 });
 
+test('「@bob さんのあだ名」のように、メンションと敬称のあいだに空白があっても、ひとまとまりにする', () => {
+	const other = name => ({ kind: 'other', name });
+	assert.deepEqual(parseAdanaTarget('@bob さんのあだ名'), other('bobさん'));
+	assert.deepEqual(parseAdanaTarget('@bob　ちゃんのあだ名'), other('bobちゃん'), '全角の空白');
+	assert.deepEqual(parseAdanaTarget('@bob@misskey.example さんのあだ名'), other('bobさん'), 'サーバー名は外す');
+	assert.deepEqual(parseAdanaTarget('@alice @bob さんのあだ名'), other('bobさん'), '前にメンションがあっても、敬称の直前のもの');
+	assert.deepEqual(parseAdanaTarget('@ai さんのあだ名'), { kind: 'ai' }, '藍の名前');
+	assert.deepEqual(parseAdanaTarget('@bob 田中さんのあだ名'), other('田中さん'), '敬称の前に名前があれば、その名前');
+});
+
 async function setup() {
 	const require = createRequire(ROOT);
 	const loki = require('lokijs');

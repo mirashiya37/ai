@@ -99,13 +99,16 @@ export type AdanaTargetWord = { name: string; base: string; honorific: boolean; 
  * 誰のものかの分類は、parseAdanaTarget() で行う。
  */
 export function findAdanaTarget(text: string): AdanaTargetWord | null {
-	const match = text.match(new RegExp(`([^\\s、。!！?？「」『』]+?)\\s*の(?:${ADANA_WORDS.map(kanaInsensitive).join('|')})`));
+	const adana = ADANA_WORDS.map(kanaInsensitive).join('|');
+	// 「@bob さんのあだ名」のように、メンションと敬称のあいだに空白があるものは、ひとまとまりにする
+	const spaced = text.match(new RegExp(`(@[^\\s@、。!！?？「」『』]+(?:@[^\\s、。!！?？「」『』]+)?)\\s+(${HONORIFIC_WORDS})\\s*の(?:${adana})`));
+	const match = spaced ?? text.match(new RegExp(`([^\\s、。!！?？「」『』]+?)\\s*の(?:${adana})`));
 	if (match == null) return null;
 
 	const mention = match[1].startsWith('@');
 	// 「@user@host」「@user」は「user」にする(返信で、その人に通知が届かないようにする)
 	const parts = match[1].match(/^@?([^@]+)(?:@(.*))?$/);
-	const name = mention ? (parts?.[1] ?? match[1]) : stripLeading(parts?.[1] ?? match[1]);
+	const name = mention ? (parts?.[1] ?? match[1]) + (spaced?.[2] ?? '') : stripLeading(parts?.[1] ?? match[1]);
 	const host = mention ? (parts?.[2] || null) : null;
 	if (name.length === 0 || name.length > MAX_TARGET_LENGTH) return null;
 
