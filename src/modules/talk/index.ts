@@ -10,7 +10,7 @@ import config from '@/config.js';
 import Friend from '@/friend.js';
 import { isMaster } from '@/utils/is-master.js';
 import { pickNickname, parseAdanaTarget, ADANA_WORDS, REROLL_WORDS, YES_WORDS, NO_WORDS, isChatReplyExpired, startsWithReplyWord } from './nickname.js';
-import { resolveMasterNicknameSettings, checkMasterNicknameLimit, nextMasterNicknameUserRecord, describeRequester, MasterNicknameSettings } from './master-nickname.js';
+import { resolveMasterNicknameSettings, checkMasterNicknameLimit, nextMasterNicknameUserRecord, describeRequester, masterLabel, MasterNicknameSettings } from './master-nickname.js';
 
 export default class extends Module {
 	public readonly name = 'talk';
@@ -488,8 +488,8 @@ export default class extends Module {
 		const limit = checkMasterNicknameLimit(settings, userData.masterNickname ?? {}, moduleData.masterNicknameNotifiedAt, today, now);
 		if (!limit.ok) {
 			msg.reply(limit.reason === 'daily'
-				? serifs.core.adanaMasterLimitDaily(item)
-				: serifs.core.adanaMasterLimitInterval(item, Math.ceil(limit.nextAt / 1000)));
+				? serifs.core.adanaMasterLimitDaily(item, masterLabel(settings))
+				: serifs.core.adanaMasterLimitInterval(item, Math.ceil(limit.nextAt / 1000), masterLabel(settings)));
 			return { reaction: '🙌' };
 		}
 
@@ -503,7 +503,7 @@ export default class extends Module {
 			this.log(`Failed to tell the master a nickname: ${err}`);
 			msg.friend.setPerModulesData(this, { ...msg.friend.getPerModulesData(this), masterNickname: prevUser });
 			this.setData({ ...this.getData(), masterNicknameNotifiedAt: prevNotifiedAt });
-			msg.reply(serifs.core.adanaMasterFailed(item));
+			msg.reply(serifs.core.adanaMasterFailed(item, masterLabel(settings)));
 		});
 
 		return { reaction: '🙌' };
@@ -517,24 +517,25 @@ export default class extends Module {
 
 		// 呼び名にする設定なら、提案ではなく、決まったこととして伝える(伝えない設定でも、呼び名を変えたことはチャットで知らせる)
 		const renamed = settings.updateName;
+		const label = masterLabel(settings);
 
 		switch (settings.notify) {
 			case 'mention': {
 				const mention = `@${master.username}`;
-				const text = renamed ? serifs.core.adanaMasterRenamedMention(mention, from, item) : serifs.core.adanaMasterMention(mention, from, item);
+				const text = renamed ? serifs.core.adanaMasterRenamedMention(mention, from, item, label) : serifs.core.adanaMasterMention(mention, from, item, label);
 				await this.ai.post(this.masterMentionParams(msg, master, text));
 
 				// チャットで頼まれたときは、メンションの投稿が頼んだ人に見えない(ダイレクト投稿)ので、チャットにも返す。
 				// マスターには伝え終わっているので、ここで失敗しても、伝えられなかったことにはしない
 				if (msg.isChat) {
-					await msg.reply(renamed ? serifs.core.adanaMasterRenamedToSender(item) : serifs.core.adanaMasterToSender(item))
+					await msg.reply(renamed ? serifs.core.adanaMasterRenamedToSender(item, label) : serifs.core.adanaMasterToSender(item, label))
 						.catch(err => this.log(`Failed to reply to the requester in chat: ${err}`));
 				}
 				break;
 			}
 			default: {
-				await this.ai.sendMessage(master.id, { text: renamed ? serifs.core.adanaMasterRenamedToMaster(from, item) : serifs.core.adanaMasterToMaster(from, item) });
-				await msg.reply(renamed ? serifs.core.adanaMasterRenamedToSender(item) : serifs.core.adanaMasterToSender(item));
+				await this.ai.sendMessage(master.id, { text: renamed ? serifs.core.adanaMasterRenamedToMaster(from, item, label) : serifs.core.adanaMasterToMaster(from, item, label) });
+				await msg.reply(renamed ? serifs.core.adanaMasterRenamedToSender(item, label) : serifs.core.adanaMasterToSender(item, label));
 				break;
 			}
 		}

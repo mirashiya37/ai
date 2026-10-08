@@ -206,30 +206,30 @@ export default {
 		adanaOtherNo: (target: string) => `わかりました、${target}のあだ名は、またいいのを考えておきますね！`,
 
 		/**
-		 * マスターのあだ名(from は頼んだ人)。呼び名にしない設定のときは提案、呼び名にする設定のときは、決まったこととして伝える。
+		 * マスターのあだ名(from は頼んだ人、label はマスターの呼び方。config.json の masterNicknameNames の先頭)。呼び名にしない設定のときは提案、呼び名にする設定のときは、決まったこととして伝える。
 		 * ほかの人のあだ名と違い、呼び名にする設定なら「いかがでしょうか？」とは聞かない
 		 */
-		adanaMasterMention: (master: string, from: string, item: string) =>
-			`${master} ${from}に頼まれて、マスターのあだ名を考えました！ 「${item}」とかいかがでしょうか？`,
+		adanaMasterMention: (master: string, from: string, item: string, label: string) =>
+			`${master} ${from}に頼まれて、${label}のあだ名を考えました！ 「${item}」とかいかがでしょうか？`,
 
-		adanaMasterToMaster: (from: string, item: string) => `${from}に頼まれて、マスターのあだ名を考えました！ 「${item}」とかいかがでしょうか？`,
+		adanaMasterToMaster: (from: string, item: string, label: string) => `${from}に頼まれて、${label}のあだ名を考えました！ 「${item}」とかいかがでしょうか？`,
 
-		adanaMasterRenamedMention: (master: string, from: string, item: string) =>
-			`${master} ${from}に頼まれて、マスターの呼び名を「${item}」にしました！ 戻すときは「〇〇って呼んで」と言ってくださいね`,
+		adanaMasterRenamedMention: (master: string, from: string, item: string, label: string) =>
+			`${master} ${from}に頼まれて、${label}の呼び名を「${item}」にしました！ 戻すときは「〇〇って呼んで」と言ってくださいね`,
 
-		adanaMasterRenamedToMaster: (from: string, item: string) => `${from}に頼まれて、マスターの呼び名を「${item}」にしました！ 戻すときは「〇〇って呼んで」と言ってくださいね`,
+		adanaMasterRenamedToMaster: (from: string, item: string, label: string) => `${from}に頼まれて、${label}の呼び名を「${item}」にしました！ 戻すときは「〇〇って呼んで」と言ってくださいね`,
 
 		/** マスターに伝え終わったあとの、頼んだ人への返事(チャットで伝えたときも、メンションで伝えたときも同じ) */
-		adanaMasterToSender: (item: string) => `マスターのあだ名は、「${item}」とかどうでしょう？ マスターに伝えておきました！`,
+		adanaMasterToSender: (item: string, label: string) => `${label}のあだ名は、「${item}」とかどうでしょう？ ${label}に伝えておきました！`,
 
-		adanaMasterRenamedToSender: (item: string) => `マスターのあだ名は、「${item}」にしてみました！ マスターにも伝えておきました！`,
+		adanaMasterRenamedToSender: (item: string, label: string) => `${label}のあだ名は、「${item}」にしてみました！ ${label}にも伝えておきました！`,
 
-		adanaMasterLimitDaily: (item: string) => `マスターのあだ名は、「${item}」とかどうでしょう？ ・・・あっ、今日はもう、マスターに伝えたんでした！ また明日、お願いしますね`,
+		adanaMasterLimitDaily: (item: string, label: string) => `${label}のあだ名は、「${item}」とかどうでしょう？ ・・・あっ、今日はもう、${label}に伝えたんでした！ また明日、お願いしますね`,
 
 		/** nextAt は、また伝えられるようになる時刻(Unix 時間、秒)。MFM の unixtime で、見る人の時刻で表示する */
-		adanaMasterLimitInterval: (item: string, nextAt: number) => `マスターのあだ名は、「${item}」とかどうでしょう？ ・・・あっ、マスターには、さっき伝えたばかりでした！ $[unixtime ${nextAt}] からなら、また伝えられます`,
+		adanaMasterLimitInterval: (item: string, nextAt: number, label: string) => `${label}のあだ名は、「${item}」とかどうでしょう？ ・・・あっ、${label}には、さっき伝えたばかりでした！ $[unixtime ${nextAt}] からなら、また伝えられます`,
 
-		adanaMasterFailed: (item: string) => `マスターのあだ名は、「${item}」とかどうでしょう？ ・・・あれ、マスターにうまく伝えられませんでした・・・`,
+		adanaMasterFailed: (item: string, label: string) => `${label}のあだ名は、「${item}」とかどうでしょう？ ・・・あれ、${label}にうまく伝えられませんでした・・・`,
 
 		/** 藍自身のあだ名を考えてと言われたとき(やんわり断る) */
 		adanaForAi: {

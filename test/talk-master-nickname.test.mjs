@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { resolveMasterNicknameSettings, checkMasterNicknameLimit, nextMasterNicknameUserRecord, describeRequester } from '../built/modules/talk/master-nickname.js';
+import { resolveMasterNicknameSettings, checkMasterNicknameLimit, nextMasterNicknameUserRecord, describeRequester, masterLabel } from '../built/modules/talk/master-nickname.js';
 import { parseAdanaTarget } from '../built/modules/talk/nickname.js';
 
 const ROOT = new URL('..', import.meta.url).pathname;
@@ -137,6 +137,29 @@ test('頼んだ人の表示名は、メンション・MFM・URL・絵文字コ�
 	assert.equal(name('   '), '@alice');
 });
 
+test('通知と返事でマスターを呼ぶ言い方は、masterNicknameNames の先頭。無ければ「マスター」', { skip: !hasConfig && 'config.json がない' }, async () => {
+	assert.equal(masterLabel({ names: ['ご主人', 'マスター'] }), 'ご主人');
+	assert.equal(masterLabel({ names: [] }), 'マスター');
+
+	const { mod, ai, calls, serifs, restore } = await setup({ master: 'boss', masterNicknameNames: ['ご主人', 'マスター'], masterNicknameNotify: 'chat', masterNicknameUpdateName: false, masterNicknamePerUserDaily: 0, masterNicknameIntervalHours: 0 });
+	try {
+		const replies = [];
+		mod.adana(message(ai, 'マスターのあだ名', replies));
+		await tick();
+		const item = calls.chats[0].text.match(/「(.+?)」とかいかがでしょうか/)?.[1];
+		assert.equal(calls.chats[0].text, serifs.core.adanaMasterToMaster('@alice', item, 'ご主人'));
+		assert.match(calls.chats[0].text, /^@aliceに頼まれて、ご主人のあだ名を考えました！/);
+		assert.deepEqual(replies, [`ご主人のあだ名は、「${item}」とかどうでしょう？ ご主人に伝えておきました！`]);
+
+		// 制限・失敗のときも同じ言い方
+		const limit = [];
+		ai.sendMessage = async () => { throw new Error('chat failed'); };
+		mod.adana(message(ai, 'ご主人のあだ名', limit));
+		await tick();
+		assert.match(limit[0], /^ご主人のあだ名は、「.+」とかどうでしょう？ ・・・あれ、ご主人にうまく伝えられませんでした・・・$/);
+	} finally { restore(); }
+});
+
 const tick = () => new Promise(r => setTimeout(r, 0));
 
 test('メンション: 頼んだ人の投稿への返信で、マスターにメンションする。呼び名にする設定なら、マスターの呼び名にする', { skip: !hasConfig && 'config.json がない' }, async () => {
@@ -150,7 +173,7 @@ test('メンション: 頼んだ人の投稿への返信で、マスターにメ
 		const post = calls.posts[0];
 		const item = post.text.match(/呼び名を「(.+?)」にしました/)?.[1];
 		assert.ok(item, post.text);
-		assert.deepEqual(post, { replyId: 'note1', text: serifs.core.adanaMasterRenamedMention('@boss', '@alice', item), visibility: 'home', visibleUserIds: undefined });
+		assert.deepEqual(post, { replyId: 'note1', text: serifs.core.adanaMasterRenamedMention('@boss', '@alice', item, 'マスター'), visibility: 'home', visibleUserIds: undefined });
 		assert.ok(!post.text.includes('いかがでしょうか'), '呼び名にするなら、提案の聞き方はしない');
 		assert.deepEqual(replies, [], '返信はメンションの投稿だけ');
 		assert.deepEqual(calls.chats, []);
@@ -185,7 +208,7 @@ test('メンション: チャットで頼まれたら、チャットにも「伝
 		mod.adana(message(ai, 'マスターのあだ名', replies, { isChat: true }));
 		await tick();
 		const item = calls.posts[0].text.match(/「(.+?)」とかいかがでしょうか/)?.[1];
-		assert.deepEqual(replies, [serifs.core.adanaMasterToSender(item)]);
+		assert.deepEqual(replies, [serifs.core.adanaMasterToSender(item, 'マスター')]);
 
 		const notChat = [];
 		mod.adana(message(ai, 'マスターのあだ名', notChat));
@@ -208,7 +231,7 @@ test('メンション: チャットで頼まれ、呼び名にする設定なら
 		mod.adana(message(ai, 'マスターのあだ名', replies, { isChat: true }));
 		await tick();
 		const item = ai.lookupFriend('m1').name;
-		assert.deepEqual(replies, [serifs.core.adanaMasterRenamedToSender(item)]);
+		assert.deepEqual(replies, [serifs.core.adanaMasterRenamedToSender(item, 'マスター')]);
 		assert.equal(calls.posts.length, 1);
 	} finally { restore(); }
 });
@@ -224,8 +247,8 @@ test('チャット: マスターにチャットで伝え、頼んだ人には「
 
 		assert.equal(calls.chats.length, 1);
 		const item = calls.chats[0].text.match(/「(.+?)」とかいかがでしょうか/)?.[1];
-		assert.deepEqual(calls.chats[0], { userId: 'm1', text: serifs.core.adanaMasterToMaster('アリス(@alice)', item) }, '頼んだ人は、表示名とユーザー名で書く(藍が付けた呼び名「ポテト」ではなく)');
-		assert.deepEqual(replies, [serifs.core.adanaMasterToSender(item)]);
+		assert.deepEqual(calls.chats[0], { userId: 'm1', text: serifs.core.adanaMasterToMaster('アリス(@alice)', item, 'マスター') }, '頼んだ人は、表示名とユーザー名で書く(藍が付けた呼び名「ポテト」ではなく)');
+		assert.deepEqual(replies, [serifs.core.adanaMasterToSender(item, 'マスター')]);
 		assert.deepEqual(calls.posts, []);
 	} finally { restore(); }
 });
@@ -237,8 +260,8 @@ test('伝えない設定で呼び名にするなら、マスターにはチャ�
 		mod.adana(message(ai, 'マスターのあだ名', replies));
 		await tick();
 		const item = ai.lookupFriend('m1').name;
-		assert.deepEqual(calls.chats, [{ userId: 'm1', text: serifs.core.adanaMasterRenamedToMaster('@alice', item) }]);
-		assert.deepEqual(replies, [serifs.core.adanaMasterRenamedToSender(item)]);
+		assert.deepEqual(calls.chats, [{ userId: 'm1', text: serifs.core.adanaMasterRenamedToMaster('@alice', item, 'マスター') }]);
+		assert.deepEqual(replies, [serifs.core.adanaMasterRenamedToSender(item, 'マスター')]);
 	} finally { restore(); }
 });
 
@@ -302,8 +325,8 @@ test('呼び名にする設定なら、チャットでも「いかがでしょ�
 		on.mod.adana(message(on.ai, 'マスターのあだ名', replies));
 		await tick();
 		const item = on.ai.lookupFriend('m1').name;
-		assert.deepEqual(on.calls.chats, [{ userId: 'm1', text: on.serifs.core.adanaMasterRenamedToMaster('@alice', item) }]);
-		assert.deepEqual(replies, [on.serifs.core.adanaMasterRenamedToSender(item)]);
+		assert.deepEqual(on.calls.chats, [{ userId: 'm1', text: on.serifs.core.adanaMasterRenamedToMaster('@alice', item, 'マスター') }]);
+		assert.deepEqual(replies, [on.serifs.core.adanaMasterRenamedToSender(item, 'マスター')]);
 		for (const text of [on.calls.chats[0].text, replies[0]]) assert.ok(!/いかがでしょうか|どうでしょう/.test(text), text);
 	} finally { on.restore(); }
 

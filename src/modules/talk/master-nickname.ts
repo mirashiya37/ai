@@ -15,6 +15,14 @@ export type MasterNicknameSettings = {
 	interval: number;
 };
 
+/** 通知や返事で、マスターを呼ぶ言い方の既定(masterNicknameNames が空のとき) */
+const DEFAULT_LABEL = 'マスター';
+
+/** 通知や返事で、マスターを呼ぶ言い方。masterNicknameNames の先頭。無ければ「マスター」 */
+export function masterLabel(settings: Pick<MasterNicknameSettings, 'names'>): string {
+	return settings.names[0] ?? DEFAULT_LABEL;
+}
+
 const DEFAULT_PER_USER_DAILY = 1;
 const DEFAULT_INTERVAL_HOURS = 3;
 
