@@ -173,6 +173,21 @@ test('メンションの公開範囲は、頼まれた投稿と上限の狭い�
 	}
 });
 
+test('マスターに伝える間隔は分で指定する。以前の時間の指定も使える(分があれば分が先)', () => {
+	const interval = config => resolveMasterNicknameSettings({ master: 'm', masterNicknameNotify: 'mention', ...config }).interval;
+	const MINUTE = 60 * 1000;
+	assert.equal(interval({}), 180 * MINUTE, '既定は180分(3時間)');
+	assert.equal(interval({ masterNicknameIntervalMinutes: 30 }), 30 * MINUTE);
+	assert.equal(interval({ masterNicknameIntervalMinutes: '45' }), 45 * MINUTE, '文字列でもよい');
+	assert.equal(interval({ masterNicknameIntervalMinutes: 0 }), 0, '0 は制限しない');
+	assert.equal(interval({ masterNicknameIntervalHours: 2 }), 120 * MINUTE, '以前の時間の指定');
+	assert.equal(interval({ masterNicknameIntervalHours: 0.5 }), 30 * MINUTE);
+	assert.equal(interval({ masterNicknameIntervalMinutes: 10, masterNicknameIntervalHours: 5 }), 10 * MINUTE, '分が先');
+	assert.equal(interval({ masterNicknameIntervalMinutes: 0, masterNicknameIntervalHours: 5 }), 0, '分が 0 なら 0');
+	assert.equal(interval({ masterNicknameIntervalMinutes: -1 }), 180 * MINUTE, '負の数は既定値');
+	assert.equal(interval({ masterNicknameIntervalMinutes: 'abc', masterNicknameIntervalHours: 1 }), 60 * MINUTE, '分が使えない値なら、時間の指定を見る');
+});
+
 test('メンションの公開範囲の上限の設定: 既定は home。知らない値は既定', () => {
 	const visibility = value => resolveMasterNicknameSettings({ master: 'm', masterNicknameNotify: 'mention', masterNicknameMentionVisibility: value }).mentionVisibility;
 	assert.equal(visibility(undefined), 'home');

@@ -30,12 +30,21 @@ export function masterLabel(settings: Pick<MasterNicknameSettings, 'names'>): st
 
 const DEFAULT_MENTION_VISIBILITY: MasterNicknameMentionVisibility = 'home';
 const DEFAULT_PER_USER_DAILY = 1;
-const DEFAULT_INTERVAL_HOURS = 3;
+const DEFAULT_INTERVAL_MINUTES = 180;
 
 /** 0 以上の数か、数を表す文字列なら数にする。それ以外は既定値 */
 function toNumber(value: unknown, fallback: number): number {
 	const n = typeof value === 'string' && value.trim() !== '' ? Number(value) : value;
 	return typeof n === 'number' && Number.isFinite(n) && n >= 0 ? n : fallback;
+}
+
+/**
+ * マスターに伝える間隔(分)。masterNicknameIntervalMinutes を使う。
+ * 以前の masterNicknameIntervalHours(時間)だけが書かれているときは、それを分にして使う
+ */
+function intervalMinutes(config: { masterNicknameIntervalMinutes?: unknown; masterNicknameIntervalHours?: unknown }): number {
+	const hours = toNumber(config.masterNicknameIntervalHours, NaN);
+	return toNumber(config.masterNicknameIntervalMinutes, Number.isNaN(hours) ? DEFAULT_INTERVAL_MINUTES : hours * 60);
 }
 
 /**
@@ -50,6 +59,7 @@ export function resolveMasterNicknameSettings(config: {
 	masterNicknameMentionVisibility?: unknown;
 	masterNicknameUpdateName?: unknown;
 	masterNicknamePerUserDaily?: unknown;
+	masterNicknameIntervalMinutes?: unknown;
 	masterNicknameIntervalHours?: unknown;
 }): MasterNicknameSettings | null {
 	if (!config.master) return null;
@@ -69,7 +79,7 @@ export function resolveMasterNicknameSettings(config: {
 		mentionVisibility: config.masterNicknameMentionVisibility === 'public' || config.masterNicknameMentionVisibility === 'specified' ? config.masterNicknameMentionVisibility : DEFAULT_MENTION_VISIBILITY,
 		updateName,
 		perUserDaily: toNumber(config.masterNicknamePerUserDaily, DEFAULT_PER_USER_DAILY),
-		interval: toNumber(config.masterNicknameIntervalHours, DEFAULT_INTERVAL_HOURS) * 1000 * 60 * 60,
+		interval: intervalMinutes(config) * 1000 * 60,
 	};
 }
 

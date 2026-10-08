@@ -31,6 +31,8 @@ type Config = {
 	masterNicknameMentionVisibility?: 'public' | 'home' | 'specified';
 	masterNicknameUpdateName?: boolean;
 	masterNicknamePerUserDaily?: number | string;
+	masterNicknameIntervalMinutes?: number | string;
+	/** 以前の書き方(時間)。masterNicknameIntervalMinutes があれば、そちらを使う */
 	masterNicknameIntervalHours?: number | string;
 };
 
