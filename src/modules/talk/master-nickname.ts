@@ -28,7 +28,7 @@ export function masterLabel(settings: Pick<MasterNicknameSettings, 'names'>): st
 	return settings.names[0] ?? DEFAULT_LABEL;
 }
 
-const DEFAULT_MENTION_VISIBILITY: MasterNicknameMentionVisibility = 'home';
+const DEFAULT_MENTION_VISIBILITY: MasterNicknameMentionVisibility = 'public';
 const DEFAULT_PER_USER_DAILY = 1;
 const DEFAULT_INTERVAL_MINUTES = 180;
 
@@ -76,7 +76,7 @@ export function resolveMasterNicknameSettings(config: {
 		username: config.master,
 		names,
 		notify,
-		mentionVisibility: config.masterNicknameMentionVisibility === 'public' || config.masterNicknameMentionVisibility === 'specified' ? config.masterNicknameMentionVisibility : DEFAULT_MENTION_VISIBILITY,
+		mentionVisibility: config.masterNicknameMentionVisibility === 'public' || config.masterNicknameMentionVisibility === 'home' || config.masterNicknameMentionVisibility === 'specified' ? config.masterNicknameMentionVisibility : DEFAULT_MENTION_VISIBILITY,
 		updateName,
 		perUserDaily: toNumber(config.masterNicknamePerUserDaily, DEFAULT_PER_USER_DAILY),
 		interval: intervalMinutes(config) * 1000 * 60,

@@ -19,13 +19,13 @@ test('マスターのユーザー名が無いか、伝えず呼び名にもし�
 
 test('設定の既定値と、文字列で書いた数', () => {
 	assert.deepEqual(resolveMasterNicknameSettings({ master: 'm', masterNicknameNotify: 'mention' }), {
-		username: 'm', names: [], notify: 'mention', mentionVisibility: 'home', updateName: false, perUserDaily: 1, interval: 3 * HOUR,
+		username: 'm', names: [], notify: 'mention', mentionVisibility: 'public', updateName: false, perUserDaily: 1, interval: 3 * HOUR,
 	});
 	assert.deepEqual(resolveMasterNicknameSettings({
 		master: 'm', masterNicknameNames: ['マスター', '', 1, 'ご主人'], masterNicknameNotify: 'off', masterNicknameUpdateName: true,
 		masterNicknamePerUserDaily: '2', masterNicknameIntervalHours: '0.5',
 	}), {
-		username: 'm', names: ['マスター', 'ご主人'], notify: 'off', mentionVisibility: 'home', updateName: true, perUserDaily: 2, interval: 0.5 * HOUR,
+		username: 'm', names: ['マスター', 'ご主人'], notify: 'off', mentionVisibility: 'public', updateName: true, perUserDaily: 2, interval: 0.5 * HOUR,
 	}, '伝えなくても、呼び名にするなら使う');
 	assert.equal(resolveMasterNicknameSettings({ master: 'm', masterNicknameNotify: 'chat', masterNicknameIntervalHours: -1 }).interval, 3 * HOUR, '負の数は既定値');
 });
@@ -188,18 +188,18 @@ test('マスターに伝える間隔は分で指定する。以前の時間の�
 	assert.equal(interval({ masterNicknameIntervalMinutes: 'abc', masterNicknameIntervalHours: 1 }), 60 * MINUTE, '分が使えない値なら、時間の指定を見る');
 });
 
-test('メンションの公開範囲の上限の設定: 既定は home。知らない値は既定', () => {
+test('メンションの公開範囲の上限の設定: 既定は public(これまでどおり)。知らない値は既定', () => {
 	const visibility = value => resolveMasterNicknameSettings({ master: 'm', masterNicknameNotify: 'mention', masterNicknameMentionVisibility: value }).mentionVisibility;
-	assert.equal(visibility(undefined), 'home');
+	assert.equal(visibility(undefined), 'public');
 	assert.equal(visibility('public'), 'public');
 	assert.equal(visibility('home'), 'home');
 	assert.equal(visibility('specified'), 'specified');
-	assert.equal(visibility('followers'), 'home', 'followers は選べない(藍がフォローされているとは限らないため)');
-	assert.equal(visibility('unknown'), 'home');
+	assert.equal(visibility('followers'), 'public', 'followers は選べない(藍がフォローされているとは限らないため)');
+	assert.equal(visibility('unknown'), 'public');
 });
 
-test('メンション: 公開で頼まれても、既定ではホームまで。上限を変えると、そのとおりになる', { skip: !hasConfig && 'config.json がない' }, async () => {
-	for (const [cap, expected] of [[undefined, 'home'], ['home', 'home'], ['public', 'public'], ['specified', 'specified']]) {
+test('メンション: 公開で頼まれたら、既定では公開のまま。上限を決めると、そこまでに狭める', { skip: !hasConfig && 'config.json がない' }, async () => {
+	for (const [cap, expected] of [[undefined, 'public'], ['public', 'public'], ['home', 'home'], ['specified', 'specified']]) {
 		const { mod, ai, calls, restore } = await setup({ master: 'boss', masterNicknameNames: ['マスター'], masterNicknameNotify: 'mention', masterNicknameMentionVisibility: cap, masterNicknamePerUserDaily: 0, masterNicknameIntervalHours: 0 });
 		try {
 			mod.adana(message(ai, 'マスターのあだ名', [], { visibility: 'public' }));
