@@ -186,6 +186,17 @@ test('「あだ名はいらない」の言葉: あだ名で呼ばないで・や
 	for (const text of ['あだ名', 'あだ名つけて', 'あだ名を考えて', '田中さんのあだ名は？', '新しいあだ名', 'あだ名ちょうだい']) assert.ok(!hit(text), text);
 });
 
+test('ほかの人の名前は、メンション・MFM・リンク・ハッシュタグにならないようにして返す', () => {
+	for (const text of ['[ここ](https://e.x)さんのあだ名', '?[a](https://e.x)さんのあだ名', '**太字**さんのあだ名', '<center>大</center>さんのあだ名', '$[x4.a]さんのあだ名', '#タグさんのあだ名', 'http://e.x/さんのあだ名', '~~消~~さんのあだ名', '`code`さんのあだ名']) {
+		const target = parseAdanaTarget(text);
+		assert.equal(target.kind, 'other', text);
+		assert.ok(!/[@$<>`*~#:\\[\]()]/.test(target.name), `${text} → ${target.name}`);
+	}
+	assert.deepEqual(parseAdanaTarget('[ここ](https://e.x)さんのあだ名'), { kind: 'other', name: '［ここ］（https：//e.x）さん' });
+	assert.deepEqual(parseAdanaTarget('田中さんのあだ名'), { kind: 'other', name: '田中さん' }, 'ふつうの名前は変わらない');
+	assert.deepEqual(parseAdanaTarget('a_bさんのあだ名'), { kind: 'other', name: 'a_bさん' });
+});
+
 async function setup() {
 	const require = createRequire(ROOT);
 	const loki = require('lokijs');
@@ -467,3 +478,22 @@ test('「あだ名で呼ばないで」には、あだ名を提案せず、待�
 	assert.deepEqual(noName, ['わかりました、あだ名はやめておきますね！'], 'ほかの人の話でも提案しない');
 });
 
+test('提案の返信に失敗しても、未処理のエラーにしない(待ち受けもしない)', { skip: !hasConfig && 'config.json がない' }, async () => {
+	const { mod, subscribed } = await setup();
+	const unhandled = [];
+	const onUnhandled = err => unhandled.push(err);
+	process.on('unhandledRejection', onUnhandled);
+	try {
+		for (const text of ['あだ名', '田中さんのあだ名']) {
+			const msg = message(text, []);
+			msg.reply = async () => { throw new Error('reply failed'); };
+			mod.adana(msg);
+		}
+		const reroll = message('別の', []);
+		reroll.reply = async () => { throw new Error('reply failed'); };
+		await mod.contextHook('u1', reroll, { name: '前のやつ', seen: ['前のやつ'], rerolls: 0 });
+		await new Promise(r => setTimeout(r, 10));
+		assert.deepEqual(unhandled, []);
+		assert.deepEqual(subscribed, []);
+	} finally { process.off('unhandledRejection', onUnhandled); }
+});

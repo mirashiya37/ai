@@ -1,3 +1,5 @@
+import { neutralizeMfm } from '@/utils/neutralize-mfm.js';
+
 /** マスターのあだ名を伝える方法。off なら伝えない */
 export type MasterNicknameNotify = 'off' | 'mention' | 'chat';
 
@@ -155,10 +157,7 @@ const MAX_DISPLAY_NAME_LENGTH = 20;
 export function describeRequester(user: { username: string; host?: string | null; name?: string | null }): string {
 	const acct = user.host ? `@${user.username}@${user.host}` : `@${user.username}`;
 
-	const chars = [...(user.name ?? '')
-		.replace(/:[\w@.-]+:/g, '')
-		.replace(/\p{Cc}/gu, ' ')
-		.replace(/[@$<>`*~#:\\[\]()]/g, c => String.fromCharCode(c.charCodeAt(0) + 0xFEE0))
+	const chars = [...neutralizeMfm((user.name ?? '').replace(/:[\w@.-]+:/g, ''))
 		.replace(/\s+/g, ' ')
 		.trim()];
 	if (chars.length === 0 || chars.join('').toLowerCase() === user.username.toLowerCase()) return acct;

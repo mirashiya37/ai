@@ -477,7 +477,7 @@ export default class extends Module {
 				...data,
 				at: Date.now(),
 			});
-		});
+		}).catch(err => this.log(`Failed to propose a nickname: ${err}`));
 	}
 
 	/** 藍自身のあだ名は、やんわり断る */
@@ -555,12 +555,8 @@ export default class extends Module {
 	 * (マスターには届いているのに、回数の記録を戻して「伝えられませんでした」と答えると、何度でも頼めてしまうため)
 	 */
 	private async tellMaster(msg: Message, settings: MasterNicknameSettings, item: string) {
-		const master: any = await this.ai.api('users/show', { username: settings.username });
 		// 藍が付けた呼び名はマスターには分からないので、表示名とユーザー名で示す
 		const from = describeRequester(msg.user);
-
-		// 呼び名にする設定なら、提案ではなく、決まったこととして伝える(伝えない設定でも、呼び名を変えたことはチャットで知らせる)
-		const renamed = settings.updateName;
 		const label = masterLabel(settings);
 
 		// 表示名を変える設定なら、マスターへの連絡は、そちら(承認の問いかけ、または変えたことの知らせ)にまとめる。
@@ -570,6 +566,10 @@ export default class extends Module {
 			const result = await nickname.requestRename(msg, item, from, label);
 			if (result !== 'busy') return;
 		}
+
+		const master: any = await this.ai.api('users/show', { username: settings.username });
+		// 呼び名にする設定なら、提案ではなく、決まったこととして伝える(伝えない設定でも、呼び名を変えたことはチャットで知らせる)
+		const renamed = settings.updateName;
 
 		if (settings.notify === 'mention') {
 			const mention = `@${master.username}`;
@@ -622,8 +622,10 @@ export default class extends Module {
 		if (msg.text == null) return;
 
 		// チャットは返信先の投稿が無く、この人の次の発言がすべて返事になる。
-		// 時間がたったものと、文の頭に返事の言葉が無いもの(「別の話だけど」など)は、返事とみなさない
-		if (msg.isChat && (isChatReplyExpired(data.at, Date.now()) || !startsWithReplyWord(msg.text))) {
+		// 時間がたったものと、文の頭に返事の言葉が無いもの(「別の話だけど」など)は、返事とみなさない。
+		// マスターが表示名の変更の承認を求められているときは、「はい」「いいえ」をそちらの返事にする(masterNickname モジュールが受け取る)
+		if (msg.isChat && (isChatReplyExpired(data.at, Date.now()) || !startsWithReplyWord(msg.text)
+			|| (isMaster(msg.user, config.master) && this.masterNicknameModule()?.awaitingApproval()))) {
 			this.unsubscribeReply(key);
 			return false;
 		}

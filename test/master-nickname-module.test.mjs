@@ -133,7 +133,7 @@ test('コマンドは、マスター本人だけ。ほかの人のものは無�
 test('設定のコマンド: config.json より優先し、reset で戻す', { skip: !hasConfig && 'config.json がない' }, async () => {
 	const { nickname, ai, restore } = await setup({ masterNicknameNotify: 'mention' });
 	try {
-		const run = async text => { const replies = []; assert.equal(await nickname.mentionHook(message(ai, text, replies, { isChat: false })), true, text); return replies[0]; };
+		const run = async text => { const replies = []; assert.equal(await nickname.mentionHook(message(ai, text, replies)), true, text); return replies[0]; };
 		assert.equal(nickname.settings().notify, 'mention');
 
 		assert.equal(await run('/nickname notify chat'), '伝え方を chat にしました');
@@ -166,13 +166,16 @@ test('設定のコマンド: config.json より優先し、reset で戻す', { s
 	} finally { restore(); }
 });
 
-test('表示名の変更のコマンドは、チャットだけ。config.json で使えるようにしていなければ、使えない', { skip: !hasConfig && 'config.json がない' }, async () => {
+test('コマンドは、どれもチャットだけ(投稿への返信は公開になることがある)。config.json で使えるようにしていなければ、表示名の変更は使えない', { skip: !hasConfig && 'config.json がない' }, async () => {
 	{
 		const { nickname, ai, restore } = await setup();
 		try {
-			const replies = [];
-			await nickname.mentionHook(message(ai, '/nickname rename setup', replies, { isChat: false }));
-			assert.deepEqual(replies, ['表示名の変更のコマンドは、チャットで送ってください']);
+			for (const text of ['/nickname status', '/nickname off', '/nickname rename setup', '/nickname']) {
+				const replies = [];
+				assert.equal(await nickname.mentionHook(message(ai, text, replies, { isChat: false })), true, text);
+				assert.deepEqual(replies, ['/nickname のコマンドは、チャットで送ってください'], text);
+			}
+			assert.notEqual(nickname.settings(), null, '投稿で送った off は効かない');
 		} finally { restore(); }
 	}
 	{
@@ -395,4 +398,73 @@ test('MiAuth: 許可の URL を返し、5秒おきに受け取りを試みる。
 		mock.timers.tick(10 * 60 * 1000 + 5000); await tick();
 		assert.match(late.at(-1), /^許可を待つのをやめました/);
 	} finally { mock.timers.reset(); restore(); }
+});
+
+test('承認: ほぼ同時に頼まれても、マスターに聞くのは1回だけ(2件目は通常の連絡)。聞けなかったら、承認待ちにしない', { skip: !hasConfig && 'config.json がない' }, async () => {
+	const { nickname, ai, state, restore } = await setup();
+	try {
+		await turnOn(nickname, ai);
+		state.chats.length = 0;
+		const results = await Promise.all([
+			nickname.requestRename(message(ai, '', [], { user: ALICE, isChat: false }), 'ひとつめ', '@alice', 'ご主人'),
+			nickname.requestRename(message(ai, '', [], { user: ALICE, isChat: false }), 'ふたつめ', '@alice', 'ご主人'),
+		]);
+		assert.deepEqual(results.sort(), ['asked', 'busy']);
+		assert.equal(state.chats.length, 1, '聞くのは1回');
+		assert.equal(nickname.rename().pending.item, state.chats[0].text.match(/表示名を「(.+?)」に/)[1], '聞いたあだ名と、承認待ちのあだ名が同じ');
+
+		nickname.updateRename({ pending: null });
+		state.failChat = true;
+		await assert.rejects(nickname.requestRename(message(ai, '', [], { user: ALICE, isChat: false }), 'みっつめ', '@alice', 'ご主人'));
+		assert.equal(nickname.rename().pending, null, '聞けなかったら、承認待ちにしない(次の依頼で、また聞ける)');
+	} finally { restore(); }
+});
+
+test('承認待ちのとき、マスターのチャットの「はい」は、あだ名の提案(talk の待ち受け)より、承認の返事を優先する', { skip: !hasConfig && 'config.json がない' }, async () => {
+	const { nickname, talk, ai, state, restore } = await setup();
+	try {
+		await turnOn(nickname, ai);
+		ai.modules[1].adana(message(ai, 'ご主人のあだ名', [], { user: ALICE, isChat: false }));
+		await tick(); await tick();
+		assert.equal(nickname.awaitingApproval(), true);
+
+		// マスターは、自分のあだ名の提案(チャット)も待っている
+		const unsubscribed = [];
+		Object.defineProperty(talk, 'unsubscribeReply', { value: key => unsubscribed.push(key), configurable: true });
+		const yes = message(ai, 'はい', []);
+		assert.equal(await talk.contextHook('m1', yes, { name: '自分のあだ名', seen: ['自分のあだ名'], rerolls: 0, at: Date.now() }), false, 'talk は受け取らない');
+		assert.deepEqual(unsubscribed, ['m1']);
+		assert.equal(ai.lookupFriend('m1').name, undefined, '藍の中の呼び名は変えない');
+
+		const answer = [];
+		assert.equal(await nickname.mentionHook(message(ai, 'はい', answer)), true, '承認の返事として受け取る');
+		assert.notEqual(state.name, 'ボス');
+	} finally { restore(); }
+});
+
+test('表示名を変える流れでは、マスターのユーザー情報(users/show)を取らない(使わないうえ、失敗すると止まってしまうため)', { skip: !hasConfig && 'config.json がない' }, async () => {
+	const { nickname, ai, state, restore } = await setup();
+	try {
+		await turnOn(nickname, ai, 'immediate');
+		const api = ai.api;
+		const calls = [];
+		ai.api = async (endpoint, param) => { calls.push(endpoint); if (endpoint === 'users/show') throw new Error('users/show failed'); return api(endpoint, param); };
+		const requester = [];
+		ai.modules[1].adana(message(ai, 'ご主人のあだ名', requester, { user: ALICE, isChat: false }));
+		await tick(); await tick(); await tick();
+		assert.notEqual(state.name, 'ボス', '表示名は変わる');
+		assert.deepEqual(calls, []);
+		assert.match(requester[0], /表示名も変えておきました/);
+	} finally { restore(); }
+});
+
+test('新しい許可を受け取ったら、前の許可を Misskey で取り消すように案内する', { skip: !hasConfig && 'config.json がない' }, async () => {
+	const { nickname, ai, restore } = await setup();
+	try {
+		const first = await withToken(nickname, ai);
+		assert.ok(!first[0].includes('前の許可'));
+		const replies = [];
+		await nickname.receiveToken(message(ai, '', replies), 'TOKEN2');
+		assert.match(replies[0], /前の許可は、もう使いません。Misskey の設定の「連携」/);
+	} finally { restore(); }
 });

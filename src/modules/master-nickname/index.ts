@@ -115,6 +115,15 @@ export default class extends Module {
 		return now - pending.at <= this.approvalMinutes() * 60 * 1000;
 	}
 
+	/**
+	 * マスターに、表示名の変更の承認を求めているか(期限切れのものも含む。期限切れの返事には「取り消しました」と答えるため)。
+	 * talk モジュールは、これが true のとき、マスターのチャットの「はい」「いいえ」を、あだ名の提案への返事にしない
+	 */
+	@bindThis
+	public awaitingApproval(): boolean {
+		return this.rename().pending != null;
+	}
+
 	//#endregion
 
 	//#region Misskey とのやりとり(テストでは差し替える)
@@ -223,10 +232,13 @@ export default class extends Module {
 
 	/** 受け取ったトークンを確かめて、使えるなら残す */
 	private async receiveToken(msg: Message, token: string) {
+		// 前の許可は、API では取り消せない(Misskey の設定画面だけ)ので、取り消すように案内する
+		const replaced = this.rename().token != null && this.rename().token !== token;
 		this.updateRename({ token, userId: undefined, lastProblem: undefined });
 		const result = await this.verifyToken();
 		if (result.ok) {
-			msg.reply('許可を受け取りました。/nickname rename on で、表示名の変更をオンにできます', { immediate: true });
+			msg.reply('許可を受け取りました。/nickname rename on で、表示名の変更をオンにできます'
+				+ (replaced ? '\n前の許可は、もう使いません。Misskey の設定の「連携」(アクセストークン)から、取り消してください' : ''), { immediate: true });
 		} else {
 			this.updateRename({ token: undefined, on: false });
 			this.tokenState = { state: 'none' };
@@ -278,8 +290,15 @@ export default class extends Module {
 			const pending = this.rename().pending;
 			if (pending != null && this.isPendingAlive(pending)) return 'busy';
 
-			await this.ai.sendMessage(await this.masterUserId(), { text: serifs.core.adanaMasterRenameAsk(from, item, label, this.approvalMinutes()) });
-			this.updateRename({ pending: { item, from, at: Date.now() } });
+			// 同時に頼まれても2回聞かないように、聞く前に承認待ちにする。聞けなかったら元に戻す
+			const reserved: PendingRename = { item, from, at: Date.now() };
+			this.updateRename({ pending: reserved });
+			try {
+				await this.ai.sendMessage(await this.masterUserId(), { text: serifs.core.adanaMasterRenameAsk(from, item, label, this.approvalMinutes()) });
+			} catch (err) {
+				if (this.rename().pending?.at === reserved.at) this.updateRename({ pending: null });
+				throw err;
+			}
 			await msg.reply(serifs.core.adanaMasterRenameAskedToSender(item, label)).catch(err => this.log(`Failed to reply to the requester: ${err}`));
 			return 'asked';
 		}
@@ -338,9 +357,9 @@ export default class extends Module {
 	private async runCommand(msg: Message, command: NicknameCommand) {
 		const reply = (text: string) => msg.reply(text, { immediate: true });
 
-		// 表示名の変更は、許可の URL などを含むので、チャットだけで受け付ける
-		if ((command.type === 'rename' || command.type === 'renameMode') && !msg.isChat) {
-			reply('表示名の変更のコマンドは、チャットで送ってください');
+		// 設定や承認待ちのあだ名、許可の URL などを含むので、チャットだけで受け付ける(投稿への返信は、公開になることがある)
+		if (!msg.isChat) {
+			reply('/nickname のコマンドは、チャットで送ってください');
 			return;
 		}
 

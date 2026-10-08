@@ -19,6 +19,7 @@ export type NicknameCommand =
 
 /** コマンドの書き方(help で返す) */
 export const NICKNAME_HELP = [
+	'マスターのあだ名のコマンド(チャットで送ってください)',
 	'/nickname status: 今の設定',
 	'/nickname on | off: マスターのあだ名を使うか',
 	'/nickname notify off | mention | chat: 伝え方',
@@ -27,12 +28,12 @@ export const NICKNAME_HELP = [
 	'/nickname daily <回数>: 同じ人が1日に頼める回数(0 で制限しない)',
 	'/nickname interval <分>: マスターに伝える間隔(0 で制限しない)',
 	'/nickname reset: コマンドで変えた設定を消して、config.json の値に戻す',
-	'/nickname rename on | off: 表示名を変えるか(チャットだけ)',
-	'/nickname rename mode approval | immediate: 承認してから変えるか、すぐ変えるか(チャットだけ)',
-	'/nickname rename setup: 表示名を変えるための許可の URL を出す(チャットだけ)',
-	'/nickname rename check: 許可(トークン)をもう一度確かめる(チャットだけ)',
-	'/nickname rename revert: 表示名を、変える前の名前に戻す(チャットだけ)',
-	'/nickname rename forget: 許可(トークン)を消す(チャットだけ)',
+	'/nickname rename on | off: 表示名を変えるか',
+	'/nickname rename mode approval | immediate: 承認してから変えるか、すぐ変えるか',
+	'/nickname rename setup: 表示名を変えるための許可の URL を出す',
+	'/nickname rename check: 許可(トークン)をもう一度確かめる',
+	'/nickname rename revert: 表示名を、変える前の名前に戻す',
+	'/nickname rename forget: 許可(トークン)を消す',
 ].join('\n');
 
 const ON_OFF: Record<string, boolean> = { on: true, off: false };

@@ -1,4 +1,5 @@
 import { safeForInterpolate } from '@/utils/safe-for-interpolate.js';
+import { neutralizeMfm } from '@/utils/neutralize-mfm.js';
 import { katakanaToHiragana, hiraganaToKatagana, hankakuToZenkaku } from '@/utils/japanese.js';
 
 /** 呼び名にできる最大の長さ(core の「〇〇って呼んで」と同じ) */
@@ -151,6 +152,7 @@ export type AdanaMasterNames = {
  * - master を渡したとき、〇〇がマスターの名前(敬称は問わない)か「@マスター」(このサーバーのユーザー): master
  * - それ以外(「あだ名」「わたしのあだ名」「田中のあだ名」など): 送った本人(self)
  * 一人称は「〇〇さん」にならないので、見分けるリストは要らない。
+ * ほかの人(other)の name は、返信にそのまま入るので、メンション・MFM・リンクにならないようにしてある(neutralizeMfm)。
  */
 export function parseAdanaTarget(text: string, options: AdanaTargetOptions = {}): AdanaTarget {
 	const { master, otherNames = [], sender, ai: aiAccount } = options;
@@ -160,13 +162,13 @@ export function parseAdanaTarget(text: string, options: AdanaTargetOptions = {})
 	if (sender != null && isSenderTarget(target, sender)) return { kind: 'self' };
 
 	if (master != null && isMasterTarget(target, master)) return { kind: 'master' };
-	if (!target.mention && (otherNames.includes(target.name) || otherNames.includes(target.base))) return { kind: 'other', name: target.name };
+	if (!target.mention && (otherNames.includes(target.name) || otherNames.includes(target.base))) return { kind: 'other', name: neutralizeMfm(target.name) };
 
 	if (SECOND_PERSON.includes(target.base)) return { kind: 'ai' };
 	if (!target.honorific && !target.mention) return { kind: 'self' };
 	if (isAiTarget(target, aiAccount)) return { kind: 'ai' };
 	// 「@bob のあだ名」は「bobさんのあだ名は…」と返す(呼び捨てにしない)
-	return { kind: 'other', name: target.mention && !target.honorific ? `${target.name}さん` : target.name };
+	return { kind: 'other', name: neutralizeMfm(target.mention && !target.honorific ? `${target.name}さん` : target.name) };
 }
 
 /** parseAdanaTarget() に渡す、誰のあだ名かを見分けるための情報 */
