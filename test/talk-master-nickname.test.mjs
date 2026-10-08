@@ -54,7 +54,7 @@ test('マスターの名前は敬称を問わず、「@マスター」はこの�
 	for (const text of ['マスターのあだ名', 'マスターさんのあだ名', 'ねえ、ご主人様のあだ名考えて', '@boss のあだ名', '@Boss のあだ名', '@boss@example.com のあだ名']) {
 		assert.deepEqual(parseAdanaTarget(text, master), { kind: 'master' }, text);
 	}
-	assert.deepEqual(parseAdanaTarget('@boss@other.example のあだ名', master), { kind: 'other', name: 'boss' }, 'ほかのサーバーの同じユーザー名');
+	assert.deepEqual(parseAdanaTarget('@boss@other.example のあだ名', master), { kind: 'other', name: 'bossさん' }, 'ほかのサーバーの同じユーザー名');
 	assert.deepEqual(parseAdanaTarget('田中さんのあだ名', master), { kind: 'other', name: '田中さん' });
 	assert.deepEqual(parseAdanaTarget('わたしのあだ名', master), { kind: 'self' });
 	assert.deepEqual(parseAdanaTarget('マスターのあだ名'), { kind: 'self' }, '使わない設定なら、敬称が無いので本人');

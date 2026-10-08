@@ -71,7 +71,7 @@ test('「あだ名」がカタカナでも、〇〇を取り出す(反応の判�
 	assert.deepEqual(parseAdanaTarget('田中さんのアダナ'), other('田中さん'));
 	assert.deepEqual(parseAdanaTarget('田中さんのアダ名'), other('田中さん'));
 	assert.deepEqual(parseAdanaTarget('田中さんのあだニャ'), other('田中さん'));
-	assert.deepEqual(parseAdanaTarget('@bob のアダナ'), other('bob'));
+	assert.deepEqual(parseAdanaTarget('@bob のアダナ'), other('bobさん'));
 });
 
 test('マスターのあだ名を使わないとき、マスターの名前は、送った本人のあだ名にせず、ほかの人にする', () => {
@@ -81,7 +81,7 @@ test('マスターのあだ名を使わないとき、マスターの名前は�
 	assert.deepEqual(parseAdanaTarget('ご主人様のあだ名', undefined, names), { kind: 'other', name: 'ご主人様' });
 	assert.deepEqual(parseAdanaTarget('田中のあだ名', undefined, names), { kind: 'self' });
 	assert.deepEqual(parseAdanaTarget('マスターのあだ名'), { kind: 'self' }, '名前を渡さなければ、これまでどおり');
-	assert.deepEqual(parseAdanaTarget('@ご主人 のあだ名', undefined, names), { kind: 'other', name: 'ご主人' });
+	assert.deepEqual(parseAdanaTarget('@ご主人 のあだ名', undefined, names), { kind: 'other', name: 'ご主人さん' });
 });
 
 test('「はい」「いいえ」の言葉: いいね・OK・気に入ったは承諾、いや・いやですは断り', () => {
@@ -115,9 +115,9 @@ test('藍のあだ名: 二人称は敬称が無くても、藍の名前は敬称
 });
 
 test('メンションは、敬称が無くても、ほかの人。「@」とサーバーの部分を外す(返信で通知が届かないようにする)', () => {
-	assert.deepEqual(parseAdanaTarget('@bob のあだ名'), { kind: 'other', name: 'bob' });
-	assert.deepEqual(parseAdanaTarget('@bob@misskey.example のあだ名'), { kind: 'other', name: 'bob' });
-	assert.deepEqual(parseAdanaTarget('@bobのあだ名'), { kind: 'other', name: 'bob' });
+	assert.deepEqual(parseAdanaTarget('@bob のあだ名'), { kind: 'other', name: 'bobさん' });
+	assert.deepEqual(parseAdanaTarget('@bob@misskey.example のあだ名'), { kind: 'other', name: 'bobさん' });
+	assert.deepEqual(parseAdanaTarget('@bobのあだ名'), { kind: 'other', name: 'bobさん' });
 });
 
 test('〇〇の前の呼びかけ(ねえ・ところで)と、一人称の「の」は、名前に含めない', () => {
@@ -150,13 +150,21 @@ test('自分へのメンションは、本人のあだ名。サーバーが違�
 	const sender = { username: 'alice', host: null, localHost: 'misskey.example' };
 	const parse = text => parseAdanaTarget(text, undefined, [], sender);
 	for (const text of ['@alice のあだ名', '@Alice のあだ名', '@alice さんのあだ名', '@alice@misskey.example のあだ名']) assert.deepEqual(parse(text), { kind: 'self' }, text);
-	assert.deepEqual(parse('@alice@remote.example のあだ名'), { kind: 'other', name: 'alice' });
-	assert.deepEqual(parse('@bob のあだ名'), { kind: 'other', name: 'bob' });
+	assert.deepEqual(parse('@alice@remote.example のあだ名'), { kind: 'other', name: 'aliceさん' });
+	assert.deepEqual(parse('@bob のあだ名'), { kind: 'other', name: 'bobさん' });
 
 	const remote = { username: 'alice', host: 'remote.example', localHost: 'misskey.example' };
 	assert.deepEqual(parseAdanaTarget('@alice@remote.example のあだ名', undefined, [], remote), { kind: 'self' });
-	assert.deepEqual(parseAdanaTarget('@alice のあだ名', undefined, [], remote), { kind: 'other', name: 'alice' }, 'このサーバーの alice は別の人');
-	assert.deepEqual(parseAdanaTarget('@alice のあだ名'), { kind: 'other', name: 'alice' }, '送った人を渡さなければ、これまでどおり');
+	assert.deepEqual(parseAdanaTarget('@alice のあだ名', undefined, [], remote), { kind: 'other', name: 'aliceさん' }, 'このサーバーの alice は別の人');
+	assert.deepEqual(parseAdanaTarget('@alice のあだ名'), { kind: 'other', name: 'aliceさん' }, '送った人を渡さなければ、これまでどおり');
+});
+
+test('メンションは、敬称が無ければ「さん」を付けた名前で返す(呼び捨てにしない)。敬称が付いていれば、そのまま', () => {
+	assert.deepEqual(parseAdanaTarget('@bob のあだ名'), { kind: 'other', name: 'bobさん' });
+	assert.deepEqual(parseAdanaTarget('@bob@remote.example のあだ名'), { kind: 'other', name: 'bobさん' });
+	assert.deepEqual(parseAdanaTarget('@bobちゃんのあだ名'), { kind: 'other', name: 'bobちゃん' });
+	assert.deepEqual(parseAdanaTarget('@bob さんのあだ名'), { kind: 'other', name: 'bobさん' }, '二重にしない');
+	assert.deepEqual(parseAdanaTarget('田中さんのあだ名'), { kind: 'other', name: '田中さん' });
 });
 
 async function setup() {
@@ -326,10 +334,10 @@ test('ほかの人のあだ名は、その人のあだ名として提案し、�
 
 	const proposed = replies[0].match(/「(.+)」とかいかがでしょうか/)?.[1];
 	assert.ok(proposed, replies[0]);
-	assert.equal(replies[0], serifs.core.adanaOther('bob', proposed));
+	assert.equal(replies[0], serifs.core.adanaOther('bobさん', proposed));
 	assert.ok(!replies[0].includes('テスト'), '送った本人の呼び名では呼ばない');
 	assert.ok(!replies[0].includes('@'), 'メンションを書かない');
-	assert.deepEqual(withoutAt(subscribed[0].data), { name: proposed, seen: [proposed], rerolls: 0, target: 'bob' });
+	assert.deepEqual(withoutAt(subscribed[0].data), { name: proposed, seen: [proposed], rerolls: 0, target: 'bobさん' });
 });
 
 test('ほかの人のあだ名に「はい」と言われても、送った本人の呼び名は変えない。引き直しでは誰のものかを引き継ぐ', { skip: !hasConfig && 'config.json がない' }, async () => {

@@ -157,7 +157,8 @@ export function parseAdanaTarget(text: string, master?: AdanaMasterNames, otherN
 	if (SECOND_PERSON.includes(target.base)) return { kind: 'ai' };
 	if (!target.honorific && !target.mention) return { kind: 'self' };
 	if (AI_NAMES.includes(target.base.toLowerCase())) return { kind: 'ai' };
-	return { kind: 'other', name: target.name };
+	// 「@bob のあだ名」は「bobさんのあだ名は…」と返す(呼び捨てにしない)
+	return { kind: 'other', name: target.mention && !target.honorific ? `${target.name}さん` : target.name };
 }
 
 /** 送った人。自分へのメンションを見分ける */
