@@ -61,7 +61,7 @@
 |---|---|---|
 | `masterNicknameNames` | `[]` | 「〇〇のあだ名」の〇〇がこれならマスターとみなす名前(文字列の配列。複数可。敬称は付いても付かなくてもよい)。`@<master>`(このサーバーのユーザー)は、書かなくてもマスター。**先頭の名前は、マスターへの通知や頼んだ人への返事で、マスターを呼ぶ言い方にも使う**(空なら「マスター」) |
 | `masterNicknameNotify` | `off` | 伝え方。`off`(提案は伝えない。ただし、呼び名にする設定(`masterNicknameUpdateName`)のときは、`chat` と同じく、呼び名を変えたことをチャットで知らせる)、`mention`(メンション)、`chat`(チャット) |
-| `masterNicknameMentionVisibility` | `home` | `mention` のとき、マスターへのメンションの公開範囲の上限。`public`、`home`、`specified`(頼んだ人とマスターだけのダイレクト)。頼まれた投稿がこれより広くても、ここまでに狭める。フォロワー限定で頼まれたときは、いつもダイレクト |
+| `masterNicknameMentionVisibility` | `public` | `mention` のとき、マスターへのメンションの公開範囲の上限。`public`、`home`、`specified`(頼んだ人とマスターだけのダイレクト)。頼まれた投稿がこれより広くても、ここまでに狭める。フォロワー限定で頼まれたときは、いつもダイレクト |
 | `masterNicknameUpdateName` | `false` | `true` で、考えたあだ名を、マスターの呼び名にする |
 | `masterNicknamePerUserDaily` | `1` | 同じ人が1日(日本時間の0時区切り)に頼める回数。`0` で制限しない |
 | `masterNicknameIntervalMinutes` | `180` | マスターに伝える間隔(**分**)。誰からの依頼でもまとめて数える。`0` で制限しない |

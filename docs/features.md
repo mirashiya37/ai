@@ -228,7 +228,7 @@ upstream(`syuilo/ai`)に対して、このフォークで追加・変更した�
 // config.json
 "masterNicknameNames": ["マスター", "<マスターの呼び名>"], // 〇〇がこれならマスター(複数可。敬称は付いても付かなくてもよい)
 "masterNicknameNotify": "mention",  // 伝え方: "off"(既定。呼び名にする設定なら、変えたことをチャットで知らせる)| "mention" | "chat"
-"masterNicknameMentionVisibility": "home", // mention のときの公開範囲の上限: "public" | "home"(既定)| "specified"
+"masterNicknameMentionVisibility": "home", // mention のときの公開範囲の上限: "public"(既定。頼まれた投稿のまま)| "home" | "specified"
 "masterNicknameUpdateName": true,    // 考えたあだ名を、マスターの呼び名にするか(既定 false)
 "masterNicknamePerUserDaily": 1,     // 同じ人が1日に頼める回数(既定 1。0 なら制限しない)
 "masterNicknameIntervalMinutes": 180 // マスターに伝える間隔(分。既定 180。0 なら制限しない。以前の masterNicknameIntervalHours(時間)も、分が無ければ使える)
@@ -241,7 +241,7 @@ upstream(`syuilo/ai`)に対して、このフォークで追加・変更した�
 - 提案したら、すぐに伝える(返事は待ち受けない。引き直しもない)。
 - 伝え方:
   - `mention`: 頼んだ人の投稿への返信で、マスターにメンションする。公開範囲は、普段の返信と同じく頼んだ人の投稿に合わせるが、
-    **`masterNicknameMentionVisibility`(既定 `home`)より広くはしない**(誰でも、マスターへの公開メンションを藍に出させられないようにするため)。
+    **`masterNicknameMentionVisibility`(既定は `public` で、上限なし)より広くはしない**(公開で頼まれても、マスターへの公開メンションを出さないようにしたいときは、`home` か `specified` にする)。
     フォロワー限定・ダイレクトなら、頼んだ人とマスターだけのダイレクト投稿にする。チャットで頼まれたときも、チャットの内容が公開されないように、2人だけのダイレクト投稿にする。
     チャットで頼まれたときは、そのダイレクト投稿が頼んだ人のチャットには出ないので、チャットにも「マスターに伝えておきました！」と返す(呼び名にする設定なら「にしてみました！ マスターにも伝えておきました！」)。
     このチャットの返事が失敗しても、マスターには伝え終わっているので、伝えられなかったことにはしない(回数の記録も戻さない)。
@@ -258,7 +258,9 @@ upstream(`syuilo/ai`)に対して、このフォークで追加・変更した�
 - 荒らし対策: 同じ人は1日(日本時間の0時で区切る)に `masterNicknamePerUserDaily` 回まで。マスターに伝えるのは、誰からの依頼かに関わらず、`masterNicknameIntervalMinutes` 分に1回まで。
   制限にかかったときも、あだ名は考えて返し、「今日はもう伝えたんでした！ また明日」「さっき伝えたばかりでした！ 〇〇からなら、また伝えられます」と添える。
   次に伝えられる時刻は、MFM の `$[unixtime …]` で書く(見る人の時刻で表示される)。
-- 制限の記録は、伝える前に残し、伝えられなかったときは元に戻す(同時に頼まれても、制限を超えないため)。頼んだ人の回数は、その人の記録(talk モジュールの `masterNickname`)、
+- 制限の記録は、伝える前に残し、**マスターに伝えられなかったときだけ**元に戻す(同時に頼まれても、制限を超えないため)。そのときは「うまく伝えられませんでした」と答える。
+  マスターに伝え終わったあとの、呼び名の変更と、頼んだ人への返事が失敗しても、伝えられなかったことにはしない(ログに残すだけ。記録も戻さない)。
+  戻すと、マスターには届いているのに、何度でも頼めてしまうため。呼び名の変更は、頼んだ人への返事より先に行う。頼んだ人の回数は、その人の記録(talk モジュールの `masterNickname`)、
   最後に伝えた時刻は、talk モジュールのデータ(`masterNicknameNotifiedAt`)に置く。
 - 実装は `src/modules/talk/master-nickname.ts`(設定の解釈と制限の判定)と、`talk/index.ts` の `adanaForMaster()`。
 
