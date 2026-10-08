@@ -54,7 +54,7 @@
 
 ## マスターのあだ名(独自機能)
 
-「マスターのあだ名」と頼まれたときの動作を決める。**既定はオフ**。動作の詳細は [features.md](features.md) の「マスターのあだ名」。
+「マスターのあだ名」と頼まれたときの動作を決める。**既定はオフ**。動作の詳細は [nickname.md](nickname.md) の「マスターのあだ名」。
 `master` が無いか、伝え方が `off` で呼び名にもしないときは、使わない。
 
 | 項目 | 既定 | 内容 |
@@ -70,8 +70,8 @@
 | `masterRenameMode` | `approval` | 表示名を変える方式。`approval`(マスターが承認してから)、`immediate`(すぐ) |
 | `masterRenameApprovalMinutes` | `60` | 承認を待つ時間(分) |
 
-`masterNickname…` と `masterRename…` の多くは、マスターがチャットかメンションの `/nickname` コマンドで変えられる。コマンドで変えた値は、`config.json` より優先する
-(`/nickname reset` で、`config.json` の値に戻る)。詳しくは [features.md](features.md) の「マスターのあだ名」。
+`masterNickname…` と `masterRename…` の多くは、マスターがチャットの `/nickname` コマンドで変えられる。コマンドで変えた値は、`config.json` より優先する
+(`/nickname reset` で、`config.json` の値に戻る)。詳しくは [nickname.md](nickname.md) の「マスターのあだ名」。
 
 ## 書き方の例(接続先などは仮の値)
 

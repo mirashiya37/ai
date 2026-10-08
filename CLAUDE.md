@@ -4,7 +4,7 @@
 バージョンの付け方は [docs/versioning.md](docs/versioning.md)、
 形態素解析(MeCab / Sudachi)の切り替えは [docs/morph-analyzer.md](docs/morph-analyzer.md) を参照。
 `config.json` の項目は [docs/config.md](docs/config.md)(**項目を足したら、ここも更新する**)。
-独自機能の一覧は [docs/features.md](docs/features.md)、バージョンごとの変更は [docs/changelog.md](docs/changelog.md)、
+独自機能の一覧は [docs/features.md](docs/features.md)(あだ名は [docs/nickname.md](docs/nickname.md))、バージョンごとの変更は [docs/changelog.md](docs/changelog.md)、
 テストは [docs/testing.md](docs/testing.md)。
 
 ## ブランチと本番反映
@@ -61,7 +61,8 @@
   不具合ではない upstream のコードは、同じ処理があっても共通にしない(upstream の挨拶・リバーシなどの「1日1回」の処理など)。
 - 独自の処理で同じことを書くときは、すでにある共通の関数を使う。
   - `src/utils/`: `choose-pool.ts`(割合でどちらの候補から選ぶか)、`is-master.ts`(マスターの判定)、`inc-love-once-a-day.ts`(親愛度を1日1回上げる)
-  - `src/modules/talk/`: `by-love.ts`(親愛度でセリフを選ぶ。境目の既定は 5 / -3)、`nickname.ts`(あだ名を考える・呼び名にできるか)
+  - `src/utils/neutralize-mfm.ts`: 利用者が書いた文字列を藍の投稿に入れるときは、これを通す(メンション・MFM・リンクにならないようにする)
+  - `src/modules/talk/`: `by-love.ts`(親愛度でセリフを選ぶ。境目の既定は 5 / -3)、`nickname.ts`(あだ名を考える・呼び名にできるか・誰のあだ名か)
   - `src/modules/keyword/`: `morph.ts`(形態素解析の切り替え)、`token-filter.ts`(覚える語の判定と分類)
 - 機能を追加・変更したら、[docs/features.md](docs/features.md) も更新する。
 
