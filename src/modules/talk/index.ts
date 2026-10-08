@@ -420,7 +420,11 @@ export default class extends Module {
 		// 「〇〇さんのあだ名」は、送った本人ではなく〇〇さんのあだ名を考える。
 		// 誰のあだ名かが増えるときは、parseAdanaTarget() の kind と、ここの分岐を増やす
 		const master = resolveMasterNicknameSettings(config);
-		const target = parseAdanaTarget(msg.extractedText, master != null ? { username: master.username, names: master.names, localHost: new URL(config.host).host } : undefined);
+		// マスターのあだ名を使わないときも、マスターの名前は、送った本人のあだ名にしない(マスター本人が言ったときは、本人のあだ名)
+		const otherNames = master == null && config.master && !isMaster(msg.user, config.master) && Array.isArray(config.masterNicknameNames)
+			? config.masterNicknameNames.filter((name): name is string => typeof name === 'string' && name.length > 0)
+			: [];
+		const target = parseAdanaTarget(msg.extractedText, master != null ? { username: master.username, names: master.names, localHost: new URL(config.host).host } : undefined, otherNames);
 		switch (target.kind) {
 			case 'ai': return this.adanaForAi(msg);
 			case 'master': return this.adanaForMaster(msg, master!);

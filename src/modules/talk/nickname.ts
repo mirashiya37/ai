@@ -109,12 +109,16 @@ export type AdanaMasterNames = {
  * - master を渡したとき、〇〇がマスターの名前(敬称は問わない)か「@マスター」(このサーバーのユーザー): master
  * - それ以外(「あだ名」「わたしのあだ名」「田中のあだ名」など): 送った本人(self)
  * 一人称は「〇〇さん」にならないので、見分けるリストは要らない。
+ * @param master マスターのあだ名を使うときに渡す
+ * @param otherNames マスターのあだ名を使わないとき、敬称やメンションが無くてもほかの人とみなす名前
+ *   (マスターの名前を、送った本人のあだ名と取り違えないため)
  */
-export function parseAdanaTarget(text: string, master?: AdanaMasterNames): AdanaTarget {
+export function parseAdanaTarget(text: string, master?: AdanaMasterNames, otherNames: readonly string[] = []): AdanaTarget {
 	const target = findAdanaTarget(text);
 	if (target == null) return { kind: 'self' };
 
 	if (master != null && isMasterTarget(target, master)) return { kind: 'master' };
+	if (!target.mention && (otherNames.includes(target.name) || otherNames.includes(target.base))) return { kind: 'other', name: target.name };
 
 	if (SECOND_PERSON.includes(target.base)) return { kind: 'ai' };
 	if (!target.honorific && !target.mention) return { kind: 'self' };

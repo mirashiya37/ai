@@ -74,6 +74,16 @@ test('「あだ名」がカタカナでも、〇〇を取り出す(反応の判�
 	assert.deepEqual(parseAdanaTarget('@bob のアダナ'), other('bob'));
 });
 
+test('マスターのあだ名を使わないとき、マスターの名前は、送った本人のあだ名にせず、ほかの人にする', () => {
+	const names = ['マスター', 'ご主人'];
+	assert.deepEqual(parseAdanaTarget('マスターのあだ名', undefined, names), { kind: 'other', name: 'マスター' });
+	assert.deepEqual(parseAdanaTarget('ご主人のあだ名', undefined, names), { kind: 'other', name: 'ご主人' });
+	assert.deepEqual(parseAdanaTarget('ご主人様のあだ名', undefined, names), { kind: 'other', name: 'ご主人様' });
+	assert.deepEqual(parseAdanaTarget('田中のあだ名', undefined, names), { kind: 'self' });
+	assert.deepEqual(parseAdanaTarget('マスターのあだ名'), { kind: 'self' }, '名前を渡さなければ、これまでどおり');
+	assert.deepEqual(parseAdanaTarget('@ご主人 のあだ名', undefined, names), { kind: 'other', name: 'ご主人' });
+});
+
 test('「はい」「いいえ」の言葉: いいね・OK・気に入ったは承諾、いや・いやですは断り', () => {
 	const hit = (words, text) => words.some(word => text.toLowerCase().includes(word.toLowerCase()));
 	for (const text of ['はい', 'いいね！', 'いいですね', 'OK', 'ok!', 'オーケー', '気に入った', 'うん', 'それで', 'お願いします']) assert.ok(hit(YES_WORDS, text), text);
@@ -140,6 +150,7 @@ const message = (text, replies, love = 0) => ({
 	text,
 	extractedText: text,
 	userId: 'u1',
+	user: { username: 'alice', host: null },
 	isChat: false,
 	includes: words => words.some(word => text.includes(word)),
 	friend: { love, name: 'テスト', updateName(name) { this.name = name; } },
@@ -325,3 +336,25 @@ test('藍のあだ名は、親愛度に応じてやんわり断り、待ち受�
 	assert.deepEqual(subscribed, []);
 });
 
+test('マスターのあだ名を使わない設定でも、マスターの名前は、送った本人のあだ名にしない', { skip: !hasConfig && 'config.json がない' }, async () => {
+	const { mod, serifs, subscribed } = await setup();
+	const config = (await import('../built/config.js')).default;
+	const saved = { ...config };
+	try {
+		Object.assign(config, { master: 'boss', masterNicknameNames: ['マスター'], masterNicknameNotify: 'off', masterNicknameUpdateName: false });
+		const replies = [];
+		const msg = { ...message('マスターのあだ名考えて', replies), user: { username: 'alice', host: null } };
+		mod.adana(msg);
+		await new Promise(r => setTimeout(r, 0));
+		assert.match(replies[0], /^マスターのあだ名は、「.+」とかいかがでしょうか？$/);
+		assert.equal(subscribed[0].data.target, 'マスター', '送った本人の呼び名は変えない');
+
+		const own = [];
+		mod.adana({ ...message('マスターのあだ名考えて', own), user: { username: 'boss', host: null } });
+		await new Promise(r => setTimeout(r, 0));
+		assert.match(own[0], /^テスト、「.+」とお呼びしてもいいですか？$/, 'マスター本人が言ったときは、本人のあだ名');
+	} finally {
+		for (const key of Object.keys(config)) delete config[key];
+		Object.assign(config, saved);
+	}
+});
