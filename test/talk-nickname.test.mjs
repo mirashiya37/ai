@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { pickNickname, canBeName, parseAdanaTarget, REROLL_WORDS, YES_WORDS, NO_WORDS, isChatReplyExpired, startsWithReplyWord, CHAT_REPLY_TTL } from '../built/modules/talk/nickname.js';
+import { pickNickname, canBeName, parseAdanaTarget, REROLL_WORDS, ADANA_REFUSE_WORDS, YES_WORDS, NO_WORDS, isChatReplyExpired, startsWithReplyWord, CHAT_REPLY_TTL } from '../built/modules/talk/nickname.js';
 
 const ROOT = new URL('..', import.meta.url).pathname;
 const hasConfig = existsSync(ROOT + 'config.json');
@@ -178,6 +178,12 @@ test('藍のメンションは、藍のユーザー名(このサーバー)のと
 	assert.deepEqual(parse('藍のあだ名'), { kind: 'self' }, '敬称もメンションも無いものは、これまでどおり本人');
 	// 藍のアカウントを渡さないときは、これまでどおり固定の名前で見る
 	assert.deepEqual(parseAdanaTarget('@ai のあだ名'), { kind: 'ai' });
+});
+
+test('「あだ名はいらない」の言葉: あだ名で呼ばないで・やめて・いらない。ふつうの依頼は含まない', () => {
+	const hit = text => ADANA_REFUSE_WORDS.some(word => text.includes(word));
+	for (const text of ['あだ名で呼ばないで', 'あだ名やめて', 'あだ名はいらない', 'あだ名つけないで', 'あだ名を付けないで', 'あだ名は要らない', 'あだ名はもう不要です', 'あだ名で呼ぶのをやめて', 'あだ名禁止']) assert.ok(hit(text), text);
+	for (const text of ['あだ名', 'あだ名つけて', 'あだ名を考えて', '田中さんのあだ名は？', '新しいあだ名', 'あだ名ちょうだい']) assert.ok(!hit(text), text);
 });
 
 async function setup() {
@@ -440,4 +446,23 @@ test('藍のあだ名: 藍のユーザー名へのメンションを、藍の本
 	await new Promise(r => setTimeout(r, 0));
 	assert.match(other[0], /^aiさんのあだ名は、「.+」とかいかがでしょうか？$/, '別の人の ai さんは、ほかの人');
 	assert.equal(subscribed[0].data.target, 'aiさん');
+});
+
+test('「あだ名で呼ばないで」には、あだ名を提案せず、待ち受けもしない', { skip: !hasConfig && 'config.json がない' }, async () => {
+	const { mod, serifs, subscribed } = await setup();
+	const replies = [];
+	const msg = message('あだ名で呼ばないで', replies);
+	msg.includes = words => words.some(word => msg.text.includes(word));
+	assert.deepEqual(mod.adana(msg), { reaction: '🙌' });
+	await new Promise(r => setTimeout(r, 0));
+	assert.deepEqual(replies, [serifs.core.adanaStop('テスト')]);
+	assert.equal(replies[0], 'わかりました、あだ名はやめて、これからもテストとお呼びしますね！');
+	assert.deepEqual(subscribed, []);
+	assert.equal(msg.friend.name, 'テスト', '呼び名は変えない');
+
+	const noName = [];
+	const msg2 = { ...message('田中さんのあだ名やめて', noName), friend: { love: 0, name: null } };
+	msg2.includes = words => words.some(word => msg2.text.includes(word));
+	mod.adana(msg2);
+	assert.deepEqual(noName, ['わかりました、あだ名はやめておきますね！'], 'ほかの人の話でも提案しない');
 });

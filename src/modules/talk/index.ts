@@ -9,7 +9,7 @@ import { byLove } from './by-love.js';
 import config from '@/config.js';
 import Friend from '@/friend.js';
 import { isMaster } from '@/utils/is-master.js';
-import { pickNickname, parseAdanaTarget, ADANA_WORDS, REROLL_WORDS, YES_WORDS, NO_WORDS, isChatReplyExpired, startsWithReplyWord } from './nickname.js';
+import { pickNickname, parseAdanaTarget, ADANA_WORDS, ADANA_REFUSE_WORDS, REROLL_WORDS, YES_WORDS, NO_WORDS, isChatReplyExpired, startsWithReplyWord } from './nickname.js';
 import { resolveMasterNicknameSettings, checkMasterNicknameLimit, nextMasterNicknameUserRecord, describeRequester, masterLabel, masterMentionVisibility, MasterNicknameSettings } from './master-nickname.js';
 
 export default class extends Module {
@@ -416,6 +416,12 @@ export default class extends Module {
 	@bindThis
 	private adana(msg: Message): boolean | HandlerResult {
 		if (!msg.includes(ADANA_WORDS)) return false;
+
+		// 「あだ名で呼ばないで」は、あだ名を提案しない
+		if (msg.includes(ADANA_REFUSE_WORDS)) {
+			msg.reply(serifs.core.adanaStop(msg.friend.name));
+			return { reaction: '🙌' };
+		}
 
 		// 「〇〇さんのあだ名」は、送った本人ではなく〇〇さんのあだ名を考える。
 		// 誰のあだ名かが増えるときは、parseAdanaTarget() の kind と、ここの分岐を増やす

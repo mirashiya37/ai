@@ -190,6 +190,9 @@ export default {
 
 		adana: (item, name) => item ? name ? `${name}、「${item}」とかいかがでしょうか？` : `「${item}」とかいかがでしょうか？` : "すみません、いまはあだ名が思い浮かばないです・・・",
 
+		/** 「あだ名で呼ばないで」と言われたとき(name は藍が呼んでいる名前。無ければ null) */
+		adanaStop: name => name ? `わかりました、あだ名はやめて、これからも${name}とお呼びしますね！` : 'わかりました、あだ名はやめておきますね！',
+
 		adanaAsk: (item, name) => name ? `${name}、「${item}」とお呼びしてもいいですか？` : `「${item}」とお呼びしてもいいですか？`,
 
 		adanaAgain: (item, name) => name ? `${name}、それなら「${item}」はどうでしょうか？` : `それなら「${item}」はどうでしょうか？`,
