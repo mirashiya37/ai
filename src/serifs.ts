@@ -223,6 +223,11 @@ export default {
 
 		adanaMasterRenamedToSender: (item: string) => `マスターのあだ名は、「${item}」にしてみますね！ マスターには、私から伝えておきます！`,
 
+		/** チャットで頼まれて、マスターにメンション(ダイレクト投稿)で伝えたあとの、頼んだ人への返事 */
+		adanaMasterMentionedToSender: (item: string) => `マスターのあだ名は、「${item}」とかどうでしょう？ マスターに伝えておきました！`,
+
+		adanaMasterRenamedMentionedToSender: (item: string) => `マスターのあだ名は、「${item}」にしてみました！ マスターにも伝えておきました！`,
+
 		adanaMasterLimitDaily: (item: string) => `マスターのあだ名は、「${item}」とかどうでしょう？ ・・・あっ、今日はもう、マスターに伝えたんでした！ また明日、お願いしますね`,
 
 		/** nextAt は、また伝えられるようになる時刻(Unix 時間、秒)。MFM の unixtime で、見る人の時刻で表示する */

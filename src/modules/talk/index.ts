@@ -522,6 +522,13 @@ export default class extends Module {
 				const mention = `@${master.username}`;
 				const text = renamed ? serifs.core.adanaMasterRenamedMention(mention, from, item) : serifs.core.adanaMasterMention(mention, from, item);
 				await this.ai.post(this.masterMentionParams(msg, master, text));
+
+				// チャットで頼まれたときは、メンションの投稿が頼んだ人に見えない(ダイレクト投稿)ので、チャットにも返す。
+				// マスターには伝え終わっているので、ここで失敗しても、伝えられなかったことにはしない
+				if (msg.isChat) {
+					await msg.reply(renamed ? serifs.core.adanaMasterRenamedMentionedToSender(item) : serifs.core.adanaMasterMentionedToSender(item))
+						.catch(err => this.log(`Failed to reply to the requester in chat: ${err}`));
+				}
 				break;
 			}
 			default: {

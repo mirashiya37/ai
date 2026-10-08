@@ -154,6 +154,41 @@ test('メンション: フォロワー限定・チャットで頼まれたら、
 	} finally { restore(); }
 });
 
+test('メンション: チャットで頼まれたら、チャットにも「伝えておきました」と返す。返事が失敗しても、伝えたことにする', { skip: !hasConfig && 'config.json がない' }, async () => {
+	const { mod, ai, calls, serifs, restore } = await setup({ master: 'boss', masterNicknameNames: ['マスター'], masterNicknameNotify: 'mention', masterNicknameUpdateName: false, masterNicknameIntervalHours: 0, masterNicknamePerUserDaily: 0 });
+	try {
+		const replies = [];
+		mod.adana(message(ai, 'マスターのあだ名', replies, { isChat: true }));
+		await tick();
+		const item = calls.posts[0].text.match(/「(.+?)」とかいかがでしょうか/)?.[1];
+		assert.deepEqual(replies, [serifs.core.adanaMasterMentionedToSender(item)]);
+
+		const notChat = [];
+		mod.adana(message(ai, 'マスターのあだ名', notChat));
+		await tick();
+		assert.deepEqual(notChat, [], '投稿で頼まれたときは、メンションの投稿が返事なので、ほかには返さない');
+
+		const failing = message(ai, 'マスターのあだ名', [], { isChat: true });
+		failing.reply = async () => { throw new Error('chat failed'); };
+		mod.adana(failing);
+		await tick();
+		assert.equal(calls.posts.length, 3, 'マスターには伝えている');
+		assert.equal(failing.friend.getPerModulesData(mod).masterNickname?.count, 3, '頼んだ3回とも数える(返事の失敗で記録を戻さない)');
+	} finally { restore(); }
+});
+
+test('メンション: チャットで頼まれ、呼び名にする設定なら、「呼び名にしてみました」と返す', { skip: !hasConfig && 'config.json がない' }, async () => {
+	const { mod, ai, calls, serifs, restore } = await setup({ master: 'boss', masterNicknameNames: ['マスター'], masterNicknameNotify: 'mention', masterNicknameUpdateName: true });
+	try {
+		const replies = [];
+		mod.adana(message(ai, 'マスターのあだ名', replies, { isChat: true }));
+		await tick();
+		const item = ai.lookupFriend('m1').name;
+		assert.deepEqual(replies, [serifs.core.adanaMasterRenamedMentionedToSender(item)]);
+		assert.equal(calls.posts.length, 1);
+	} finally { restore(); }
+});
+
 test('チャット: マスターにチャットで伝え、頼んだ人には「伝えておきます」と返す', { skip: !hasConfig && 'config.json がない' }, async () => {
 	const { mod, ai, calls, serifs, restore } = await setup({ master: 'boss', masterNicknameNames: ['マスター'], masterNicknameNotify: 'chat', masterNicknameUpdateName: false });
 	try {
