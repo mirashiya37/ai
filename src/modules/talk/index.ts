@@ -561,10 +561,15 @@ export default class extends Module {
 		const label = masterLabel(settings);
 
 		// 表示名を変える設定なら、マスターへの連絡は、そちら(承認の問いかけ、または変えたことの知らせ)にまとめる。
+		// 承認の問いかけはチャット。すぐ変えたことの知らせは、伝え方が mention ならメンションの投稿で伝える。
 		// 承認を待っているものがあれば(busy)、表示名は変えず、通常の連絡をする
 		const nickname = this.masterNicknameModule();
 		if (nickname?.renameActive()) {
-			const result = await nickname.requestRename(msg, item, from, label);
+			const mention = settings.notify === 'mention' ? async (text: string) => {
+				const master: any = await this.ai.api('users/show', { username: settings.username });
+				await this.ai.post(this.masterMentionParams(msg, master, `@${master.username} ${text}`, settings.mentionVisibility));
+			} : undefined;
+			const result = await nickname.requestRename(msg, item, from, label, mention);
 			if (result !== 'busy') return;
 		}
 

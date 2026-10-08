@@ -53,7 +53,7 @@ async function setup(settings = {}) {
 	const db = new loki('test.json');
 	const cols = {};
 	const getCollection = name => cols[name] ?? (cols[name] = db.addCollection(name));
-	const state = { name: 'ボス', calls: [], chats: [], fail: {} };
+	const state = { name: 'ボス', calls: [], chats: [], posts: [], fail: {} };
 	const ai = {
 		moduleData: getCollection('moduleData'),
 		friends: getCollection('friends'),
@@ -65,7 +65,11 @@ async function setup(settings = {}) {
 			if (endpoint === 'users/show') return MASTER;
 			throw new Error(`unexpected ${endpoint}`);
 		},
-		post: async () => ({ id: 'post' }),
+		post: async param => {
+			if (state.failPost) throw new Error('post failed');
+			state.posts.push(param);
+			return { id: 'post' };
+		},
 		sendMessage: async (userId, param) => {
 			if (state.failChat) throw new Error('chat failed');
 			state.chats.push({ userId, ...param });
@@ -317,6 +321,74 @@ test('すぐ変える設定: 頼まれたら表示名を変えて、マスター
 		assert.deepEqual(state.chats, [{ userId: 'm1', text: serifs.core.adanaMasterRenamedNow('アリス(@alice)', item, 'ご主人') }]);
 		assert.deepEqual(requester, [serifs.core.adanaMasterRenamedNowToSender(item, 'ご主人')]);
 		assert.equal(ai.lookupFriend('m1')?.name, item, '藍の中の呼び名も変える');
+	} finally { restore(); }
+});
+
+test('すぐ変える設定で、伝え方が mention なら、マスターへの知らせはメンションの投稿(頼んだ人への返信)。チャットは使わず、頼んだ人への返事も重ねない', { skip: !hasConfig && 'config.json がない' }, async () => {
+	const { nickname, ai, state, serifs, restore } = await setup({ masterNicknameNotify: 'mention' });
+	try {
+		await turnOn(nickname, ai, 'immediate');
+		state.chats.length = 0;
+		const requester = [];
+		ai.modules[1].adana(message(ai, 'ご主人のあだ名', requester, { user: ALICE, isChat: false }));
+		await tick(); await tick(); await tick();
+		const item = state.name;
+		assert.notEqual(item, 'ボス');
+		assert.deepEqual(state.posts, [{
+			replyId: 'note1',
+			text: '@boss ' + serifs.core.adanaMasterRenamedNow('アリス(@alice)', item, 'ご主人'),
+			visibility: 'public',
+			visibleUserIds: undefined,
+		}]);
+		assert.deepEqual(state.chats, []);
+		assert.deepEqual(requester, [], 'メンションの投稿が返事そのもの');
+	} finally { restore(); }
+});
+
+test('すぐ変える設定で、伝え方が mention のとき、チャットで頼まれたら、頼んだ人とマスターだけのダイレクト投稿にして、チャットにも返す', { skip: !hasConfig && 'config.json がない' }, async () => {
+	const { nickname, ai, state, serifs, restore } = await setup({ masterNicknameNotify: 'mention' });
+	try {
+		await turnOn(nickname, ai, 'immediate');
+		const requester = [];
+		ai.modules[1].adana(message(ai, 'ご主人のあだ名', requester, { user: ALICE, isChat: true }));
+		await tick(); await tick(); await tick();
+		const item = state.name;
+		assert.equal(state.posts.length, 1);
+		assert.equal(state.posts[0].text, '@alice @boss ' + serifs.core.adanaMasterRenamedNow('アリス(@alice)', item, 'ご主人'));
+		assert.equal(state.posts[0].visibility, 'specified');
+		assert.deepEqual(state.posts[0].visibleUserIds, ['u1', 'm1']);
+		assert.deepEqual(requester, [serifs.core.adanaMasterRenamedNowToSender(item, 'ご主人')]);
+	} finally { restore(); }
+});
+
+test('すぐ変える設定で、伝え方が mention でも、メンションの投稿に失敗したら、チャットで知らせて頼んだ人にも返す(表示名は変わっている)', { skip: !hasConfig && 'config.json がない' }, async () => {
+	const { nickname, ai, state, serifs, restore } = await setup({ masterNicknameNotify: 'mention' });
+	try {
+		await turnOn(nickname, ai, 'immediate');
+		state.chats.length = 0;
+		state.failPost = true;
+		const requester = [];
+		ai.modules[1].adana(message(ai, 'ご主人のあだ名', requester, { user: ALICE, isChat: false }));
+		await tick(); await tick(); await tick();
+		const item = state.name;
+		assert.notEqual(item, 'ボス');
+		assert.deepEqual(state.chats, [{ userId: 'm1', text: serifs.core.adanaMasterRenamedNow('アリス(@alice)', item, 'ご主人') }]);
+		assert.deepEqual(requester, [serifs.core.adanaMasterRenamedNowToSender(item, 'ご主人')]);
+	} finally { restore(); }
+});
+
+test('承認の問いかけは、伝え方が mention でもチャットで送る(メンションの投稿は使わない)', { skip: !hasConfig && 'config.json がない' }, async () => {
+	const { nickname, ai, state, restore } = await setup({ masterNicknameNotify: 'mention' });
+	try {
+		await turnOn(nickname, ai, 'approval');
+		state.chats.length = 0;
+		const requester = [];
+		ai.modules[1].adana(message(ai, 'ご主人のあだ名', requester, { user: ALICE, isChat: false }));
+		await tick(); await tick(); await tick();
+		assert.equal(state.chats.length, 1);
+		assert.match(state.chats[0].text, /表示名を「.+」に変えてもいいですか？/);
+		assert.deepEqual(state.posts, []);
+		assert.match(requester[0], /聞いてみますね/);
 	} finally { restore(); }
 });
 

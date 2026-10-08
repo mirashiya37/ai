@@ -281,12 +281,12 @@ export default class extends Module {
 	/**
 	 * 頼まれたあだ名で、マスターの表示名を変える(talk モジュールから呼ぶ)。
 	 * - 承認(approval): マスターにチャットで聞く。承認を待っているものがあれば、聞かずに busy を返す(呼び出し元が、通常の連絡をする)
-	 * - すぐ(immediate): 表示名を変えて、マスターに知らせる
+	 * - すぐ(immediate): 表示名を変えて、マスターに知らせる。mention を渡されたときは、チャットでなく、それ(メンションの投稿)で知らせる
 	 * マスターに伝えられなかった(聞けなかった・変えられなかった)ときは、投げる(呼び出し元が、回数の記録を戻す)。
 	 * 頼んだ人への返事は、ここで行う
 	 */
 	@bindThis
-	public async requestRename(msg: Message, item: string, from: string, label: string): Promise<'asked' | 'renamed' | 'busy'> {
+	public async requestRename(msg: Message, item: string, from: string, label: string, mention?: (text: string) => Promise<unknown>): Promise<'asked' | 'renamed' | 'busy'> {
 		if (this.renameMode() === 'approval') {
 			const pending = this.rename().pending;
 			if (pending != null && this.isPendingAlive(pending)) return 'busy';
@@ -305,8 +305,21 @@ export default class extends Module {
 		}
 
 		await this.applyRename(item);
-		await this.tellMaster(serifs.core.adanaMasterRenamedNow(from, item, label));
-		await replyWithMention(msg, serifs.core.adanaMasterRenamedNowToSender(item, label)).catch(err => this.log(`Failed to reply to the requester: ${err}`));
+		const text = serifs.core.adanaMasterRenamedNow(from, item, label);
+		let mentioned = false;
+		if (mention) {
+			try {
+				await mention(text);
+				mentioned = true;
+			} catch (err) {
+				this.log(`Failed to mention the master: ${err}`);
+			}
+		}
+		if (!mentioned) await this.tellMaster(text);
+		// 投稿で頼まれたときは、メンションの投稿が頼んだ人への返信そのものなので、別には返さない
+		if (!mentioned || msg.isChat) {
+			await replyWithMention(msg, serifs.core.adanaMasterRenamedNowToSender(item, label)).catch(err => this.log(`Failed to reply to the requester: ${err}`));
+		}
 		return 'renamed';
 	}
 
