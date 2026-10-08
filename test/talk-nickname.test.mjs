@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { pickNickname, canBeName, parseAdanaTarget, REROLL_WORDS, YES_WORDS, NO_WORDS } from '../built/modules/talk/nickname.js';
+import { pickNickname, canBeName, parseAdanaTarget, REROLL_WORDS, YES_WORDS, NO_WORDS, isChatReplyExpired, startsWithReplyWord, CHAT_REPLY_TTL } from '../built/modules/talk/nickname.js';
 
 const ROOT = new URL('..', import.meta.url).pathname;
 const hasConfig = existsSync(ROOT + 'config.json');
@@ -63,6 +63,20 @@ test('「はい」「いいえ」の言葉: いいね・OK・気に入ったは�
 	for (const text of ['いいです']) assert.ok(!hit(YES_WORDS, text) && !hit(NO_WORDS, text), `${text}: どちらにもとれるので、どちらにも入れない`);
 });
 
+test('チャットの待ち受けは、10分を過ぎたら期限切れ。時刻の記録が無い以前の形は、期限切れにしない', () => {
+	const now = 1_000_000_000;
+	assert.equal(isChatReplyExpired(now - CHAT_REPLY_TTL, now), false);
+	assert.equal(isChatReplyExpired(now - CHAT_REPLY_TTL - 1, now), true);
+	assert.equal(isChatReplyExpired(undefined, now), false);
+});
+
+test('返事の言葉が文の頭にあるかを見る(頭の句読点・空白は読み飛ばす)', () => {
+	for (const text of ['はい', 'はい、おやすみ', '、はい', '  うん！', 'ううん', 'やだ、別の', '別のがいい', 'もう一回', 'OK', 'オーケー', 'いやです']) assert.ok(startsWithReplyWord(text), text);
+	for (const text of ['ところで、はい', 'おはよう', '今日はいい天気ですね', 'ありがとう', 'さっきの話だけど、別の']) assert.ok(!startsWithReplyWord(text), text);
+	// 「別の話だけど」は、引き直しの言葉で始まるので返事とみなす(言葉の判定は部分一致のため。チャットの誤爆は、期限と合わせて減らす)
+	assert.ok(startsWithReplyWord('別の話だけど'));
+});
+
 test('藍のあだ名: 二人称は敬称が無くても、藍の名前は敬称かメンションが付いたときだけ', () => {
 	for (const text of ['あなたのあだ名', '君のあだ名', 'おまえのあだ名', 'あなたさんのあだ名', '藍ちゃんのあだ名', '藍さんのあだ名', 'AIさんのあだ名', 'アイちゃんのあだ名', '@ai のあだ名', '@ai@misskey.example のあだ名']) {
 		assert.deepEqual(parseAdanaTarget(text), { kind: 'ai' }, text);
@@ -102,6 +116,8 @@ async function setup() {
 	return { serifs, mod, subscribed, unsubscribed };
 }
 
+const withoutAt = ({ at, ...rest }) => rest;
+
 const message = (text, replies, love = 0) => ({
 	text,
 	extractedText: text,
@@ -110,6 +126,47 @@ const message = (text, replies, love = 0) => ({
 	includes: words => words.some(word => text.includes(word)),
 	friend: { love, name: 'テスト', updateName(name) { this.name = name; } },
 	reply: t => { replies.push(t); return Promise.resolve({ id: 'reply' + replies.length }); },
+});
+
+test('チャット: 待ち受けが期限切れなら、返事とみなさず、待ち受けをやめて普段の会話として扱う', { skip: !hasConfig && 'config.json がない' }, async () => {
+	const { mod, subscribed, unsubscribed } = await setup();
+	const replies = [];
+	const msg = { ...message('はい', replies), isChat: true };
+	const data = { name: '古いやつ', seen: ['古いやつ'], rerolls: 0, at: Date.now() - CHAT_REPLY_TTL - 1000 };
+
+	assert.equal(await mod.contextHook('u1', msg, data), false);
+	assert.equal(msg.friend.name, 'テスト', '呼び名は変えない');
+	assert.deepEqual(replies, []);
+	assert.deepEqual(unsubscribed, ['u1']);
+	assert.deepEqual(subscribed, []);
+});
+
+test('チャット: 期限内でも、文の頭に返事の言葉が無ければ返事とみなさない。あれば、これまでどおり', { skip: !hasConfig && 'config.json がない' }, async () => {
+	const { mod, serifs, unsubscribed } = await setup();
+	const data = { name: '決めるやつ', seen: ['決めるやつ'], rerolls: 0, at: Date.now() - 60 * 1000 };
+
+	const otherReplies = [];
+	const other = { ...message('今日はいい天気ですね。はい、散歩します', otherReplies), isChat: true };
+	assert.equal(await mod.contextHook('u1', other, data), false);
+	assert.equal(other.friend.name, 'テスト');
+	assert.deepEqual(unsubscribed, ['u1']);
+
+	const yesReplies = [];
+	const yes = { ...message('はい、お願いします', yesReplies), isChat: true };
+	assert.deepEqual(await mod.contextHook('u1', yes, data), { reaction: '🙌' });
+	assert.equal(yes.friend.name, '決めるやつ');
+	assert.deepEqual(yesReplies, [serifs.core.setNameOk('決めるやつ')]);
+});
+
+test('投稿への返信なら、時間がたっていても返事とみなす(返信先がはっきりしているため)', { skip: !hasConfig && 'config.json がない' }, async () => {
+	const { mod, serifs } = await setup();
+	const replies = [];
+	const msg = message('いいね！', replies);
+	const data = { name: '決めるやつ', seen: ['決めるやつ'], rerolls: 0, at: Date.now() - 24 * 60 * 60 * 1000 };
+
+	assert.deepEqual(await mod.contextHook('u1', msg, data), { reaction: '🙌' });
+	assert.equal(msg.friend.name, '決めるやつ');
+	assert.deepEqual(replies, [serifs.core.setNameOk('決めるやつ')]);
 });
 
 test('引き直すと、別のあだ名を提案し、出したあだ名と回数を引き継いで待ち受ける', { skip: !hasConfig && 'config.json がない' }, async () => {
@@ -127,7 +184,8 @@ test('引き直すと、別のあだ名を提案し、出したあだ名と回�
 	assert.ok(proposed && proposed !== '最初のやつ', replies[0]);
 	assert.equal(replies[0], serifs.core.adanaAgain(proposed, 'テスト'));
 	assert.equal(subscribed.length, 1);
-	assert.deepEqual(subscribed[0].data, { name: proposed, seen: ['最初のやつ', proposed], rerolls: 1 });
+	assert.deepEqual(withoutAt(subscribed[0].data), { name: proposed, seen: ['最初のやつ', proposed], rerolls: 1 });
+	assert.ok(Math.abs(subscribed[0].data.at - Date.now()) < 5000, '待ち受けた時刻を持つ');
 	assert.equal(subscribed[0].id, 'reply1');
 });
 
@@ -203,7 +261,7 @@ test('ほかの人のあだ名は、その人のあだ名として提案し、�
 	assert.equal(replies[0], serifs.core.adanaOther('bob', proposed));
 	assert.ok(!replies[0].includes('テスト'), '送った本人の呼び名では呼ばない');
 	assert.ok(!replies[0].includes('@'), 'メンションを書かない');
-	assert.deepEqual(subscribed[0].data, { name: proposed, seen: [proposed], rerolls: 0, target: 'bob' });
+	assert.deepEqual(withoutAt(subscribed[0].data), { name: proposed, seen: [proposed], rerolls: 0, target: 'bob' });
 });
 
 test('ほかの人のあだ名に「はい」と言われても、送った本人の呼び名は変えない。引き直しでは誰のものかを引き継ぐ', { skip: !hasConfig && 'config.json がない' }, async () => {
@@ -227,7 +285,7 @@ test('ほかの人のあだ名に「はい」と言われても、送った本�
 	await new Promise(r => setTimeout(r, 0));
 	const proposed = subscribed[0].data.name;
 	assert.equal(again[0], serifs.core.adanaOtherAgain('田中', proposed));
-	assert.deepEqual(subscribed[0].data, { name: proposed, seen: ['決めるやつ', proposed], rerolls: 1, target: '田中' });
+	assert.deepEqual(withoutAt(subscribed[0].data), { name: proposed, seen: ['決めるやつ', proposed], rerolls: 1, target: '田中' });
 });
 
 test('自分のあだ名(一人称)は、これまでどおり本人の呼び名として聞く', { skip: !hasConfig && 'config.json がない' }, async () => {

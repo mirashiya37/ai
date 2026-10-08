@@ -1,4 +1,5 @@
 import { safeForInterpolate } from '@/utils/safe-for-interpolate.js';
+import { katakanaToHiragana, hankakuToZenkaku } from '@/utils/japanese.js';
 
 /** 呼び名にできる最大の長さ(core の「〇〇って呼んで」と同じ) */
 const MAX_LENGTH = 10;
@@ -17,6 +18,23 @@ export const YES_WORDS = ['はい', 'いいよ', 'いいね', 'いいですね',
 
 /** 提案への返事で、断るとみなす言葉 */
 export const NO_WORDS = ['いいえ', 'ううん', 'いや', 'やだ', '嫌', 'だめ', 'やめ'];
+
+/** チャットでの提案への返事を待つ時間(ミリ秒)。チャットは返信先の投稿が無く、この人の次の発言がすべて返事になってしまうため */
+export const CHAT_REPLY_TTL = 10 * 60 * 1000;
+
+/** チャットの待ち受けが、待つ時間を過ぎているか。時刻の記録(at)が無い以前の形のものは、過ぎていないとみなす */
+export function isChatReplyExpired(at: number | undefined, now: number): boolean {
+	return at != null && now - at > CHAT_REPLY_TTL;
+}
+
+/**
+ * 提案への返事は、文の頭にあるとみなす。チャットでは「はい、おやすみ」は返事、「別の話だけど」は返事ではない。
+ * 頭の句読点や空白は読み飛ばす
+ */
+export function startsWithReplyWord(text: string): boolean {
+	const normalized = katakanaToHiragana(hankakuToZenkaku(text)).toLowerCase().replace(/^[\s、。，．,.!！?？…～~「『(（]+/, '');
+	return [...YES_WORDS, ...NO_WORDS, ...REROLL_WORDS].some(word => normalized.startsWith(katakanaToHiragana(word).toLowerCase()));
+}
 
 /** 「〇〇のあだ名」の〇〇として受け付ける最大の長さ。長いものは、文の一部を拾ったとみなす */
 const MAX_TARGET_LENGTH = 20;

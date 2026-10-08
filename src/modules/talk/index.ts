@@ -9,7 +9,7 @@ import { byLove } from './by-love.js';
 import config from '@/config.js';
 import Friend from '@/friend.js';
 import { isMaster } from '@/utils/is-master.js';
-import { pickNickname, parseAdanaTarget, ADANA_WORDS, REROLL_WORDS, YES_WORDS, NO_WORDS } from './nickname.js';
+import { pickNickname, parseAdanaTarget, ADANA_WORDS, REROLL_WORDS, YES_WORDS, NO_WORDS, isChatReplyExpired, startsWithReplyWord } from './nickname.js';
 import { resolveMasterNicknameSettings, checkMasterNicknameLimit, nextMasterNicknameUserRecord, MasterNicknameSettings } from './master-nickname.js';
 
 export default class extends Module {
@@ -453,7 +453,8 @@ export default class extends Module {
 				name: item,
 				seen: [item],
 				rerolls: 0,
-				target: targetName
+				target: targetName,
+				at: Date.now()
 			});
 		});
 		return { reaction: '🙌' };
@@ -561,7 +562,8 @@ export default class extends Module {
 				this.subscribeReply(msg.userId, msg.isChat, msg.isChat ? msg.userId : reply.id, {
 					name: item,
 					seen: [item],
-					rerolls: 0
+					rerolls: 0,
+					at: Date.now()
 				});
 			});
 		} else {
@@ -574,6 +576,13 @@ export default class extends Module {
 	@bindThis
 	private async contextHook(key: any, msg: Message, data: any) {
 		if (msg.text == null) return;
+
+		// チャットは返信先の投稿が無く、この人の次の発言がすべて返事になる。
+		// 時間がたったものと、文の頭に返事の言葉が無いもの(「別の話だけど」など)は、返事とみなさない
+		if (msg.isChat && (isChatReplyExpired(data.at, Date.now()) || !startsWithReplyWord(msg.text))) {
+			this.unsubscribeReply(key);
+			return false;
+		}
 
 		// 「やだ、別の」のように否定と一緒に言われても、引き直しとして扱う
 		if (msg.includes(REROLL_WORDS)) return this.rerollNickname(key, msg, data);
@@ -628,6 +637,7 @@ export default class extends Module {
 				name: item,
 				seen: [...seen, item],
 				rerolls: (data.rerolls ?? 0) + 1,
+				at: Date.now(),
 				...(target != null ? { target } : {})
 			});
 		});
