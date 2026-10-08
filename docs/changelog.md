@@ -3,6 +3,19 @@
 このフォークのバージョン(`package.json` の `_v`)ごとの変更。付け方は [versioning.md](versioning.md)。
 機能の詳細は [features.md](features.md)。
 
+## 2.0.1-mk3.9.0
+
+機能追加
+
+- マスターが、チャットかメンションの `/nickname` コマンドで、マスターのあだ名の設定(伝え方・公開範囲・回数・間隔・オンオフ)を変えられるようにした。
+  コマンドで変えた値は `config.json` より優先し、記憶に残る(`/nickname reset` で戻る)。コマンドの一覧は [features.md](features.md) の「マスターのあだ名」。
+- マスターの Misskey の表示名を、頼まれたあだ名に丸ごと置き換える機能を追加した(**既定はオフ**)。
+  - `config.json` の `masterRenameEnabled` を `true` にしたうえで、マスターがチャットで許可(MiAuth)して、オンにしたときだけ動く。
+  - 許可の権限は `read:account` と `write:account` だけ。起動のたびと受け取ったときに、許可(トークン)を検証して、
+    持ち主がマスターでない・ブラウザのログインのトークン・要らない権限がある・確かめられない、のどれかなら、この機能だけを止めて、理由をマスターに知らせる。
+  - 既定は、マスターが1時間以内に承認してから変える。すぐ変える方式にもできる。変える前の表示名を残し、`/nickname rename revert` で戻せる。
+  - 設定の項目は `masterRenameEnabled`・`masterRenameMode`・`masterRenameApprovalMinutes`([config.md](config.md))。
+
 ## 2.0.1-mk3.8.0
 
 機能追加
