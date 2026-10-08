@@ -56,6 +56,24 @@ test('敬称もメンションも無ければ、送った本人のあだ名(一�
 	}
 });
 
+test('敬称に、君・先輩・先生も使う。「君のあだ名」は、これまでどおり藍', () => {
+	const other = name => ({ kind: 'other', name });
+	assert.deepEqual(parseAdanaTarget('田中君のあだ名'), other('田中君'));
+	assert.deepEqual(parseAdanaTarget('山田先生のあだ名'), other('山田先生'));
+	assert.deepEqual(parseAdanaTarget('部活の先輩のあだ名'), other('部活の先輩'));
+	assert.deepEqual(parseAdanaTarget('はなこせんぱいのあだ名'), other('はなこせんぱい'));
+	assert.deepEqual(parseAdanaTarget('君のあだ名'), { kind: 'ai' });
+	assert.deepEqual(parseAdanaTarget('先生のあだ名'), { kind: 'self' }, '名前が無い');
+});
+
+test('「あだ名」がカタカナでも、〇〇を取り出す(反応の判定と同じにする)', () => {
+	const other = name => ({ kind: 'other', name });
+	assert.deepEqual(parseAdanaTarget('田中さんのアダナ'), other('田中さん'));
+	assert.deepEqual(parseAdanaTarget('田中さんのアダ名'), other('田中さん'));
+	assert.deepEqual(parseAdanaTarget('田中さんのあだニャ'), other('田中さん'));
+	assert.deepEqual(parseAdanaTarget('@bob のアダナ'), other('bob'));
+});
+
 test('「はい」「いいえ」の言葉: いいね・OK・気に入ったは承諾、いや・いやですは断り', () => {
 	const hit = (words, text) => words.some(word => text.toLowerCase().includes(word.toLowerCase()));
 	for (const text of ['はい', 'いいね！', 'いいですね', 'OK', 'ok!', 'オーケー', '気に入った', 'うん', 'それで', 'お願いします']) assert.ok(hit(YES_WORDS, text), text);

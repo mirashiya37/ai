@@ -1,5 +1,5 @@
 import { safeForInterpolate } from '@/utils/safe-for-interpolate.js';
-import { katakanaToHiragana, hankakuToZenkaku } from '@/utils/japanese.js';
+import { katakanaToHiragana, hiraganaToKatagana, hankakuToZenkaku } from '@/utils/japanese.js';
 
 /** 呼び名にできる最大の長さ(core の「〇〇って呼んで」と同じ) */
 const MAX_LENGTH = 10;
@@ -36,11 +36,20 @@ export function startsWithReplyWord(text: string): boolean {
 	return [...YES_WORDS, ...NO_WORDS, ...REROLL_WORDS].some(word => normalized.startsWith(katakanaToHiragana(word).toLowerCase()));
 }
 
+/** 「あだ名」の言葉を、ひらがなとカタカナのどちらで書かれても拾う正規表現にする(「アダナ」「あだニャ」) */
+function kanaInsensitive(word: string): string {
+	return [...word].map(c => {
+		const hira = katakanaToHiragana(c);
+		const kata = hiraganaToKatagana(c);
+		return hira === kata ? c : `[${hira}${kata}]`;
+	}).join('');
+}
+
 /** 「〇〇のあだ名」の〇〇として受け付ける最大の長さ。長いものは、文の一部を拾ったとみなす */
 const MAX_TARGET_LENGTH = 20;
 
 /** 〇〇の後ろの敬称。「〇〇さんのあだ名」のように敬称が付いたものだけを、ほかの人とみなす */
-const HONORIFIC = /(ちゃん|ちゃま|さん|さま|様|くん|氏|殿)$/;
+const HONORIFIC = /(ちゃん|ちゃま|さん|さま|様|くん|君|氏|殿|先輩|せんぱい|先生|せんせい)$/;
 
 /** 藍を指す言葉(二人称)。敬称が無くても、藍とみなす */
 const SECOND_PERSON = [
@@ -62,7 +71,7 @@ export type AdanaTargetWord = { name: string; base: string; honorific: boolean; 
  * 誰のものかの分類は、parseAdanaTarget() で行う。
  */
 export function findAdanaTarget(text: string): AdanaTargetWord | null {
-	const match = text.match(new RegExp(`([^\\s、。!！?？「」『』]+?)\\s*の(?:${ADANA_WORDS.join('|')})`));
+	const match = text.match(new RegExp(`([^\\s、。!！?？「」『』]+?)\\s*の(?:${ADANA_WORDS.map(kanaInsensitive).join('|')})`));
 	if (match == null) return null;
 
 	const mention = match[1].startsWith('@');
