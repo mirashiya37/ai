@@ -38,8 +38,13 @@ export function isChatReplyExpired(at: number | undefined, now: number): boolean
  * 頭の句読点や空白は読み飛ばす
  */
 export function startsWithReplyWord(text: string): boolean {
+	return startsWithWord(text, [...YES_WORDS, ...NO_WORDS, ...REROLL_WORDS]);
+}
+
+/** 文の頭が、words のどれかか。ひらがな・カタカナ、全角・半角、大文字・小文字は区別せず、頭の句読点や空白は読み飛ばす */
+export function startsWithWord(text: string, words: readonly string[]): boolean {
 	const normalized = katakanaToHiragana(hankakuToZenkaku(text)).toLowerCase().replace(/^[\s、。，．,.!！?？…～~「『(（]+/, '');
-	return [...YES_WORDS, ...NO_WORDS, ...REROLL_WORDS].some(word => normalized.startsWith(katakanaToHiragana(word).toLowerCase()));
+	return words.some(word => normalized.startsWith(katakanaToHiragana(word).toLowerCase()));
 }
 
 /** 「あだ名」の言葉を、ひらがなとカタカナのどちらで書かれても拾う正規表現にする(「アダナ」「あだニャ」) */
