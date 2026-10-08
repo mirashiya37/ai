@@ -173,6 +173,21 @@ test('メンションの公開範囲は、頼まれた投稿と上限の狭い�
 	}
 });
 
+test('コマンドで変えた設定は、config.json より優先する。off なら使わない。表示名を変えるなら、伝え方が off でも使う', () => {
+	const config = { master: 'm', masterNicknameNotify: 'mention', masterNicknamePerUserDaily: 1, masterNicknameIntervalMinutes: 180 };
+	const settings = resolveMasterNicknameSettings(config, { notify: 'chat', updateName: true, mentionVisibility: 'specified', perUserDaily: 0, intervalMinutes: 5 });
+	assert.equal(settings.notify, 'chat');
+	assert.equal(settings.updateName, true);
+	assert.equal(settings.mentionVisibility, 'specified');
+	assert.equal(settings.perUserDaily, 0);
+	assert.equal(settings.interval, 5 * 60 * 1000);
+	assert.equal(resolveMasterNicknameSettings(config, { enabled: false }), null);
+	assert.equal(resolveMasterNicknameSettings(config, { enabled: true }).notify, 'mention', '上書きの無い項目は config.json の値');
+	assert.equal(resolveMasterNicknameSettings({ master: 'm' }, {}, false), null, '何もしない設定なら使わない');
+	assert.equal(resolveMasterNicknameSettings({ master: 'm' }, {}, true).notify, 'off', '表示名を変えるなら使う');
+	assert.equal(resolveMasterNicknameSettings({}, { enabled: true }, true), null, 'master が無ければ使わない');
+});
+
 test('マスターに伝える間隔は分で指定する。以前の時間の指定も使える(分があれば分が先)', () => {
 	const interval = config => resolveMasterNicknameSettings({ master: 'm', masterNicknameNotify: 'mention', ...config }).interval;
 	const MINUTE = 60 * 1000;

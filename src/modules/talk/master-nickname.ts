@@ -48,9 +48,24 @@ function intervalMinutes(config: { masterNicknameIntervalMinutes?: unknown; mast
 }
 
 /**
- * config.json の値から、マスターのあだ名の設定を作る。使わないなら null。
- * 伝えない(notify が off)うえに呼び名にもしないなら、マスターには何も起きないので使わない
+ * コマンド(/nickname)で変えた設定。config.json の値より優先する。undefined の項目は config.json の値を使う
+ */
+export type MasterNicknameOverrides = {
+	/** false なら、マスターのあだ名を使わない */
+	enabled?: boolean;
+	notify?: MasterNicknameNotify;
+	mentionVisibility?: MasterNicknameMentionVisibility;
+	updateName?: boolean;
+	perUserDaily?: number;
+	intervalMinutes?: number;
+};
+
+/**
+ * config.json の値と、コマンドで変えた値から、マスターのあだ名の設定を作る。使わないなら null。
+ * 伝えない(notify が off)うえに呼び名にもせず、表示名も変えないなら、マスターには何も起きないので使わない
  * (「〇〇さんのあだ名」として、ほかの人と同じに扱う)。
+ * @param overrides コマンドで変えた設定
+ * @param renameActive 表示名の変更が使える状態か(オンで、トークンの検証が済んでいる)
  */
 export function resolveMasterNicknameSettings(config: {
 	master?: string;
@@ -61,12 +76,14 @@ export function resolveMasterNicknameSettings(config: {
 	masterNicknamePerUserDaily?: unknown;
 	masterNicknameIntervalMinutes?: unknown;
 	masterNicknameIntervalHours?: unknown;
-}): MasterNicknameSettings | null {
+}, overrides: MasterNicknameOverrides = {}, renameActive = false): MasterNicknameSettings | null {
 	if (!config.master) return null;
+	if (overrides.enabled === false) return null;
 
-	const notify: MasterNicknameNotify = config.masterNicknameNotify === 'mention' || config.masterNicknameNotify === 'chat' ? config.masterNicknameNotify : 'off';
-	const updateName = config.masterNicknameUpdateName === true;
-	if (notify === 'off' && !updateName) return null;
+	const notify: MasterNicknameNotify = overrides.notify
+		?? (config.masterNicknameNotify === 'mention' || config.masterNicknameNotify === 'chat' ? config.masterNicknameNotify : 'off');
+	const updateName = overrides.updateName ?? config.masterNicknameUpdateName === true;
+	if (notify === 'off' && !updateName && !renameActive) return null;
 
 	const names = Array.isArray(config.masterNicknameNames)
 		? config.masterNicknameNames.filter((name): name is string => typeof name === 'string' && name.length > 0)
@@ -76,10 +93,11 @@ export function resolveMasterNicknameSettings(config: {
 		username: config.master,
 		names,
 		notify,
-		mentionVisibility: config.masterNicknameMentionVisibility === 'public' || config.masterNicknameMentionVisibility === 'home' || config.masterNicknameMentionVisibility === 'specified' ? config.masterNicknameMentionVisibility : DEFAULT_MENTION_VISIBILITY,
+		mentionVisibility: overrides.mentionVisibility
+			?? (config.masterNicknameMentionVisibility === 'public' || config.masterNicknameMentionVisibility === 'home' || config.masterNicknameMentionVisibility === 'specified' ? config.masterNicknameMentionVisibility : DEFAULT_MENTION_VISIBILITY),
 		updateName,
-		perUserDaily: toNumber(config.masterNicknamePerUserDaily, DEFAULT_PER_USER_DAILY),
-		interval: intervalMinutes(config) * 1000 * 60,
+		perUserDaily: overrides.perUserDaily ?? toNumber(config.masterNicknamePerUserDaily, DEFAULT_PER_USER_DAILY),
+		interval: (overrides.intervalMinutes ?? intervalMinutes(config)) * 1000 * 60,
 	};
 }
 
