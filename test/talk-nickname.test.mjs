@@ -120,6 +120,22 @@ test('メンションは、敬称が無くても、ほかの人。「@」とサ�
 	assert.deepEqual(parseAdanaTarget('@bobのあだ名'), { kind: 'other', name: 'bob' });
 });
 
+test('〇〇の前の呼びかけ(ねえ・ところで)と、一人称の「の」は、名前に含めない', () => {
+	const other = name => ({ kind: 'other', name });
+	assert.deepEqual(parseAdanaTarget('ねえ田中さんのあだ名'), other('田中さん'));
+	assert.deepEqual(parseAdanaTarget('ねえねえ、私の田中さんのあだ名'), other('田中さん'));
+	assert.deepEqual(parseAdanaTarget('ところで山田先生のあだ名'), other('山田先生'));
+	assert.deepEqual(parseAdanaTarget('私の友達の田中さんのあだ名'), other('友達の田中さん'));
+	assert.deepEqual(parseAdanaTarget('僕の弟さんのあだ名'), other('弟さん'));
+	assert.deepEqual(parseAdanaTarget('鈴木の弟さんのあだ名'), other('鈴木の弟さん'), '一人称でない「の」は、名前の一部');
+	// 外すと敬称だけになるものは、名前の一部
+	assert.deepEqual(parseAdanaTarget('ねえさんのあだ名'), other('ねえさん'));
+	assert.deepEqual(parseAdanaTarget('おいちゃんのあだ名'), other('おいちゃん'));
+	// 敬称が無ければ、外しても本人のあだ名のまま
+	assert.deepEqual(parseAdanaTarget('ねえ田中のあだ名'), { kind: 'self' });
+	assert.deepEqual(parseAdanaTarget('私の田中のあだ名'), { kind: 'self' });
+});
+
 async function setup() {
 	const require = createRequire(ROOT);
 	const loki = require('lokijs');

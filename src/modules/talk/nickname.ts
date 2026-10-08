@@ -49,7 +49,35 @@ function kanaInsensitive(word: string): string {
 const MAX_TARGET_LENGTH = 20;
 
 /** 〇〇の後ろの敬称。「〇〇さんのあだ名」のように敬称が付いたものだけを、ほかの人とみなす */
-const HONORIFIC = /(ちゃん|ちゃま|さん|さま|様|くん|君|氏|殿|先輩|せんぱい|先生|せんせい)$/;
+const HONORIFIC_WORDS = 'ちゃん|ちゃま|さん|さま|様|くん|君|氏|殿|先輩|せんぱい|先生|せんせい';
+const HONORIFIC = new RegExp(`(${HONORIFIC_WORDS})$`);
+
+/** 〇〇の前に付く呼びかけ。「ねえ田中さんのあだ名」の「ねえ」は、名前に含めない */
+const LEADING_WORDS = ['ねえねえ', 'ねーねー', 'ねえ', 'ねぇ', 'ねー', 'ところで', 'ちょっと', 'じゃあ', 'じゃー', 'えっと', 'えーと', 'おい', 'そういえば', 'ちなみに', 'それと', 'それから'];
+
+/** 〇〇の前に付く一人称の「の」。「私の友達の田中さん」の「私の」は、名前に含めない(藍のことと取り違えないため) */
+const FIRST_PERSON_POSSESSIVE = /^(?:私|わたし|ワタシ|僕|ぼく|ボク|俺|おれ|オレ|あたし|アタシ|うち|自分|わし|ワイ)の/;
+
+/**
+ * 〇〇の頭の、呼びかけと一人称の「の」を外す。外した残りが敬称だけになるとき(「ねえさん」)は、名前の一部とみなして外さない
+ */
+function stripLeading(name: string): string {
+	const stripped = (rest: string) => rest.replace(HONORIFIC, '').length > 0;
+	let current = name;
+	for (let changed = true; changed;) {
+		changed = false;
+		for (const word of LEADING_WORDS) {
+			if (current.startsWith(word) && stripped(current.slice(word.length))) {
+				current = current.slice(word.length);
+				changed = true;
+				break;
+			}
+		}
+	}
+	const possessive = current.match(FIRST_PERSON_POSSESSIVE);
+	if (possessive != null && stripped(current.slice(possessive[0].length))) current = current.slice(possessive[0].length);
+	return current;
+}
 
 /** 藍を指す言葉(二人称)。敬称が無くても、藍とみなす */
 const SECOND_PERSON = [
@@ -77,7 +105,7 @@ export function findAdanaTarget(text: string): AdanaTargetWord | null {
 	const mention = match[1].startsWith('@');
 	// 「@user@host」「@user」は「user」にする(返信で、その人に通知が届かないようにする)
 	const parts = match[1].match(/^@?([^@]+)(?:@(.*))?$/);
-	const name = parts?.[1] ?? match[1];
+	const name = mention ? (parts?.[1] ?? match[1]) : stripLeading(parts?.[1] ?? match[1]);
 	const host = mention ? (parts?.[2] || null) : null;
 	if (name.length === 0 || name.length > MAX_TARGET_LENGTH) return null;
 
