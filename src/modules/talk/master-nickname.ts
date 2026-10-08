@@ -85,9 +85,7 @@ export function resolveMasterNicknameSettings(config: {
 	const updateName = overrides.updateName ?? config.masterNicknameUpdateName === true;
 	if (notify === 'off' && !updateName && !renameActive) return null;
 
-	const names = Array.isArray(config.masterNicknameNames)
-		? config.masterNicknameNames.filter((name): name is string => typeof name === 'string' && name.length > 0)
-		: [];
+	const names = masterNames(config);
 
 	return {
 		username: config.master,
@@ -99,6 +97,13 @@ export function resolveMasterNicknameSettings(config: {
 		perUserDaily: overrides.perUserDaily ?? toNumber(config.masterNicknamePerUserDaily, DEFAULT_PER_USER_DAILY),
 		interval: (overrides.intervalMinutes ?? intervalMinutes(config)) * 1000 * 60,
 	};
+}
+
+/** config.json の masterNicknameNames(文字列だけ。空の文字列は除く) */
+export function masterNames(config: { masterNicknameNames?: unknown }): string[] {
+	return Array.isArray(config.masterNicknameNames)
+		? config.masterNicknameNames.filter((name): name is string => typeof name === 'string' && name.length > 0)
+		: [];
 }
 
 /** 頼んだ人ごとの記録(Friend の perModulesData に置く) */

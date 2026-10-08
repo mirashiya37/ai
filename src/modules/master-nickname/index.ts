@@ -110,6 +110,11 @@ export default class extends Module {
 		return config.masterRenameApprovalMinutes != null && Number.isFinite(n) && n > 0 ? n : DEFAULT_APPROVAL_MINUTES;
 	}
 
+	/** 承認を待っているものが、期限内か */
+	private isPendingAlive(pending: PendingRename, now = Date.now()): boolean {
+		return now - pending.at <= this.approvalMinutes() * 60 * 1000;
+	}
+
 	//#endregion
 
 	//#region Misskey とのやりとり(テストでは差し替える)
@@ -271,7 +276,7 @@ export default class extends Module {
 	public async requestRename(msg: Message, item: string, from: string, label: string): Promise<'asked' | 'renamed' | 'busy'> {
 		if (this.renameMode() === 'approval') {
 			const pending = this.rename().pending;
-			if (pending != null && Date.now() - pending.at <= this.approvalMinutes() * 60 * 1000) return 'busy';
+			if (pending != null && this.isPendingAlive(pending)) return 'busy';
 
 			await this.ai.sendMessage(await this.masterUserId(), { text: serifs.core.adanaMasterRenameAsk(from, item, label, this.approvalMinutes()) });
 			this.updateRename({ pending: { item, from, at: Date.now() } });
@@ -294,7 +299,7 @@ export default class extends Module {
 		if (!no && !startsWithWord(msg.text, YES_WORDS)) return false;
 
 		this.updateRename({ pending: null });
-		if (Date.now() - pending.at > this.approvalMinutes() * 60 * 1000) {
+		if (!this.isPendingAlive(pending)) {
 			msg.reply(serifs.core.adanaMasterRenameExpired(this.approvalMinutes()), { immediate: true });
 		} else if (no) {
 			msg.reply(serifs.core.adanaMasterRenameDeclined, { immediate: true });

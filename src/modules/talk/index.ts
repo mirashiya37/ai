@@ -11,7 +11,7 @@ import Friend from '@/friend.js';
 import { isMaster } from '@/utils/is-master.js';
 import type MasterNicknameModule from '@/modules/master-nickname/index.js';
 import { pickNickname, parseAdanaTarget, ADANA_WORDS, ADANA_REFUSE_WORDS, REROLL_WORDS, YES_WORDS, NO_WORDS, isChatReplyExpired, startsWithReplyWord } from './nickname.js';
-import { resolveMasterNicknameSettings, checkMasterNicknameLimit, nextMasterNicknameUserRecord, describeRequester, masterLabel, masterMentionVisibility, MasterNicknameSettings } from './master-nickname.js';
+import { resolveMasterNicknameSettings, checkMasterNicknameLimit, nextMasterNicknameUserRecord, describeRequester, masterLabel, masterMentionVisibility, masterNames, MasterNicknameSettings } from './master-nickname.js';
 
 export default class extends Module {
 	public readonly name = 'talk';
@@ -424,23 +424,60 @@ export default class extends Module {
 			return { reaction: '🙌' };
 		}
 
-		// 「〇〇さんのあだ名」は、送った本人ではなく〇〇さんのあだ名を考える。
 		// 誰のあだ名かが増えるときは、parseAdanaTarget() の kind と、ここの分岐を増やす
-		// 設定は masterNickname モジュール(コマンドで変えた値を含む)から取る。読み込んでいないときだけ config.json から作る
-		const nickname = this.masterNicknameModule();
-		const master = nickname != null ? nickname.settings() : resolveMasterNicknameSettings(config);
-		// マスターのあだ名を使わないときも、マスターの名前は、送った本人のあだ名にしない(マスター本人が言ったときは、本人のあだ名)
-		const otherNames = master == null && config.master && !isMaster(msg.user, config.master) && Array.isArray(config.masterNicknameNames)
-			? config.masterNicknameNames.filter((name): name is string => typeof name === 'string' && name.length > 0)
-			: [];
+		const master = this.masterNicknameSettings();
 		const localHost = new URL(config.host).host;
-		const target = parseAdanaTarget(msg.extractedText, master != null ? { username: master.username, names: master.names, localHost } : undefined, otherNames, { username: msg.user.username, host: msg.user.host, localHost }, this.ai.account?.username ? { username: this.ai.account.username, localHost } : undefined);
+		const target = parseAdanaTarget(msg.extractedText, {
+			master: master != null ? { username: master.username, names: master.names, localHost } : undefined,
+			// マスターのあだ名を使わないときも、マスターの名前は、送った本人のあだ名にしない(マスター本人が言ったときは、本人のあだ名)
+			otherNames: master == null && config.master && !isMaster(msg.user, config.master) ? masterNames(config) : [],
+			sender: { username: msg.user.username, host: msg.user.host, localHost },
+			ai: this.ai.account?.username ? { username: this.ai.account.username, localHost } : undefined,
+		});
 		switch (target.kind) {
 			case 'ai': return this.adanaForAi(msg);
 			case 'master': return this.adanaForMaster(msg, master!);
 			case 'other': return this.adanaForOther(msg, target.name);
 			default: return this.adanaForSelf(msg);
 		}
+	}
+
+	/** マスターのあだ名の設定と、表示名の変更を受け持つモジュール(src/index.ts で読み込んでいなければ undefined) */
+	private masterNicknameModule(): MasterNicknameModule | undefined {
+		return this.ai.modules?.find(m => m.name === 'masterNickname') as MasterNicknameModule | undefined;
+	}
+
+	/**
+	 * マスターのあだ名の設定。使わないなら null。
+	 * masterNickname モジュール(コマンドで変えた値を含む)から取る。読み込んでいないときだけ config.json から作る
+	 */
+	private masterNicknameSettings(): MasterNicknameSettings | null {
+		const nickname = this.masterNicknameModule();
+		return nickname != null ? nickname.settings() : resolveMasterNicknameSettings(config);
+	}
+
+	/**
+	 * 呼び名にできるあだ名を1つ考える。考えつかなければ「思い浮かばない」と答えて null
+	 * @param exclude すでに出したあだ名(引き直しのとき)
+	 */
+	private thinkNickname(msg: Message, exclude: readonly string[] = []): string | null {
+		const item = pickNickname(() => genItemWithKeyword(getLearnedKeywords(this.ai)), exclude);
+		if (item == null) msg.reply(serifs.core.adana('', msg.friend.name));
+		return item;
+	}
+
+	/**
+	 * あだ名を提案して、返事を待ち受ける(チャットなら相手、投稿なら藍の返信への返事)。
+	 * 待ち受けのデータは、提案したあだ名(name)、これまでに出したあだ名(seen)、引き直した回数(rerolls)、
+	 * 待ち受けた時刻(at)、ほかの人のあだ名なら誰のものか(target)
+	 */
+	private proposeNickname(msg: Message, text: string, data: { name: string; seen: string[]; rerolls: number; target?: string }) {
+		msg.reply(text).then(reply => {
+			this.subscribeReply(msg.userId, msg.isChat, msg.isChat ? msg.userId : reply.id, {
+				...data,
+				at: Date.now(),
+			});
+		});
 	}
 
 	/** 藍自身のあだ名は、やんわり断る */
@@ -454,29 +491,20 @@ export default class extends Module {
 	 * (待ち受けのデータの target で見分ける)
 	 */
 	private adanaForOther(msg: Message, targetName: string): HandlerResult {
-		const keywords = getLearnedKeywords(this.ai);
-		const item = pickNickname(() => genItemWithKeyword(keywords));
-
-		if (item == null) {
-			msg.reply(serifs.core.adana('', msg.friend.name));
-			return { reaction: '🙌' };
+		const item = this.thinkNickname(msg);
+		if (item != null) {
+			this.proposeNickname(msg, serifs.core.adanaOther(targetName, item), { name: item, seen: [item], rerolls: 0, target: targetName });
 		}
-
-		msg.reply(serifs.core.adanaOther(targetName, item)).then(reply => {
-			this.subscribeReply(msg.userId, msg.isChat, msg.isChat ? msg.userId : reply.id, {
-				name: item,
-				seen: [item],
-				rerolls: 0,
-				target: targetName,
-				at: Date.now()
-			});
-		});
 		return { reaction: '🙌' };
 	}
 
-	/** マスターのあだ名の設定と、表示名の変更を受け持つモジュール(src/index.ts で読み込んでいなければ undefined) */
-	private masterNicknameModule(): MasterNicknameModule | undefined {
-		return this.ai.modules?.find(m => m.name === 'masterNickname') as MasterNicknameModule | undefined;
+	/** 送った本人のあだ名を提案して、「はい」なら呼び名にする */
+	private adanaForSelf(msg: Message): HandlerResult {
+		const item = this.thinkNickname(msg);
+		if (item != null) {
+			this.proposeNickname(msg, serifs.core.adanaAsk(item, msg.friend.name), { name: item, seen: [item], rerolls: 0 });
+		}
+		return { reaction: '🙌' };
 	}
 
 	/**
@@ -488,12 +516,8 @@ export default class extends Module {
 		// マスター本人が言ったときは、本人のあだ名
 		if (isMaster(msg.user, config.master)) return this.adanaForSelf(msg);
 
-		const keywords = getLearnedKeywords(this.ai);
-		const item = pickNickname(() => genItemWithKeyword(keywords));
-		if (item == null) {
-			msg.reply(serifs.core.adana('', msg.friend.name));
-			return { reaction: '🙌' };
-		}
+		const item = this.thinkNickname(msg);
+		if (item == null) return { reaction: '🙌' };
 
 		const today = getDate();
 		const now = Date.now();
@@ -593,28 +617,6 @@ export default class extends Module {
 		};
 	}
 
-	/** 送った本人のあだ名を提案して、「はい」なら呼び名にする */
-	private adanaForSelf(msg: Message): HandlerResult {
-		const keywords = getLearnedKeywords(this.ai);
-		const item = pickNickname(() => genItemWithKeyword(keywords));
-
-		if (item != null) {
-			msg.reply(serifs.core.adanaAsk(item, msg.friend.name)).then(reply => {
-				// seen: これまでに出したあだ名、rerolls: 引き直した回数(引き直しで使う)
-				this.subscribeReply(msg.userId, msg.isChat, msg.isChat ? msg.userId : reply.id, {
-					name: item,
-					seen: [item],
-					rerolls: 0,
-					at: Date.now()
-				});
-			});
-		} else {
-			msg.reply(serifs.core.adana('', msg.friend.name));
-		}
-
-		return { reaction: '🙌' };
-	}
-
 	@bindThis
 	private async contextHook(key: any, msg: Message, data: any) {
 		if (msg.text == null) return;
@@ -661,27 +663,18 @@ export default class extends Module {
 	@bindThis
 	private rerollNickname(key: any, msg: Message, data: any): HandlerResult {
 		const seen: string[] = data.seen ?? [data.name];
-		const keywords = getLearnedKeywords(this.ai);
-		const item = pickNickname(() => genItemWithKeyword(keywords), seen);
-
 		this.unsubscribeReply(key);
 
-		if (item == null) {
-			msg.reply(serifs.core.adana('', msg.friend.name));
-			return { reaction: 'confused' };
-		}
+		const item = this.thinkNickname(msg, seen);
+		if (item == null) return { reaction: 'confused' };
 
 		const target: string | undefined = data.target;
 		const text = target != null ? serifs.core.adanaOtherAgain(target, item) : serifs.core.adanaAgain(item, msg.friend.name);
-
-		msg.reply(text).then(reply => {
-			this.subscribeReply(msg.userId, msg.isChat, msg.isChat ? msg.userId : reply.id, {
-				name: item,
-				seen: [...seen, item],
-				rerolls: (data.rerolls ?? 0) + 1,
-				at: Date.now(),
-				...(target != null ? { target } : {})
-			});
+		this.proposeNickname(msg, text, {
+			name: item,
+			seen: [...seen, item],
+			rerolls: (data.rerolls ?? 0) + 1,
+			...(target != null ? { target } : {}),
 		});
 
 		return { reaction: '🙌' };

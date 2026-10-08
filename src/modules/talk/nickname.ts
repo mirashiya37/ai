@@ -151,13 +151,9 @@ export type AdanaMasterNames = {
  * - master を渡したとき、〇〇がマスターの名前(敬称は問わない)か「@マスター」(このサーバーのユーザー): master
  * - それ以外(「あだ名」「わたしのあだ名」「田中のあだ名」など): 送った本人(self)
  * 一人称は「〇〇さん」にならないので、見分けるリストは要らない。
- * @param master マスターのあだ名を使うときに渡す
- * @param otherNames マスターのあだ名を使わないとき、敬称やメンションが無くてもほかの人とみなす名前
- *   (マスターの名前を、送った本人のあだ名と取り違えないため)
- * @param sender 送った人。渡すと、自分へのメンション(「@自分 のあだ名」)は、本人のあだ名(self)にする
- * @param aiAccount 藍のアカウント。渡すと、メンションは藍のユーザー名(このサーバー)のときだけ藍とみなす。渡さないときは、AI_NAMES(ai など)で見る
  */
-export function parseAdanaTarget(text: string, master?: AdanaMasterNames, otherNames: readonly string[] = [], sender?: AdanaSender, aiAccount?: AdanaAiAccount): AdanaTarget {
+export function parseAdanaTarget(text: string, options: AdanaTargetOptions = {}): AdanaTarget {
+	const { master, otherNames = [], sender, ai: aiAccount } = options;
 	const target = findAdanaTarget(text);
 	if (target == null) return { kind: 'self' };
 
@@ -172,6 +168,18 @@ export function parseAdanaTarget(text: string, master?: AdanaMasterNames, otherN
 	// 「@bob のあだ名」は「bobさんのあだ名は…」と返す(呼び捨てにしない)
 	return { kind: 'other', name: target.mention && !target.honorific ? `${target.name}さん` : target.name };
 }
+
+/** parseAdanaTarget() に渡す、誰のあだ名かを見分けるための情報 */
+export type AdanaTargetOptions = {
+	/** マスターのあだ名を使うときに渡す */
+	master?: AdanaMasterNames;
+	/** マスターのあだ名を使わないとき、敬称やメンションが無くてもほかの人とみなす名前(マスターの名前を、送った本人のあだ名と取り違えないため) */
+	otherNames?: readonly string[];
+	/** 送った人。渡すと、自分へのメンション(「@自分 のあだ名」)は、本人のあだ名(self)にする */
+	sender?: AdanaSender;
+	/** 藍のアカウント。渡すと、メンションは藍のユーザー名(このサーバー)のときだけ藍とみなす。渡さないときは、AI_NAMES(ai など)で見る */
+	ai?: AdanaAiAccount;
+};
 
 /** 藍のアカウント。「@藍のユーザー名」を、藍とみなす */
 export type AdanaAiAccount = {
