@@ -1,5 +1,5 @@
 {
-	"_v": "2.0.1-mk3.7.3",
+	"_v": "2.0.1-mk3.8.0",
 	"type": "module",
 	"main": "./built/index.js",
 	"scripts": {
