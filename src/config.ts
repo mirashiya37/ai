@@ -13,6 +13,7 @@ type Config = {
 	serverMonitoring: boolean;
 	checkEmojisEnabled?: boolean;
 	checkEmojisAtOnce?: boolean;
+	checkEmojisChunkSize?: number;
 	geminiProApiKey?: string;
 	pLaMoApiKey?: string;
 	prompt?: string;

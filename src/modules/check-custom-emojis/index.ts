@@ -4,6 +4,16 @@ import Module from '@/module.js';
 import serifs from '@/serifs.js';
 import config from '@/config.js';
 import Message from '@/message.js';
+import { MAX_NOTE_LENGTH, resolveChunkSize, splitEmojis } from './chunk.js';
+
+// 新着の取得: 1回の件数と、繰り返す回数の上限
+const FETCH_LIMIT = 100;
+const FETCH_MAX_PAGES = 10;
+// 初回は、新しい順に何件を新着として投稿するか
+const FIRST_RUN_COUNT = 5;
+// 連続の取得・投稿の間隔(ミリ秒)
+const FETCH_INTERVAL = 50;
+const POST_INTERVAL = 1000;
 
 export default class extends Module {
 	public readonly name = 'checkCustomEmojis';
@@ -75,9 +85,7 @@ export default class extends Module {
 			return;
 		}
 
-		// 絵文字データが取得された場合、元々のデータを削除しておく
 		const emojiSize = emojisData.length;
-		this.lastEmoji.remove(lastEmoji);
 
 		const server_name = config.serverName ? config.serverName : 'このサーバー';
 		this.log('Posting...');
@@ -92,27 +100,40 @@ export default class extends Module {
 
 			// 各絵文字について投稿
 			for (const emoji of emojisData){
+				await this.sleep(POST_INTERVAL);
 				await this.ai.post({
 					text: serifs.checkCustomEmojis.emojiPost(emoji.name)
 				});
 				this.log(serifs.checkCustomEmojis.emojiPost(emoji.name));
 			}
 		} else {
-			// 一気に投稿ver
-			let text = '';
-			for (const emoji of emojisData){
-				text += serifs.checkCustomEmojis.emojiOnce(emoji.name);
+			// 一気に投稿ver(件数や文字数が多いときは、複数のノートに分ける)
+			const render = (index: number, chunk: any[]) => {
+				const text = chunk.map(emoji => serifs.checkCustomEmojis.emojiOnce(emoji.name)).join('');
+				// 2ノート目以降のページ表記は、桁数が最大になる値で見積もる(ページ数は件数以下)
+				return index === 0
+					? serifs.checkCustomEmojis.postOnce(server_name, emojiSize, text)
+					: serifs.checkCustomEmojis.postOncePage(emojiSize, emojiSize, text);
+			};
+			const chunks = splitEmojis(emojisData, resolveChunkSize(config.checkEmojisChunkSize), MAX_NOTE_LENGTH, render);
+
+			for (let i = 0; i < chunks.length; i++) {
+				if (i > 0) await this.sleep(POST_INTERVAL);
+				const text = chunks[i].map(emoji => serifs.checkCustomEmojis.emojiOnce(emoji.name)).join('');
+				const message = i === 0
+					? serifs.checkCustomEmojis.postOnce(server_name, emojiSize, text)
+					: serifs.checkCustomEmojis.postOncePage(i + 1, chunks.length, text);
+				this.log(message);
+				await this.ai.post({
+					text: message
+				});
 			}
-			const message = serifs.checkCustomEmojis.postOnce(server_name, emojiSize, text);
-			this.log(message);
-			await this.ai.post({
-				text: message
-			});
 		}
 
 		// データの保存
 		this.log('Last CustomEmojis data saving...');
 		this.log(JSON.stringify(emojisData[emojiSize-1],null,'\t'));
+		this.lastEmoji.remove(lastEmoji);
 		this.lastEmoji.insertOne({
 			id: emojisData[emojiSize-1].id,
 			updatedAt: Date.now()
@@ -120,44 +141,37 @@ export default class extends Module {
 		this.log('Check CustomEmojis finished!');
 	}
 
+	/**
+	 * 新しく追加された絵文字を、古い順に返す
+	 */
 	@bindThis
 	private async checkCumstomEmojis(lastId : any) {
 		this.log('CustomEmojis fetching...');
-		let emojisData;
-		if(lastId != null){
-			this.log('lastId is **not** null');
-			emojisData = await this.ai.api('admin/emoji/list', {
-				sinceId: lastId,
-				limit: 30
-			});
-		} else {
+		if (lastId == null) {
 			this.log('lastId is null');
-			emojisData = await this.ai.api('admin/emoji/list', {
-				limit: 100
-			});
-
-			// 最後まで取得
-			let beforeEmoji = null;
-			let afterEmoji = emojisData.length > 1 ? emojisData[0] : null;
-			while(emojisData.length == 100 && beforeEmoji != afterEmoji){
-				const lastId = emojisData[emojisData.length-1].id;
-				// sinceIdを指定して再度取り直す
-				emojisData = await this.ai.api('admin/emoji/list', {
-					limit: 100,
-					sinceId: lastId
-				});
-				beforeEmoji = afterEmoji;
-				afterEmoji = emojisData.length > 1 ? emojisData[0] : null;
-				await this.sleep(50);
-			}
-
-			// sinceIdが未指定の場合、末尾から5件程度にしておく
-			let newJson: any[] = [];
-			for (let i = emojisData.length - 5; i < emojisData.length; i++) {
-				newJson.push(emojisData[i]);
-			}
-			emojisData = newJson;
+			// sinceId を指定しないと新しい順で返る。新着の扱いにそろえて古い順にする
+			const emojisData = await this.ai.api('admin/emoji/list', {
+				limit: FIRST_RUN_COUNT
+			}) as any[];
+			return emojisData.reverse();
 		}
+
+		this.log('lastId is **not** null');
+		// sinceId を指定すると古い順で返るので、取得した最後のIDから続きを取る
+		const emojisData: any[] = [];
+		let sinceId = lastId;
+		for (let page = 0; page < FETCH_MAX_PAGES; page++) {
+			if (page > 0) await this.sleep(FETCH_INTERVAL);
+			const res = await this.ai.api('admin/emoji/list', {
+				sinceId,
+				limit: FETCH_LIMIT
+			}) as any[];
+			emojisData.push(...res);
+			if (res.length < FETCH_LIMIT) return emojisData;
+			sinceId = res[res.length - 1].id;
+		}
+		// 上限に達したぶんは、翌日以降に続きを取る(保存するIDは取得した最後のもの)
+		this.log(`CustomEmojis fetch reached the page limit (${FETCH_MAX_PAGES}).`);
 		return emojisData;
 	}
 
