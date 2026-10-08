@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { resolveMasterNicknameSettings, checkMasterNicknameLimit, nextMasterNicknameUserRecord } from '../built/modules/talk/master-nickname.js';
+import { resolveMasterNicknameSettings, checkMasterNicknameLimit, nextMasterNicknameUserRecord, describeRequester } from '../built/modules/talk/master-nickname.js';
 import { parseAdanaTarget } from '../built/modules/talk/nickname.js';
 
 const ROOT = new URL('..', import.meta.url).pathname;
@@ -113,6 +113,30 @@ function message(ai, text, replies, { user = { id: 'u1', username: 'alice', host
 	};
 }
 
+test('頼んだ人は「表示名(@ユーザー名)」。表示名が無い・ユーザー名と同じなら「@ユーザー名」、別のサーバーなら「@ユーザー名@サーバー」', () => {
+	assert.equal(describeRequester({ username: 'alice', name: 'アリス' }), 'アリス(@alice)');
+	assert.equal(describeRequester({ username: 'alice', name: null }), '@alice');
+	assert.equal(describeRequester({ username: 'alice' }), '@alice');
+	assert.equal(describeRequester({ username: 'alice', name: 'Alice' }), '@alice', 'ユーザー名と同じ(大文字小文字は問わない)');
+	assert.equal(describeRequester({ username: 'bob', host: 'remote.example', name: 'ボブ' }), 'ボブ(@bob@remote.example)');
+	assert.equal(describeRequester({ username: 'bob', host: 'remote.example' }), '@bob@remote.example');
+});
+
+test('頼んだ人の表示名は、メンション・MFM・URL・絵文字コード・改行を無効にして、20文字までに切る', () => {
+	const name = text => describeRequester({ username: 'alice', name: text });
+	assert.equal(name('たろう:custom_emoji:'), 'たろう(@alice)', '絵文字コードは除く');
+	assert.equal(name(':a@remote.example:たろう'), 'たろう(@alice)');
+	assert.equal(name('@boss に注目'), '＠boss に注目(@alice)', 'メンションにならない');
+	assert.equal(name('$[x4 たろう]'), '＄［x4 たろう］(@alice)', 'MFM にならない');
+	assert.ok(!name('<plain>x</plain> `code` **b** ~~s~~ #tag [l](u)').match(/[<>`*~#\[\]]|\(u\)/), '記号は全角');
+	assert.ok(!name('https://evil.example/').includes('://'), 'URL にならない');
+	assert.equal(name('一行目\n二行目\r\n三行目'), '一行目 二行目 三行目(@alice)');
+	assert.equal(name('あ'.repeat(25)), 'あ'.repeat(20) + '…(@alice)');
+	assert.equal(name('😀'.repeat(21)), '😀'.repeat(20) + '…(@alice)', '絵文字は1文字として数える');
+	assert.equal(name(':only_emoji:'), '@alice', '表示名が残らなければ、ユーザー名だけ');
+	assert.equal(name('   '), '@alice');
+});
+
 const tick = () => new Promise(r => setTimeout(r, 0));
 
 test('メンション: 頼んだ人の投稿への返信で、マスターにメンションする。呼び名にする設定なら、マスターの呼び名にする', { skip: !hasConfig && 'config.json がない' }, async () => {
@@ -126,7 +150,7 @@ test('メンション: 頼んだ人の投稿への返信で、マスターにメ
 		const post = calls.posts[0];
 		const item = post.text.match(/呼び名を「(.+?)」にしました/)?.[1];
 		assert.ok(item, post.text);
-		assert.deepEqual(post, { replyId: 'note1', text: serifs.core.adanaMasterRenamedMention('@boss', 'aliceさん', item), visibility: 'home', visibleUserIds: undefined });
+		assert.deepEqual(post, { replyId: 'note1', text: serifs.core.adanaMasterRenamedMention('@boss', '@alice', item), visibility: 'home', visibleUserIds: undefined });
 		assert.ok(!post.text.includes('いかがでしょうか'), '呼び名にするなら、提案の聞き方はしない');
 		assert.deepEqual(replies, [], '返信はメンションの投稿だけ');
 		assert.deepEqual(calls.chats, []);
@@ -193,14 +217,14 @@ test('チャット: マスターにチャットで伝え、頼んだ人には「
 	const { mod, ai, calls, serifs, restore } = await setup({ master: 'boss', masterNicknameNames: ['マスター'], masterNicknameNotify: 'chat', masterNicknameUpdateName: false });
 	try {
 		const replies = [];
-		const msg = message(ai, 'マスターさんのあだ名', replies);
-		msg.friend.updateName('アリス');
+		const msg = message(ai, 'マスターさんのあだ名', replies, { user: { id: 'u1', username: 'alice', host: null, name: 'アリス' } });
+		msg.friend.updateName('ポテト');
 		mod.adana(msg);
 		await tick();
 
 		assert.equal(calls.chats.length, 1);
 		const item = calls.chats[0].text.match(/「(.+?)」とかいかがでしょうか/)?.[1];
-		assert.deepEqual(calls.chats[0], { userId: 'm1', text: serifs.core.adanaMasterToMaster('アリス', item) }, '頼んだ人は、藍の呼び名で書く');
+		assert.deepEqual(calls.chats[0], { userId: 'm1', text: serifs.core.adanaMasterToMaster('アリス(@alice)', item) }, '頼んだ人は、表示名とユーザー名で書く(藍が付けた呼び名「ポテト」ではなく)');
 		assert.deepEqual(replies, [serifs.core.adanaMasterToSender(item)]);
 		assert.deepEqual(calls.posts, []);
 	} finally { restore(); }
@@ -213,7 +237,7 @@ test('伝えない設定で呼び名にするなら、マスターにはチャ�
 		mod.adana(message(ai, 'マスターのあだ名', replies));
 		await tick();
 		const item = ai.lookupFriend('m1').name;
-		assert.deepEqual(calls.chats, [{ userId: 'm1', text: serifs.core.adanaMasterRenamedToMaster('aliceさん', item) }]);
+		assert.deepEqual(calls.chats, [{ userId: 'm1', text: serifs.core.adanaMasterRenamedToMaster('@alice', item) }]);
 		assert.deepEqual(replies, [serifs.core.adanaMasterRenamedToSender(item)]);
 	} finally { restore(); }
 });
@@ -278,7 +302,7 @@ test('呼び名にする設定なら、チャットでも「いかがでしょ�
 		on.mod.adana(message(on.ai, 'マスターのあだ名', replies));
 		await tick();
 		const item = on.ai.lookupFriend('m1').name;
-		assert.deepEqual(on.calls.chats, [{ userId: 'm1', text: on.serifs.core.adanaMasterRenamedToMaster('aliceさん', item) }]);
+		assert.deepEqual(on.calls.chats, [{ userId: 'm1', text: on.serifs.core.adanaMasterRenamedToMaster('@alice', item) }]);
 		assert.deepEqual(replies, [on.serifs.core.adanaMasterRenamedToSender(item)]);
 		for (const text of [on.calls.chats[0].text, replies[0]]) assert.ok(!/いかがでしょうか|どうでしょう/.test(text), text);
 	} finally { on.restore(); }
@@ -287,6 +311,6 @@ test('呼び名にする設定なら、チャットでも「いかがでしょ�
 	try {
 		off.mod.adana(message(off.ai, 'マスターのあだ名', []));
 		await tick();
-		assert.match(off.calls.posts[0].text, /^@boss aliceさんに頼まれて、マスターのあだ名を考えました！ 「.+」とかいかがでしょうか？$/);
+		assert.match(off.calls.posts[0].text, /^@boss @aliceに頼まれて、マスターのあだ名を考えました！ 「.+」とかいかがでしょうか？$/);
 	} finally { off.restore(); }
 });

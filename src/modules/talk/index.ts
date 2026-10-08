@@ -10,7 +10,7 @@ import config from '@/config.js';
 import Friend from '@/friend.js';
 import { isMaster } from '@/utils/is-master.js';
 import { pickNickname, parseAdanaTarget, ADANA_WORDS, REROLL_WORDS, YES_WORDS, NO_WORDS, isChatReplyExpired, startsWithReplyWord } from './nickname.js';
-import { resolveMasterNicknameSettings, checkMasterNicknameLimit, nextMasterNicknameUserRecord, MasterNicknameSettings } from './master-nickname.js';
+import { resolveMasterNicknameSettings, checkMasterNicknameLimit, nextMasterNicknameUserRecord, describeRequester, MasterNicknameSettings } from './master-nickname.js';
 
 export default class extends Module {
 	public readonly name = 'talk';
@@ -512,7 +512,8 @@ export default class extends Module {
 	/** マスターに、頼まれて考えたあだ名を伝える。呼び名にする設定なら、伝えられたあとで呼び名にする */
 	private async tellMaster(msg: Message, settings: MasterNicknameSettings, item: string) {
 		const master: any = await this.ai.api('users/show', { username: settings.username });
-		const from = msg.friend.name ?? `${msg.user.username}さん`;
+		// 藍が付けた呼び名はマスターには分からないので、表示名とユーザー名で示す
+		const from = describeRequester(msg.user);
 
 		// 呼び名にする設定なら、提案ではなく、決まったこととして伝える(伝えない設定でも、呼び名を変えたことはチャットで知らせる)
 		const renamed = settings.updateName;

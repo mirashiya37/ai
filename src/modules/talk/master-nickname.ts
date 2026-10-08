@@ -93,3 +93,27 @@ export function checkMasterNicknameLimit(
 export function nextMasterNicknameUserRecord(user: MasterNicknameUserRecord, today: string): MasterNicknameUserRecord {
 	return { date: today, count: (user.date === today ? (user.count ?? 0) : 0) + 1 };
 }
+
+/** 頼んだ人の表示名として使う最大の文字数 */
+const MAX_DISPLAY_NAME_LENGTH = 20;
+
+/**
+ * マスターへの通知で、頼んだ人を示す文字列。「表示名(@ユーザー名)」の形で、別のサーバーの人は「@ユーザー名@サーバー」。
+ * 表示名が無いか、ユーザー名と同じなら、「@ユーザー名」だけにする。
+ * 表示名は本人が自由に決められるので、そのまま投稿に入れない。
+ * 絵文字コードを除き、改行を空白にし、MFM やメンション・URL になる記号(@ $ < > ` * ~ # : \ [ ] ( ))を全角にして、20文字までに切る
+ */
+export function describeRequester(user: { username: string; host?: string | null; name?: string | null }): string {
+	const acct = user.host ? `@${user.username}@${user.host}` : `@${user.username}`;
+
+	const chars = [...(user.name ?? '')
+		.replace(/:[\w@.-]+:/g, '')
+		.replace(/\p{Cc}/gu, ' ')
+		.replace(/[@$<>`*~#:\\[\]()]/g, c => String.fromCharCode(c.charCodeAt(0) + 0xFEE0))
+		.replace(/\s+/g, ' ')
+		.trim()];
+	if (chars.length === 0 || chars.join('').toLowerCase() === user.username.toLowerCase()) return acct;
+
+	const display = chars.length > MAX_DISPLAY_NAME_LENGTH ? chars.slice(0, MAX_DISPLAY_NAME_LENGTH).join('') + '…' : chars.join('');
+	return `${display}(${acct})`;
+}
