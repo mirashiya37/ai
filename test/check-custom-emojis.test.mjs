@@ -167,6 +167,9 @@ test('まとめ投稿: チャンクサイズ 20 で 45 件が 20/20/5 の3ノー
 		assert.ok(!t.posts[1].text.includes('追加されました'));
 		assert.deepEqual(t.posts.flatMap(p => namesIn(p.text)), added.map(e => e.name), '全件が古い順に1回ずつ');
 		assert.ok(t.posts.every(p => p.text.endsWith('#AddCustomEmojis')));
+		assert.equal(t.posts[0].replyId, undefined, '1ノート目は返信にしない');
+		assert.equal(t.posts[1].replyId, 'n1', '2ノート目は1ノート目への返信');
+		assert.equal(t.posts[2].replyId, 'n2', '3ノート目は2ノート目への返信');
 		assert.deepEqual(t.savedId(), [added[44].id], '全部投稿してから、最後のIDを保存する');
 		assert.equal(t.sleeps.filter(ms => ms >= 1000).length, 2, 'ノートの間');
 	} finally { t.restore(); }
@@ -179,6 +182,7 @@ test('まとめ投稿: 20件以下なら1ノートで、ページ表記は付か
 		assert.equal(t.posts.length, 1);
 		assert.ok(t.posts[0].text.startsWith('テスト鯖に3件の絵文字が追加されました！\n'));
 		assert.ok(!/\(\d+\/\d+\)/.test(t.posts[0].text));
+		assert.equal(t.posts[0].replyId, undefined);
 	} finally { t.restore(); }
 });
 
@@ -210,6 +214,7 @@ test('まとめ投稿: チャンクサイズが大きくても、3000字を超�
 		assert.ok(t.posts.every(p => p.text.length <= 3000), t.posts.map(p => p.text.length).join(','));
 		const total = t.posts.length;
 		t.posts.slice(1).forEach((p, i) => assert.ok(p.text.startsWith(`(${i + 2}/${total})\n`)));
+		t.posts.forEach((p, i) => assert.equal(p.replyId, i === 0 ? undefined : 'n' + i));
 		assert.equal(t.posts.flatMap(p => [...p.text.matchAll(/:(emoji_\d+_x+):/g)]).length, 300);
 		assert.deepEqual(t.savedId(), [added[299].id]);
 	} finally { t.restore(); }
@@ -222,6 +227,7 @@ test('個別投稿でも、概要の件数は取得した全件数', { skip }, a
 		await t.mod.post();
 		assert.equal(t.posts[0].text, 'テスト鯖に150件の絵文字が追加されました！');
 		assert.equal(t.posts.length, 151);
+		assert.ok(t.posts.every(p => p.replyId === undefined), '個別投稿は返信でつなげない');
 	} finally { t.restore(); }
 });
 

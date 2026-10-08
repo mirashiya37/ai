@@ -117,6 +117,8 @@ export default class extends Module {
 			};
 			const chunks = splitEmojis(emojisData, resolveChunkSize(config.checkEmojisChunkSize), MAX_NOTE_LENGTH, render);
 
+			// 2ノート目以降は、直前のノートへの返信としてつなげる
+			let prevNoteId: string | null = null;
 			for (let i = 0; i < chunks.length; i++) {
 				if (i > 0) await this.sleep(POST_INTERVAL);
 				const text = chunks[i].map(emoji => serifs.checkCustomEmojis.emojiOnce(emoji.name)).join('');
@@ -124,9 +126,13 @@ export default class extends Module {
 					? serifs.checkCustomEmojis.postOnce(server_name, emojiSize, text)
 					: serifs.checkCustomEmojis.postOncePage(i + 1, chunks.length, text);
 				this.log(message);
-				await this.ai.post({
+				const posted = await this.ai.post(prevNoteId ? {
+					text: message,
+					replyId: prevNoteId
+				} : {
 					text: message
 				});
+				prevNoteId = posted.id;
 			}
 		}
 
