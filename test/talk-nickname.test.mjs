@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { pickNickname, canBeName, parseAdanaTarget, REROLL_WORDS } from '../built/modules/talk/nickname.js';
+import { pickNickname, canBeName, parseAdanaTarget, REROLL_WORDS, YES_WORDS, NO_WORDS } from '../built/modules/talk/nickname.js';
 
 const ROOT = new URL('..', import.meta.url).pathname;
 const hasConfig = existsSync(ROOT + 'config.json');
@@ -54,6 +54,13 @@ test('敬称もメンションも無ければ、送った本人のあだ名(一�
 	]) {
 		assert.deepEqual(parseAdanaTarget(text), { kind: 'self' }, text);
 	}
+});
+
+test('「はい」「いいえ」の言葉: いいね・OK・気に入ったは承諾、いや・いやですは断り', () => {
+	const hit = (words, text) => words.some(word => text.toLowerCase().includes(word.toLowerCase()));
+	for (const text of ['はい', 'いいね！', 'いいですね', 'OK', 'ok!', 'オーケー', '気に入った', 'うん', 'それで', 'お願いします']) assert.ok(hit(YES_WORDS, text), text);
+	for (const text of ['いいえ', 'ううん', 'いや', 'いやです', 'いやいや', 'いいや', 'やだ', '嫌', 'だめ', 'やめて']) assert.ok(hit(NO_WORDS, text), text);
+	for (const text of ['いいです']) assert.ok(!hit(YES_WORDS, text) && !hit(NO_WORDS, text), `${text}: どちらにもとれるので、どちらにも入れない`);
 });
 
 test('藍のあだ名: 二人称は敬称が無くても、藍の名前は敬称かメンションが付いたときだけ', () => {
@@ -241,3 +248,4 @@ test('藍のあだ名は、親愛度に応じてやんわり断り、待ち受�
 	}
 	assert.deepEqual(subscribed, []);
 });
+

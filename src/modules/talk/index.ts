@@ -9,7 +9,7 @@ import { byLove } from './by-love.js';
 import config from '@/config.js';
 import Friend from '@/friend.js';
 import { isMaster } from '@/utils/is-master.js';
-import { pickNickname, parseAdanaTarget, ADANA_WORDS, REROLL_WORDS } from './nickname.js';
+import { pickNickname, parseAdanaTarget, ADANA_WORDS, REROLL_WORDS, YES_WORDS, NO_WORDS } from './nickname.js';
 import { resolveMasterNicknameSettings, checkMasterNicknameLimit, nextMasterNicknameUserRecord, MasterNicknameSettings } from './master-nickname.js';
 
 export default class extends Module {
@@ -582,9 +582,9 @@ export default class extends Module {
 		const target: string | undefined = data.target;
 
 		// 「ううん」は「うん」を含むので、否定を先に判定する
-		if (msg.includes(['いいえ', 'ううん', 'やだ', '嫌', 'だめ', 'やめ'])) {
+		if (msg.includes(NO_WORDS)) {
 			msg.reply(target != null ? serifs.core.adanaOtherNo(target) : serifs.core.adanaNo(msg.friend.name));
-		} else if (msg.includes(['はい', 'いいよ', 'うん', 'それで', 'お願い', 'おねがい'])) {
+		} else if (msg.includes(YES_WORDS)) {
 			if (target != null) {
 				msg.reply(serifs.core.adanaOtherOk(target));
 			} else {
