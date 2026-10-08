@@ -167,6 +167,19 @@ test('メンションは、敬称が無ければ「さん」を付けた名前�
 	assert.deepEqual(parseAdanaTarget('田中さんのあだ名'), { kind: 'other', name: '田中さん' });
 });
 
+test('藍のメンションは、藍のユーザー名(このサーバー)のときだけ。ほかのサーバーの同じユーザー名は、ほかの人', () => {
+	const ai = { username: 'ai_bot', localHost: 'misskey.example' };
+	const parse = text => parseAdanaTarget(text, undefined, [], undefined, ai);
+	for (const text of ['@ai_bot のあだ名', '@AI_BOT のあだ名', '@ai_bot@misskey.example のあだ名', '@ai_bot さんのあだ名', 'あなたのあだ名', '藍ちゃんのあだ名', 'AIさんのあだ名', 'ai_botさんのあだ名']) {
+		assert.deepEqual(parse(text), { kind: 'ai' }, text);
+	}
+	assert.deepEqual(parse('@ai_bot@remote.example のあだ名'), { kind: 'other', name: 'ai_botさん' }, 'ほかのサーバー');
+	assert.deepEqual(parse('@ai のあだ名'), { kind: 'other', name: 'aiさん' }, '藍のユーザー名ではない「ai」さん');
+	assert.deepEqual(parse('藍のあだ名'), { kind: 'self' }, '敬称もメンションも無いものは、これまでどおり本人');
+	// 藍のアカウントを渡さないときは、これまでどおり固定の名前で見る
+	assert.deepEqual(parseAdanaTarget('@ai のあだ名'), { kind: 'ai' });
+});
+
 async function setup() {
 	const require = createRequire(ROOT);
 	const loki = require('lokijs');
@@ -413,4 +426,18 @@ test('自分へのメンションは、本人のあだ名として聞き、呼�
 	await new Promise(r => setTimeout(r, 0));
 	assert.match(replies[0], /^テスト、「.+」とお呼びしてもいいですか？$/);
 	assert.equal(subscribed[0].data.target, undefined);
+});
+
+test('藍のあだ名: 藍のユーザー名へのメンションを、藍の本当のアカウントで見分ける', { skip: !hasConfig && 'config.json がない' }, async () => {
+	const { mod, serifs, subscribed } = await setup();
+	mod.ai.account = { username: 'ai_bot' };
+	const real = [];
+	assert.deepEqual(mod.adana(message('@ai_bot のあだ名は？', real)), { reaction: 'confused' });
+	assert.equal(subscribed.length, 0);
+
+	const other = [];
+	mod.adana(message('@ai のあだ名は？', other));
+	await new Promise(r => setTimeout(r, 0));
+	assert.match(other[0], /^aiさんのあだ名は、「.+」とかいかがでしょうか？$/, '別の人の ai さんは、ほかの人');
+	assert.equal(subscribed[0].data.target, 'aiさん');
 });

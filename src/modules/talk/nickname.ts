@@ -144,8 +144,9 @@ export type AdanaMasterNames = {
  * @param otherNames マスターのあだ名を使わないとき、敬称やメンションが無くてもほかの人とみなす名前
  *   (マスターの名前を、送った本人のあだ名と取り違えないため)
  * @param sender 送った人。渡すと、自分へのメンション(「@自分 のあだ名」)は、本人のあだ名(self)にする
+ * @param aiAccount 藍のアカウント。渡すと、メンションは藍のユーザー名(このサーバー)のときだけ藍とみなす。渡さないときは、AI_NAMES(ai など)で見る
  */
-export function parseAdanaTarget(text: string, master?: AdanaMasterNames, otherNames: readonly string[] = [], sender?: AdanaSender): AdanaTarget {
+export function parseAdanaTarget(text: string, master?: AdanaMasterNames, otherNames: readonly string[] = [], sender?: AdanaSender, aiAccount?: AdanaAiAccount): AdanaTarget {
 	const target = findAdanaTarget(text);
 	if (target == null) return { kind: 'self' };
 
@@ -156,9 +157,26 @@ export function parseAdanaTarget(text: string, master?: AdanaMasterNames, otherN
 
 	if (SECOND_PERSON.includes(target.base)) return { kind: 'ai' };
 	if (!target.honorific && !target.mention) return { kind: 'self' };
-	if (AI_NAMES.includes(target.base.toLowerCase())) return { kind: 'ai' };
+	if (isAiTarget(target, aiAccount)) return { kind: 'ai' };
 	// 「@bob のあだ名」は「bobさんのあだ名は…」と返す(呼び捨てにしない)
 	return { kind: 'other', name: target.mention && !target.honorific ? `${target.name}さん` : target.name };
+}
+
+/** 藍のアカウント。「@藍のユーザー名」を、藍とみなす */
+export type AdanaAiAccount = {
+	username: string;
+	/** このサーバーのホスト名。「@ユーザー名@このサーバー」も藍とみなし、ほかのサーバーの同じユーザー名は、ほかの人 */
+	localHost?: string;
+};
+
+function isAiTarget(target: AdanaTargetWord, aiAccount?: AdanaAiAccount): boolean {
+	if (aiAccount == null) return AI_NAMES.includes(target.base.toLowerCase());
+
+	if (target.mention) {
+		const local = target.host == null || (aiAccount.localHost != null && target.host.toLowerCase() === aiAccount.localHost.toLowerCase());
+		return local && target.base.toLowerCase() === aiAccount.username.toLowerCase();
+	}
+	return AI_NAMES.includes(target.base.toLowerCase()) || target.base.toLowerCase() === aiAccount.username.toLowerCase();
 }
 
 /** 送った人。自分へのメンションを見分ける */

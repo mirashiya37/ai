@@ -425,7 +425,7 @@ export default class extends Module {
 			? config.masterNicknameNames.filter((name): name is string => typeof name === 'string' && name.length > 0)
 			: [];
 		const localHost = new URL(config.host).host;
-		const target = parseAdanaTarget(msg.extractedText, master != null ? { username: master.username, names: master.names, localHost } : undefined, otherNames, { username: msg.user.username, host: msg.user.host, localHost });
+		const target = parseAdanaTarget(msg.extractedText, master != null ? { username: master.username, names: master.names, localHost } : undefined, otherNames, { username: msg.user.username, host: msg.user.host, localHost }, this.ai.account?.username ? { username: this.ai.account.username, localHost } : undefined);
 		switch (target.kind) {
 			case 'ai': return this.adanaForAi(msg);
 			case 'master': return this.adanaForMaster(msg, master!);
