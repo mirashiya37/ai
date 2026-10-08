@@ -219,14 +219,10 @@ export default {
 
 		adanaMasterRenamedToMaster: (from: string, item: string) => `${from}に頼まれて、マスターの呼び名を「${item}」にしました！ 戻すときは「〇〇って呼んで」と言ってくださいね`,
 
-		adanaMasterToSender: (item: string) => `マスターのあだ名は、「${item}」とかどうでしょう？ マスターに伝えておきますね！`,
+		/** マスターに伝え終わったあとの、頼んだ人への返事(チャットで伝えたときも、メンションで伝えたときも同じ) */
+		adanaMasterToSender: (item: string) => `マスターのあだ名は、「${item}」とかどうでしょう？ マスターに伝えておきました！`,
 
-		adanaMasterRenamedToSender: (item: string) => `マスターのあだ名は、「${item}」にしてみますね！ マスターには、私から伝えておきます！`,
-
-		/** チャットで頼まれて、マスターにメンション(ダイレクト投稿)で伝えたあとの、頼んだ人への返事 */
-		adanaMasterMentionedToSender: (item: string) => `マスターのあだ名は、「${item}」とかどうでしょう？ マスターに伝えておきました！`,
-
-		adanaMasterRenamedMentionedToSender: (item: string) => `マスターのあだ名は、「${item}」にしてみました！ マスターにも伝えておきました！`,
+		adanaMasterRenamedToSender: (item: string) => `マスターのあだ名は、「${item}」にしてみました！ マスターにも伝えておきました！`,
 
 		adanaMasterLimitDaily: (item: string) => `マスターのあだ名は、「${item}」とかどうでしょう？ ・・・あっ、今日はもう、マスターに伝えたんでした！ また明日、お願いしますね`,
 
