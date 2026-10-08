@@ -221,6 +221,8 @@ async function setup() {
 	return { serifs, mod, subscribed, unsubscribed };
 }
 
+const stripMention = t => t.replace(/^@\w+ /, '');
+
 const withoutAt = ({ at, ...rest }) => rest;
 
 const message = (text, replies, love = 0) => ({
@@ -231,7 +233,8 @@ const message = (text, replies, love = 0) => ({
 	isChat: false,
 	includes: words => words.some(word => text.includes(word)),
 	friend: { love, name: 'テスト', updateName(name) { this.name = name; } },
-	reply: t => { replies.push(t); return Promise.resolve({ id: 'reply' + replies.length }); },
+	// 投稿への返信は、頭に送った人へのメンションが付く。中身を比べやすいように、記録からは外す(付くことは、別のテストで確かめる)
+	reply: t => { replies.push(stripMention(t)); return Promise.resolve({ id: 'reply' + replies.length }); },
 });
 
 test('チャット: 待ち受けが期限切れなら、返事とみなさず、待ち受けをやめて普段の会話として扱う', { skip: !hasConfig && 'config.json がない' }, async () => {
@@ -496,4 +499,18 @@ test('提案の返信に失敗しても、未処理のエラーにしない(待�
 		assert.deepEqual(unhandled, []);
 		assert.deepEqual(subscribed, []);
 	} finally { process.off('unhandledRejection', onUnhandled); }
+});
+
+test('あだ名の返信は、投稿なら頭に送った人へのメンションを付け、チャットには付けない', { skip: !hasConfig && 'config.json がない' }, async () => {
+	const { mod } = await setup();
+	const raw = [];
+	const mk = isChat => ({ ...message('あだ名で呼ばないで', []), isChat, reply: t => { raw.push(t); return Promise.resolve({ id: 'r' }); } });
+
+	mod.adana(mk(false));
+	mod.adana({ ...mk(false), user: { username: 'bob', host: 'remote.example' } });
+	mod.adana(mk(true));
+	await new Promise(r => setTimeout(r, 0));
+
+	const body = 'わかりました、あだ名はやめて、これからもテストとお呼びしますね！';
+	assert.deepEqual(raw, [`@alice ${body}`, `@bob@remote.example ${body}`, body]);
 });

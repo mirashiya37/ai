@@ -7,6 +7,7 @@ import serifs from '@/serifs.js';
 import config from '@/config.js';
 import Friend from '@/friend.js';
 import { isMaster } from '@/utils/is-master.js';
+import { replyWithMention } from '@/utils/reply-with-mention.js';
 import { resolveMasterNicknameSettings, MasterNicknameOverrides, MasterNicknameSettings } from '@/modules/talk/master-nickname.js';
 import { YES_WORDS, NO_WORDS, startsWithWord } from '@/modules/talk/nickname.js';
 import { parseNicknameCommand, NICKNAME_HELP, NicknameCommand, RenameMode } from './commands.js';
@@ -299,13 +300,13 @@ export default class extends Module {
 				if (this.rename().pending?.at === reserved.at) this.updateRename({ pending: null });
 				throw err;
 			}
-			await msg.reply(serifs.core.adanaMasterRenameAskedToSender(item, label)).catch(err => this.log(`Failed to reply to the requester: ${err}`));
+			await replyWithMention(msg, serifs.core.adanaMasterRenameAskedToSender(item, label)).catch(err => this.log(`Failed to reply to the requester: ${err}`));
 			return 'asked';
 		}
 
 		await this.applyRename(item);
 		await this.tellMaster(serifs.core.adanaMasterRenamedNow(from, item, label));
-		await msg.reply(serifs.core.adanaMasterRenamedNowToSender(item, label)).catch(err => this.log(`Failed to reply to the requester: ${err}`));
+		await replyWithMention(msg, serifs.core.adanaMasterRenamedNowToSender(item, label)).catch(err => this.log(`Failed to reply to the requester: ${err}`));
 		return 'renamed';
 	}
 

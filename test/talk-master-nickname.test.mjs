@@ -109,7 +109,7 @@ function message(ai, text, replies, { user = { id: 'u1', username: 'alice', host
 	return {
 		id: 'note1', text, extractedText: text, userId: user.id, user, isChat, visibility, friend,
 		includes: words => words.some(word => text.includes(word)),
-		reply: async t => { replies.push(t); return { id: 'reply' + replies.length }; },
+		reply: async t => { replies.push(t.replace(/^@\w+ /, '')); return { id: 'reply' + replies.length }; },
 	};
 }
 

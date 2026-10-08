@@ -9,6 +9,7 @@ import { byLove } from './by-love.js';
 import config from '@/config.js';
 import Friend from '@/friend.js';
 import { isMaster } from '@/utils/is-master.js';
+import { replyWithMention } from '@/utils/reply-with-mention.js';
 import type MasterNicknameModule from '@/modules/master-nickname/index.js';
 import { pickNickname, parseAdanaTarget, ADANA_WORDS, ADANA_REFUSE_WORDS, REROLL_WORDS, YES_WORDS, NO_WORDS, isChatReplyExpired, startsWithReplyWord } from './nickname.js';
 import { resolveMasterNicknameSettings, checkMasterNicknameLimit, nextMasterNicknameUserRecord, describeRequester, masterLabel, masterMentionVisibility, masterNames, MasterNicknameSettings } from './master-nickname.js';
@@ -420,7 +421,7 @@ export default class extends Module {
 
 		// 「あだ名で呼ばないで」は、あだ名を提案しない
 		if (msg.includes(ADANA_REFUSE_WORDS)) {
-			msg.reply(serifs.core.adanaStop(msg.friend.name));
+			replyWithMention(msg, serifs.core.adanaStop(msg.friend.name));
 			return { reaction: '🙌' };
 		}
 
@@ -462,7 +463,7 @@ export default class extends Module {
 	 */
 	private thinkNickname(msg: Message, exclude: readonly string[] = []): string | null {
 		const item = pickNickname(() => genItemWithKeyword(getLearnedKeywords(this.ai)), exclude);
-		if (item == null) msg.reply(serifs.core.adana('', msg.friend.name));
+		if (item == null) replyWithMention(msg, serifs.core.adana('', msg.friend.name));
 		return item;
 	}
 
@@ -472,7 +473,7 @@ export default class extends Module {
 	 * 待ち受けた時刻(at)、ほかの人のあだ名なら誰のものか(target)
 	 */
 	private proposeNickname(msg: Message, text: string, data: { name: string; seen: string[]; rerolls: number; target?: string }) {
-		msg.reply(text).then(reply => {
+		replyWithMention(msg, text).then(reply => {
 			this.subscribeReply(msg.userId, msg.isChat, msg.isChat ? msg.userId : reply.id, {
 				...data,
 				at: Date.now(),
@@ -482,7 +483,7 @@ export default class extends Module {
 
 	/** 藍自身のあだ名は、やんわり断る */
 	private adanaForAi(msg: Message): HandlerResult {
-		msg.reply(getSerif(byLove(msg.friend, serifs.core.adanaForAi)));
+		replyWithMention(msg, getSerif(byLove(msg.friend, serifs.core.adanaForAi)));
 		return { reaction: 'confused' };
 	}
 
@@ -525,7 +526,7 @@ export default class extends Module {
 		const moduleData = this.getData();
 		const limit = checkMasterNicknameLimit(settings, userData.masterNickname ?? {}, moduleData.masterNicknameNotifiedAt, today, now);
 		if (!limit.ok) {
-			msg.reply(limit.reason === 'daily'
+			replyWithMention(msg, limit.reason === 'daily'
 				? serifs.core.adanaMasterLimitDaily(item, masterLabel(settings))
 				: serifs.core.adanaMasterLimitInterval(item, Math.ceil(limit.nextAt / 1000), masterLabel(settings)));
 			return { reaction: '🙌' };
@@ -541,7 +542,7 @@ export default class extends Module {
 			this.log(`Failed to tell the master a nickname: ${err}`);
 			msg.friend.setPerModulesData(this, { ...msg.friend.getPerModulesData(this), masterNickname: prevUser });
 			this.setData({ ...this.getData(), masterNicknameNotifiedAt: prevNotifiedAt });
-			msg.reply(serifs.core.adanaMasterFailed(item, masterLabel(settings)))
+			replyWithMention(msg, serifs.core.adanaMasterFailed(item, masterLabel(settings)))
 				.catch(err => this.log(`Failed to reply to the requester: ${err}`));
 		});
 
@@ -592,7 +593,7 @@ export default class extends Module {
 		// メンションの投稿は、投稿で頼まれたなら、頼んだ人への返信そのもの。
 		// チャットで頼まれたときは、メンションの投稿(ダイレクト)が頼んだ人のチャットには出ないので、チャットにも返す
 		if (settings.notify !== 'mention' || msg.isChat) {
-			await msg.reply(renamed ? serifs.core.adanaMasterRenamedToSender(item, label) : serifs.core.adanaMasterToSender(item, label))
+			await replyWithMention(msg, renamed ? serifs.core.adanaMasterRenamedToSender(item, label) : serifs.core.adanaMasterToSender(item, label))
 				.catch(err => this.log(`Failed to reply to the requester: ${err}`));
 		}
 	}
@@ -638,13 +639,13 @@ export default class extends Module {
 
 		// 「ううん」は「うん」を含むので、否定を先に判定する
 		if (msg.includes(NO_WORDS)) {
-			msg.reply(target != null ? serifs.core.adanaOtherNo(target) : serifs.core.adanaNo(msg.friend.name));
+			replyWithMention(msg, target != null ? serifs.core.adanaOtherNo(target) : serifs.core.adanaNo(msg.friend.name));
 		} else if (msg.includes(YES_WORDS)) {
 			if (target != null) {
-				msg.reply(serifs.core.adanaOtherOk(target));
+				replyWithMention(msg, serifs.core.adanaOtherOk(target));
 			} else {
 				msg.friend.updateName(data.name);
-				msg.reply(serifs.core.setNameOk(data.name));
+				replyWithMention(msg, serifs.core.setNameOk(data.name));
 			}
 		} else {
 			// あだ名への返事ではなさそうなので、待ち受けをやめて普段の会話として扱う
