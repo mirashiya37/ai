@@ -143,10 +143,13 @@ export type AdanaMasterNames = {
  * @param master マスターのあだ名を使うときに渡す
  * @param otherNames マスターのあだ名を使わないとき、敬称やメンションが無くてもほかの人とみなす名前
  *   (マスターの名前を、送った本人のあだ名と取り違えないため)
+ * @param sender 送った人。渡すと、自分へのメンション(「@自分 のあだ名」)は、本人のあだ名(self)にする
  */
-export function parseAdanaTarget(text: string, master?: AdanaMasterNames, otherNames: readonly string[] = []): AdanaTarget {
+export function parseAdanaTarget(text: string, master?: AdanaMasterNames, otherNames: readonly string[] = [], sender?: AdanaSender): AdanaTarget {
 	const target = findAdanaTarget(text);
 	if (target == null) return { kind: 'self' };
+
+	if (sender != null && isSenderTarget(target, sender)) return { kind: 'self' };
 
 	if (master != null && isMasterTarget(target, master)) return { kind: 'master' };
 	if (!target.mention && (otherNames.includes(target.name) || otherNames.includes(target.base))) return { kind: 'other', name: target.name };
@@ -155,6 +158,22 @@ export function parseAdanaTarget(text: string, master?: AdanaMasterNames, otherN
 	if (!target.honorific && !target.mention) return { kind: 'self' };
 	if (AI_NAMES.includes(target.base.toLowerCase())) return { kind: 'ai' };
 	return { kind: 'other', name: target.name };
+}
+
+/** 送った人。自分へのメンションを見分ける */
+export type AdanaSender = {
+	username: string;
+	/** 送った人のサーバー。このサーバーのユーザーなら null */
+	host?: string | null;
+	/** このサーバーのホスト名。「@ユーザー名@このサーバー」も、このサーバーのユーザーとみなす */
+	localHost?: string;
+};
+
+function isSenderTarget(target: AdanaTargetWord, sender: AdanaSender): boolean {
+	if (!target.mention || target.base.toLowerCase() !== sender.username.toLowerCase()) return false;
+	const host = (target.host ?? sender.localHost ?? null)?.toLowerCase() ?? null;
+	const senderHost = (sender.host ?? sender.localHost ?? null)?.toLowerCase() ?? null;
+	return host === senderHost;
 }
 
 function isMasterTarget(target: AdanaTargetWord, master: AdanaMasterNames): boolean {

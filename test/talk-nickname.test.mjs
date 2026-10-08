@@ -146,6 +146,19 @@ test('「@bob さんのあだ名」のように、メンションと敬称のあ
 	assert.deepEqual(parseAdanaTarget('@bob 田中さんのあだ名'), other('田中さん'), '敬称の前に名前があれば、その名前');
 });
 
+test('自分へのメンションは、本人のあだ名。サーバーが違う同じユーザー名は、ほかの人', () => {
+	const sender = { username: 'alice', host: null, localHost: 'misskey.example' };
+	const parse = text => parseAdanaTarget(text, undefined, [], sender);
+	for (const text of ['@alice のあだ名', '@Alice のあだ名', '@alice さんのあだ名', '@alice@misskey.example のあだ名']) assert.deepEqual(parse(text), { kind: 'self' }, text);
+	assert.deepEqual(parse('@alice@remote.example のあだ名'), { kind: 'other', name: 'alice' });
+	assert.deepEqual(parse('@bob のあだ名'), { kind: 'other', name: 'bob' });
+
+	const remote = { username: 'alice', host: 'remote.example', localHost: 'misskey.example' };
+	assert.deepEqual(parseAdanaTarget('@alice@remote.example のあだ名', undefined, [], remote), { kind: 'self' });
+	assert.deepEqual(parseAdanaTarget('@alice のあだ名', undefined, [], remote), { kind: 'other', name: 'alice' }, 'このサーバーの alice は別の人');
+	assert.deepEqual(parseAdanaTarget('@alice のあだ名'), { kind: 'other', name: 'alice' }, '送った人を渡さなければ、これまでどおり');
+});
+
 async function setup() {
 	const require = createRequire(ROOT);
 	const loki = require('lokijs');
@@ -383,4 +396,13 @@ test('マスターのあだ名を使わない設定でも、マスターの名�
 		for (const key of Object.keys(config)) delete config[key];
 		Object.assign(config, saved);
 	}
+});
+
+test('自分へのメンションは、本人のあだ名として聞き、呼び名は変えない対象(target)にしない', { skip: !hasConfig && 'config.json がない' }, async () => {
+	const { mod, subscribed } = await setup();
+	const replies = [];
+	mod.adana(message('@alice のあだ名考えて', replies));
+	await new Promise(r => setTimeout(r, 0));
+	assert.match(replies[0], /^テスト、「.+」とお呼びしてもいいですか？$/);
+	assert.equal(subscribed[0].data.target, undefined);
 });
