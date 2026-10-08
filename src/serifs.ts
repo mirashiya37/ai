@@ -240,7 +240,7 @@ export default {
 
 		adanaMasterRenameAskedToSender: (item: string, label: string) => `${label}のあだ名は、「${item}」とかどうでしょう？ ${label}に、表示名をこれにしていいか聞いてみますね！`,
 
-		adanaMasterRenameApproved: (item: string) => `表示名を「${item}」にしました！ 戻すときは「/nickname rename revert」と送ってくださいね`,
+		adanaMasterRenameApproved: (item: string) => `表示名を「${item}」にしました！`,
 
 		adanaMasterRenameDeclined: 'わかりました、表示名はそのままにしますね',
 
@@ -250,7 +250,7 @@ export default {
 
 		/** マスターの表示名を変える(すぐ変える設定) */
 		adanaMasterRenamedNow: (from: string, item: string, label: string) =>
-			`${from}に頼まれて、${label}の表示名を「${item}」にしました！ 戻すときは「/nickname rename revert」と送ってくださいね`,
+			`${from}に頼まれて、${label}の表示名を「${item}」にしました！`,
 
 		adanaMasterRenamedNowToSender: (item: string, label: string) => `${label}のあだ名は、「${item}」にしてみました！ 表示名も変えておきました！`,
 
