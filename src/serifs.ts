@@ -234,6 +234,28 @@ export default {
 
 		adanaMasterFailed: (item: string, label: string) => `${label}のあだ名は、「${item}」とかどうでしょう？ ・・・あれ、${label}にうまく伝えられませんでした・・・`,
 
+		/** マスターの表示名を変える(承認してから変える設定)。マスターへの問いかけ */
+		adanaMasterRenameAsk: (from: string, item: string, label: string, minutes: number) =>
+			`${from}に頼まれて、${label}のあだ名を考えました！ 表示名を「${item}」に変えてもいいですか？ ${minutes}分以内に「はい」か「いいえ」で教えてくださいね`,
+
+		adanaMasterRenameAskedToSender: (item: string, label: string) => `${label}のあだ名は、「${item}」とかどうでしょう？ ${label}に、表示名をこれにしていいか聞いてみますね！`,
+
+		adanaMasterRenameApproved: (item: string) => `表示名を「${item}」にしました！ 戻すときは「/nickname rename revert」と送ってくださいね`,
+
+		adanaMasterRenameDeclined: 'わかりました、表示名はそのままにしますね',
+
+		adanaMasterRenameExpired: (minutes: number) => `ごめんなさい、${minutes}分を過ぎたので、表示名の変更は取り消しました`,
+
+		adanaMasterRenameFailed: '表示名を変えられませんでした・・・',
+
+		/** マスターの表示名を変える(すぐ変える設定) */
+		adanaMasterRenamedNow: (from: string, item: string, label: string) =>
+			`${from}に頼まれて、${label}の表示名を「${item}」にしました！ 戻すときは「/nickname rename revert」と送ってくださいね`,
+
+		adanaMasterRenamedNowToSender: (item: string, label: string) => `${label}のあだ名は、「${item}」にしてみました！ 表示名も変えておきました！`,
+
+		adanaMasterRenameStopped: (problems: string) => `表示名の変更を止めました。${problems}`,
+
 		/** 藍自身のあだ名を考えてと言われたとき(やんわり断る) */
 		adanaForAi: {
 			normal: ['私のあだ名を、私が考えるんですか・・・？ ちょっと恥ずかしいので、遠慮しておきますね', '自分のあだ名を自分で考えるのは、ちょっと照れちゃいます・・・'],

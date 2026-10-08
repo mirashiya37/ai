@@ -1,0 +1,8847 @@
+{
+	"info": {
+		"note": "Misskey の /api.json から、権限とパラメーターの型だけを取り出したもの(token-check のテスト用)",
+		"version": "2026.10.0"
+	},
+	"paths": {
+		"/admin/abuse-report/notification-recipient/create": {
+			"post": {
+				"description": "**Permission**: *write:admin:abuse-report:notification-recipient*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"isActive": {
+										"type": "boolean"
+									},
+									"name": {
+										"type": "string"
+									},
+									"method": {
+										"type": "string"
+									},
+									"userId": {
+										"type": "string"
+									},
+									"systemWebhookId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"isActive",
+									"name",
+									"method"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/abuse-report/notification-recipient/delete": {
+			"post": {
+				"description": "**Permission**: *write:admin:abuse-report:notification-recipient*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"id": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"id"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/abuse-report/notification-recipient/list": {
+			"post": {
+				"description": "**Permission**: *read:admin:abuse-report:notification-recipient*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"method": {
+										"type": "array"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/abuse-report/notification-recipient/show": {
+			"post": {
+				"description": "**Permission**: *read:admin:abuse-report:notification-recipient*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"id": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"id"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/abuse-report/notification-recipient/update": {
+			"post": {
+				"description": "**Permission**: *write:admin:abuse-report:notification-recipient*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"id": {
+										"type": "string"
+									},
+									"isActive": {
+										"type": "boolean"
+									},
+									"name": {
+										"type": "string"
+									},
+									"method": {
+										"type": "string"
+									},
+									"userId": {
+										"type": "string"
+									},
+									"systemWebhookId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"id",
+									"isActive",
+									"name",
+									"method"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/abuse-user-reports": {
+			"post": {
+				"description": "**Permission**: *read:admin:abuse-user-reports*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									},
+									"state": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"reporterOrigin": {
+										"type": "string"
+									},
+									"targetUserOrigin": {
+										"type": "string"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/accounts/delete": {
+			"post": {
+				"description": "**Permission**: *write:admin:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"userId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"userId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/accounts/find-by-email": {
+			"post": {
+				"description": "**Permission**: *read:admin:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"email": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"email"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/ad/create": {
+			"post": {
+				"description": "**Permission**: *write:admin:ad*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"url": {
+										"type": "string"
+									},
+									"memo": {
+										"type": "string"
+									},
+									"place": {
+										"type": "string"
+									},
+									"priority": {
+										"type": "string"
+									},
+									"ratio": {
+										"type": "integer"
+									},
+									"expiresAt": {
+										"type": "integer"
+									},
+									"startsAt": {
+										"type": "integer"
+									},
+									"imageUrl": {
+										"type": "string"
+									},
+									"dayOfWeek": {
+										"type": "integer"
+									},
+									"isSensitive": {
+										"type": "boolean"
+									}
+								},
+								"required": [
+									"url",
+									"memo",
+									"place",
+									"priority",
+									"ratio",
+									"expiresAt",
+									"startsAt",
+									"imageUrl",
+									"dayOfWeek"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/ad/delete": {
+			"post": {
+				"description": "**Permission**: *write:admin:ad*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"id": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"id"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/ad/list": {
+			"post": {
+				"description": "**Permission**: *read:admin:ad*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									},
+									"publishing": {
+										"type": [
+											"boolean",
+											"null"
+										]
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/ad/update": {
+			"post": {
+				"description": "**Permission**: *write:admin:ad*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"id": {
+										"type": "string"
+									},
+									"memo": {
+										"type": "string"
+									},
+									"url": {
+										"type": "string"
+									},
+									"imageUrl": {
+										"type": "string"
+									},
+									"place": {
+										"type": "string"
+									},
+									"priority": {
+										"type": "string"
+									},
+									"ratio": {
+										"type": "integer"
+									},
+									"expiresAt": {
+										"type": "integer"
+									},
+									"startsAt": {
+										"type": "integer"
+									},
+									"dayOfWeek": {
+										"type": "integer"
+									},
+									"isSensitive": {
+										"type": "boolean"
+									}
+								},
+								"required": [
+									"id"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/announcements/create": {
+			"post": {
+				"description": "**Permission**: *write:admin:announcements*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"title": {
+										"type": "string"
+									},
+									"text": {
+										"type": "string"
+									},
+									"imageUrl": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"icon": {
+										"type": "string"
+									},
+									"display": {
+										"type": "string"
+									},
+									"forExistingUsers": {
+										"type": "boolean"
+									},
+									"silence": {
+										"type": "boolean"
+									},
+									"needConfirmationToRead": {
+										"type": "boolean"
+									},
+									"userId": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								},
+								"required": [
+									"title",
+									"text",
+									"imageUrl"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/announcements/delete": {
+			"post": {
+				"description": "**Permission**: *write:admin:announcements*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"id": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"id"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/announcements/list": {
+			"post": {
+				"description": "**Permission**: *read:admin:announcements*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									},
+									"userId": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"status": {
+										"type": "string"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/announcements/update": {
+			"post": {
+				"description": "**Permission**: *write:admin:announcements*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"id": {
+										"type": "string"
+									},
+									"title": {
+										"type": "string"
+									},
+									"text": {
+										"type": "string"
+									},
+									"imageUrl": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"icon": {
+										"type": "string"
+									},
+									"display": {
+										"type": "string"
+									},
+									"forExistingUsers": {
+										"type": "boolean"
+									},
+									"silence": {
+										"type": "boolean"
+									},
+									"needConfirmationToRead": {
+										"type": "boolean"
+									},
+									"isActive": {
+										"type": "boolean"
+									}
+								},
+								"required": [
+									"id"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/avatar-decorations/create": {
+			"post": {
+				"description": "**Permission**: *write:admin:avatar-decorations*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"name": {
+										"type": "string"
+									},
+									"description": {
+										"type": "string"
+									},
+									"url": {
+										"type": "string"
+									},
+									"roleIdsThatCanBeUsedThisDecoration": {
+										"type": "array"
+									},
+									"category": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								},
+								"required": [
+									"name",
+									"description",
+									"url"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/avatar-decorations/delete": {
+			"post": {
+				"description": "**Permission**: *write:admin:avatar-decorations*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"id": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"id"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/avatar-decorations/list": {
+			"post": {
+				"description": "**Permission**: *read:admin:avatar-decorations*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									},
+									"userId": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/avatar-decorations/update": {
+			"post": {
+				"description": "**Permission**: *write:admin:avatar-decorations*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"id": {
+										"type": "string"
+									},
+									"name": {
+										"type": "string"
+									},
+									"description": {
+										"type": "string"
+									},
+									"url": {
+										"type": "string"
+									},
+									"roleIdsThatCanBeUsedThisDecoration": {
+										"type": "array"
+									},
+									"category": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								},
+								"required": [
+									"id"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/captcha/current": {
+			"post": {
+				"description": "**Permission**: *read:admin:meta*"
+			}
+		},
+		"/admin/captcha/save": {
+			"post": {
+				"description": "**Permission**: *write:admin:meta*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"provider": {
+										"type": "string"
+									},
+									"captchaResult": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"sitekey": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"secret": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"instanceUrl": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								},
+								"required": [
+									"provider"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/delete-account": {
+			"post": {
+				"description": "**Permission**: *write:admin:delete-account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"userId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"userId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/delete-all-files-of-a-user": {
+			"post": {
+				"description": "**Permission**: *write:admin:delete-all-files-of-a-user*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"userId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"userId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/drive/clean-remote-files": {
+			"post": {
+				"description": "**Permission**: *write:admin:drive*"
+			}
+		},
+		"/admin/drive/cleanup": {
+			"post": {
+				"description": "**Permission**: *write:admin:drive*"
+			}
+		},
+		"/admin/drive/files": {
+			"post": {
+				"description": "**Permission**: *read:admin:drive*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									},
+									"userId": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"type": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"origin": {
+										"type": "string"
+									},
+									"hostname": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/drive/show-file": {
+			"post": {
+				"description": "**Permission**: *read:admin:drive*"
+			}
+		},
+		"/admin/emoji/add": {
+			"post": {
+				"description": "**Permission**: *write:admin:emoji*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"name": {
+										"type": "string"
+									},
+									"fileId": {
+										"type": "string"
+									},
+									"category": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"aliases": {
+										"type": "array"
+									},
+									"license": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"isSensitive": {
+										"type": "boolean"
+									},
+									"localOnly": {
+										"type": "boolean"
+									},
+									"roleIdsThatCanBeUsedThisEmojiAsReaction": {
+										"type": "array"
+									}
+								},
+								"required": [
+									"name",
+									"fileId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/emoji/add-aliases-bulk": {
+			"post": {
+				"description": "**Permission**: *write:admin:emoji*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"ids": {
+										"type": "array"
+									},
+									"aliases": {
+										"type": "array"
+									}
+								},
+								"required": [
+									"ids",
+									"aliases"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/emoji/copy": {
+			"post": {
+				"description": "**Permission**: *write:admin:emoji*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"emojiId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"emojiId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/emoji/delete": {
+			"post": {
+				"description": "**Permission**: *write:admin:emoji*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"id": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"id"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/emoji/delete-bulk": {
+			"post": {
+				"description": "**Permission**: *write:admin:emoji*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"ids": {
+										"type": "array"
+									}
+								},
+								"required": [
+									"ids"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/emoji/list": {
+			"post": {
+				"description": "**Permission**: *read:admin:emoji*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"query": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/emoji/list-remote": {
+			"post": {
+				"description": "**Permission**: *read:admin:emoji*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"query": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"host": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/emoji/remove-aliases-bulk": {
+			"post": {
+				"description": "**Permission**: *write:admin:emoji*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"ids": {
+										"type": "array"
+									},
+									"aliases": {
+										"type": "array"
+									}
+								},
+								"required": [
+									"ids",
+									"aliases"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/emoji/set-aliases-bulk": {
+			"post": {
+				"description": "**Permission**: *write:admin:emoji*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"ids": {
+										"type": "array"
+									},
+									"aliases": {
+										"type": "array"
+									}
+								},
+								"required": [
+									"ids",
+									"aliases"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/emoji/set-category-bulk": {
+			"post": {
+				"description": "**Permission**: *write:admin:emoji*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"ids": {
+										"type": "array"
+									},
+									"category": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								},
+								"required": [
+									"ids"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/emoji/set-license-bulk": {
+			"post": {
+				"description": "**Permission**: *write:admin:emoji*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"ids": {
+										"type": "array"
+									},
+									"license": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								},
+								"required": [
+									"ids"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/emoji/update": {
+			"post": {
+				"description": "**Permission**: *write:admin:emoji*"
+			}
+		},
+		"/admin/federation/delete-all-files": {
+			"post": {
+				"description": "**Permission**: *write:admin:federation*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"host": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"host"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/federation/refresh-remote-instance-metadata": {
+			"post": {
+				"description": "**Permission**: *write:admin:federation*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"host": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"host"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/federation/remove-all-following": {
+			"post": {
+				"description": "**Permission**: *write:admin:federation*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"host": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"host"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/federation/update-instance": {
+			"post": {
+				"description": "**Permission**: *write:admin:federation*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"host": {
+										"type": "string"
+									},
+									"isSuspended": {
+										"type": "boolean"
+									},
+									"moderationNote": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"host"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/forward-abuse-user-report": {
+			"post": {
+				"description": "**Permission**: *write:admin:resolve-abuse-user-report*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"reportId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"reportId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/get-index-stats": {
+			"post": {
+				"description": "**Permission**: *read:admin:index-stats*"
+			}
+		},
+		"/admin/get-table-stats": {
+			"post": {
+				"description": "**Permission**: *read:admin:table-stats*"
+			}
+		},
+		"/admin/get-user-ips": {
+			"post": {
+				"description": "**Permission**: *read:admin:user-ips*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"userId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"userId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/invite/create": {
+			"post": {
+				"description": "**Permission**: *write:admin:invite-codes*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"count": {
+										"type": "integer"
+									},
+									"expiresAt": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/invite/list": {
+			"post": {
+				"description": "**Permission**: *read:admin:invite-codes*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"offset": {
+										"type": "integer"
+									},
+									"type": {
+										"type": "string"
+									},
+									"sort": {
+										"type": "string"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/meta": {
+			"post": {
+				"description": "**Permission**: *read:admin:meta*"
+			}
+		},
+		"/admin/promo/create": {
+			"post": {
+				"description": "**Permission**: *write:admin:promo*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"noteId": {
+										"type": "string"
+									},
+									"expiresAt": {
+										"type": "integer"
+									}
+								},
+								"required": [
+									"noteId",
+									"expiresAt"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/queue/clear": {
+			"post": {
+				"description": "**Permission**: *write:admin:queue*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"queue": {
+										"type": "string"
+									},
+									"state": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"queue",
+									"state"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/queue/deliver-delayed": {
+			"post": {
+				"description": "**Permission**: *read:admin:queue*"
+			}
+		},
+		"/admin/queue/inbox-delayed": {
+			"post": {
+				"description": "**Permission**: *read:admin:queue*"
+			}
+		},
+		"/admin/queue/jobs": {
+			"post": {
+				"description": "**Permission**: *read:admin:queue*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"queue": {
+										"type": "string"
+									},
+									"state": {
+										"type": "array"
+									},
+									"search": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"queue",
+									"state"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/queue/pause": {
+			"post": {
+				"description": "**Permission**: *write:admin:queue*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"queue": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"queue"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/queue/promote-jobs": {
+			"post": {
+				"description": "**Permission**: *write:admin:queue*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"queue": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"queue"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/queue/queue-stats": {
+			"post": {
+				"description": "**Permission**: *read:admin:queue*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"queue": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"queue"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/queue/queues": {
+			"post": {
+				"description": "**Permission**: *read:admin:queue*"
+			}
+		},
+		"/admin/queue/remove-job": {
+			"post": {
+				"description": "**Permission**: *write:admin:queue*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"queue": {
+										"type": "string"
+									},
+									"jobId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"queue",
+									"jobId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/queue/resume": {
+			"post": {
+				"description": "**Permission**: *write:admin:queue*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"queue": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"queue"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/queue/retry-job": {
+			"post": {
+				"description": "**Permission**: *write:admin:queue*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"queue": {
+										"type": "string"
+									},
+									"jobId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"queue",
+									"jobId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/queue/show-job": {
+			"post": {
+				"description": "**Permission**: *read:admin:queue*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"queue": {
+										"type": "string"
+									},
+									"jobId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"queue",
+									"jobId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/queue/show-job-logs": {
+			"post": {
+				"description": "**Permission**: *read:admin:queue*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"queue": {
+										"type": "string"
+									},
+									"jobId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"queue",
+									"jobId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/queue/stats": {
+			"post": {
+				"description": "**Permission**: *read:admin:queue*"
+			}
+		},
+		"/admin/relays/add": {
+			"post": {
+				"description": "**Permission**: *write:admin:relays*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"inbox": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"inbox"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/relays/list": {
+			"post": {
+				"description": "**Permission**: *read:admin:relays*"
+			}
+		},
+		"/admin/relays/remove": {
+			"post": {
+				"description": "**Permission**: *write:admin:relays*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"inbox": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"inbox"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/reset-password": {
+			"post": {
+				"description": "**Permission**: *write:admin:reset-password*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"userId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"userId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/resolve-abuse-user-report": {
+			"post": {
+				"description": "**Permission**: *write:admin:resolve-abuse-user-report*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"reportId": {
+										"type": "string"
+									},
+									"resolvedAs": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								},
+								"required": [
+									"reportId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/roles/assign": {
+			"post": {
+				"description": "**Permission**: *write:admin:roles*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"roleId": {
+										"type": "string"
+									},
+									"userId": {
+										"type": "string"
+									},
+									"expiresAt": {
+										"type": [
+											"integer",
+											"null"
+										]
+									}
+								},
+								"required": [
+									"roleId",
+									"userId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/roles/create": {
+			"post": {
+				"description": "**Permission**: *write:admin:roles*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"name": {
+										"type": "string"
+									},
+									"description": {
+										"type": "string"
+									},
+									"color": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"iconUrl": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"target": {
+										"type": "string"
+									},
+									"condFormula": {
+										"type": "object"
+									},
+									"isPublic": {
+										"type": "boolean"
+									},
+									"isModerator": {
+										"type": "boolean"
+									},
+									"isAdministrator": {
+										"type": "boolean"
+									},
+									"isExplorable": {
+										"type": "boolean"
+									},
+									"asBadge": {
+										"type": "boolean"
+									},
+									"preserveAssignmentOnMoveAccount": {
+										"type": "boolean"
+									},
+									"canEditMembersByModerator": {
+										"type": "boolean"
+									},
+									"displayOrder": {
+										"type": "number"
+									},
+									"policies": {
+										"type": "object"
+									}
+								},
+								"required": [
+									"name",
+									"description",
+									"color",
+									"iconUrl",
+									"target",
+									"condFormula",
+									"isPublic",
+									"isModerator",
+									"isAdministrator",
+									"asBadge",
+									"canEditMembersByModerator",
+									"displayOrder",
+									"policies"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/roles/delete": {
+			"post": {
+				"description": "**Permission**: *write:admin:roles*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"roleId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"roleId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/roles/list": {
+			"post": {
+				"description": "**Permission**: *read:admin:roles*"
+			}
+		},
+		"/admin/roles/show": {
+			"post": {
+				"description": "**Permission**: *read:admin:roles*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"roleId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"roleId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/roles/unassign": {
+			"post": {
+				"description": "**Permission**: *write:admin:roles*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"roleId": {
+										"type": "string"
+									},
+									"userId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"roleId",
+									"userId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/roles/update": {
+			"post": {
+				"description": "**Permission**: *write:admin:roles*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"roleId": {
+										"type": "string"
+									},
+									"name": {
+										"type": "string"
+									},
+									"description": {
+										"type": "string"
+									},
+									"color": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"iconUrl": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"target": {
+										"type": "string"
+									},
+									"condFormula": {
+										"type": "object"
+									},
+									"isPublic": {
+										"type": "boolean"
+									},
+									"isModerator": {
+										"type": "boolean"
+									},
+									"isAdministrator": {
+										"type": "boolean"
+									},
+									"isExplorable": {
+										"type": "boolean"
+									},
+									"asBadge": {
+										"type": "boolean"
+									},
+									"preserveAssignmentOnMoveAccount": {
+										"type": "boolean"
+									},
+									"canEditMembersByModerator": {
+										"type": "boolean"
+									},
+									"displayOrder": {
+										"type": "number"
+									},
+									"policies": {
+										"type": "object"
+									}
+								},
+								"required": [
+									"roleId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/roles/update-default-policies": {
+			"post": {
+				"description": "**Permission**: *write:admin:roles*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"policies": {
+										"type": "object"
+									}
+								},
+								"required": [
+									"policies"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/roles/users": {
+			"post": {
+				"description": "**Permission**: *read:admin:roles*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"roleId": {
+										"type": "string"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									},
+									"limit": {
+										"type": "integer"
+									}
+								},
+								"required": [
+									"roleId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/send-email": {
+			"post": {
+				"description": "**Permission**: *write:admin:send-email*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"to": {
+										"type": "string"
+									},
+									"subject": {
+										"type": "string"
+									},
+									"text": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"to",
+									"subject",
+									"text"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/server-info": {
+			"post": {
+				"description": "**Permission**: *read:admin:server-info*"
+			}
+		},
+		"/admin/show-moderation-logs": {
+			"post": {
+				"description": "**Permission**: *read:admin:show-moderation-log*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									},
+									"type": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"userId": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"search": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/show-user": {
+			"post": {
+				"description": "**Permission**: *read:admin:show-user*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"userId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"userId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/show-users": {
+			"post": {
+				"description": "**Permission**: *read:admin:show-user*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"offset": {
+										"type": "integer"
+									},
+									"sort": {
+										"type": "string"
+									},
+									"state": {
+										"type": "string"
+									},
+									"origin": {
+										"type": "string"
+									},
+									"username": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"hostname": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/suspend-user": {
+			"post": {
+				"description": "**Permission**: *write:admin:suspend-user*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"userId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"userId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/system-webhook/create": {
+			"post": {
+				"description": "**Permission**: *write:admin:system-webhook*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"isActive": {
+										"type": "boolean"
+									},
+									"name": {
+										"type": "string"
+									},
+									"on": {
+										"type": "array"
+									},
+									"url": {
+										"type": "string"
+									},
+									"secret": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"isActive",
+									"name",
+									"on",
+									"url"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/system-webhook/delete": {
+			"post": {
+				"description": "**Permission**: *write:admin:system-webhook*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"id": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"id"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/system-webhook/list": {
+			"post": {
+				"description": "**Permission**: *write:admin:system-webhook*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"isActive": {
+										"type": "boolean"
+									},
+									"on": {
+										"type": "array"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/system-webhook/show": {
+			"post": {
+				"description": "**Permission**: *write:admin:system-webhook*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"id": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"id"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/system-webhook/test": {
+			"post": {
+				"description": "**Permission**: *read:admin:system-webhook*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"webhookId": {
+										"type": "string"
+									},
+									"type": {
+										"type": "string"
+									},
+									"override": {
+										"type": "object"
+									}
+								},
+								"required": [
+									"webhookId",
+									"type"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/system-webhook/update": {
+			"post": {
+				"description": "**Permission**: *write:admin:system-webhook*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"id": {
+										"type": "string"
+									},
+									"isActive": {
+										"type": "boolean"
+									},
+									"name": {
+										"type": "string"
+									},
+									"on": {
+										"type": "array"
+									},
+									"url": {
+										"type": "string"
+									},
+									"secret": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"id",
+									"isActive",
+									"name",
+									"on",
+									"url"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/unset-mfa": {
+			"post": {
+				"description": "**Permission**: *write:admin:unset-mfa*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"userId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"userId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/unset-user-avatar": {
+			"post": {
+				"description": "**Permission**: *write:admin:unset-user-avatar*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"userId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"userId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/unset-user-banner": {
+			"post": {
+				"description": "**Permission**: *write:admin:unset-user-banner*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"userId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"userId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/unsuspend-user": {
+			"post": {
+				"description": "**Permission**: *write:admin:unsuspend-user*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"userId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"userId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/update-abuse-user-report": {
+			"post": {
+				"description": "**Permission**: *write:admin:resolve-abuse-user-report*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"reportId": {
+										"type": "string"
+									},
+									"moderationNote": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"reportId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/update-meta": {
+			"post": {
+				"description": "**Permission**: *write:admin:meta*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"disableRegistration": {
+										"type": [
+											"boolean",
+											"null"
+										]
+									},
+									"pinnedUsers": {
+										"type": [
+											"array",
+											"null"
+										]
+									},
+									"hiddenTags": {
+										"type": [
+											"array",
+											"null"
+										]
+									},
+									"blockedHosts": {
+										"type": [
+											"array",
+											"null"
+										]
+									},
+									"sensitiveWords": {
+										"type": [
+											"array",
+											"null"
+										]
+									},
+									"prohibitedWords": {
+										"type": [
+											"array",
+											"null"
+										]
+									},
+									"prohibitedWordsForNameOfUser": {
+										"type": [
+											"array",
+											"null"
+										]
+									},
+									"themeColor": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"mascotImageUrl": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"bannerUrl": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"serverErrorImageUrl": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"infoImageUrl": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"notFoundImageUrl": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"iconUrl": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"app192IconUrl": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"app512IconUrl": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"backgroundImageUrl": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"logoImageUrl": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"name": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"shortName": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"description": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"defaultLightTheme": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"defaultDarkTheme": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"clientOptions": {
+										"type": "object"
+									},
+									"cacheRemoteFiles": {
+										"type": "boolean"
+									},
+									"cacheRemoteSensitiveFiles": {
+										"type": "boolean"
+									},
+									"emailRequiredForSignup": {
+										"type": "boolean"
+									},
+									"enableHcaptcha": {
+										"type": "boolean"
+									},
+									"hcaptchaSiteKey": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"hcaptchaSecretKey": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"enableMcaptcha": {
+										"type": "boolean"
+									},
+									"mcaptchaSiteKey": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"mcaptchaInstanceUrl": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"mcaptchaSecretKey": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"enableRecaptcha": {
+										"type": "boolean"
+									},
+									"recaptchaSiteKey": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"recaptchaSecretKey": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"enableTurnstile": {
+										"type": "boolean"
+									},
+									"turnstileSiteKey": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"turnstileSecretKey": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"enableTestcaptcha": {
+										"type": "boolean"
+									},
+									"googleAnalyticsMeasurementId": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"sensitiveMediaDetection": {
+										"type": "string"
+									},
+									"sensitiveMediaDetectionSensitivity": {
+										"type": "string"
+									},
+									"setSensitiveFlagAutomatically": {
+										"type": "boolean"
+									},
+									"enableSensitiveMediaDetectionForVideos": {
+										"type": "boolean"
+									},
+									"sensitiveMediaDetectionApiUrl": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"sensitiveMediaDetectionApiKey": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"sensitiveMediaDetectionTimeout": {
+										"type": "integer"
+									},
+									"sensitiveMediaDetectionMaxImagesPerRequest": {
+										"type": "integer"
+									},
+									"maintainerName": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"maintainerEmail": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"langs": {
+										"type": "array"
+									},
+									"deeplAuthKey": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"deeplIsPro": {
+										"type": "boolean"
+									},
+									"enableEmail": {
+										"type": "boolean"
+									},
+									"email": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"smtpSecure": {
+										"type": "boolean"
+									},
+									"smtpHost": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"smtpPort": {
+										"type": [
+											"integer",
+											"null"
+										]
+									},
+									"smtpUser": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"smtpPass": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"enableServiceWorker": {
+										"type": "boolean"
+									},
+									"swPublicKey": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"swPrivateKey": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"tosUrl": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"repositoryUrl": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"feedbackUrl": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"impressumUrl": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"privacyPolicyUrl": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"inquiryUrl": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"useObjectStorage": {
+										"type": "boolean"
+									},
+									"objectStorageBaseUrl": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"objectStorageBucket": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"objectStoragePrefix": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"objectStorageEndpoint": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"objectStorageRegion": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"objectStoragePort": {
+										"type": [
+											"integer",
+											"null"
+										]
+									},
+									"objectStorageAccessKey": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"objectStorageSecretKey": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"objectStorageUseSSL": {
+										"type": "boolean"
+									},
+									"objectStorageUseProxy": {
+										"type": "boolean"
+									},
+									"objectStorageSetPublicRead": {
+										"type": "boolean"
+									},
+									"objectStorageS3ForcePathStyle": {
+										"type": "boolean"
+									},
+									"enableIpLogging": {
+										"type": "boolean"
+									},
+									"enableActiveEmailValidation": {
+										"type": "boolean"
+									},
+									"enableVerifymailApi": {
+										"type": "boolean"
+									},
+									"verifymailAuthKey": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"enableTruemailApi": {
+										"type": "boolean"
+									},
+									"truemailInstance": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"truemailAuthKey": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"enableChartsForRemoteUser": {
+										"type": "boolean"
+									},
+									"enableChartsForFederatedInstances": {
+										"type": "boolean"
+									},
+									"enableStatsForFederatedInstances": {
+										"type": "boolean"
+									},
+									"enableServerMachineStats": {
+										"type": "boolean"
+									},
+									"enableIdenticonGeneration": {
+										"type": "boolean"
+									},
+									"serverRules": {
+										"type": "array"
+									},
+									"bannedEmailDomains": {
+										"type": "array"
+									},
+									"preservedUsernames": {
+										"type": "array"
+									},
+									"manifestJsonOverride": {
+										"type": "string"
+									},
+									"enableFanoutTimeline": {
+										"type": "boolean"
+									},
+									"enableFanoutTimelineDbFallback": {
+										"type": "boolean"
+									},
+									"perLocalUserUserTimelineCacheMax": {
+										"type": "integer"
+									},
+									"perRemoteUserUserTimelineCacheMax": {
+										"type": "integer"
+									},
+									"perUserHomeTimelineCacheMax": {
+										"type": "integer"
+									},
+									"perUserListTimelineCacheMax": {
+										"type": "integer"
+									},
+									"enableReactionsBuffering": {
+										"type": "boolean"
+									},
+									"notesPerOneAd": {
+										"type": "integer"
+									},
+									"silencedHosts": {
+										"type": [
+											"array",
+											"null"
+										]
+									},
+									"mediaSilencedHosts": {
+										"type": [
+											"array",
+											"null"
+										]
+									},
+									"summalyProxy": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"urlPreviewEnabled": {
+										"type": "boolean"
+									},
+									"urlPreviewAllowRedirect": {
+										"type": "boolean"
+									},
+									"urlPreviewTimeout": {
+										"type": "integer"
+									},
+									"urlPreviewMaximumContentLength": {
+										"type": "integer"
+									},
+									"urlPreviewRequireContentLength": {
+										"type": "boolean"
+									},
+									"urlPreviewUserAgent": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"urlPreviewSummaryProxyUrl": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"urlPreviewSensitiveList": {
+										"type": [
+											"array",
+											"null"
+										]
+									},
+									"federation": {
+										"type": "string"
+									},
+									"federationHosts": {
+										"type": "array"
+									},
+									"deliverSuspendedSoftware": {
+										"type": "array"
+									},
+									"singleUserMode": {
+										"type": "boolean"
+									},
+									"ugcVisibilityForVisitor": {
+										"type": "string"
+									},
+									"proxyRemoteFiles": {
+										"type": "boolean"
+									},
+									"signToActivityPubGet": {
+										"type": "boolean"
+									},
+									"allowExternalApRedirect": {
+										"type": "boolean"
+									},
+									"enableRemoteNotesCleaning": {
+										"type": "boolean"
+									},
+									"remoteNotesCleaningExpiryDaysForEachNotes": {
+										"type": "number"
+									},
+									"remoteNotesCleaningMaxProcessingDurationInMinutes": {
+										"type": "number"
+									},
+									"showRoleBadgesOfRemoteUsers": {
+										"type": "boolean"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/update-proxy-account": {
+			"post": {
+				"description": "**Permission**: *write:admin:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"description": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/admin/update-user-note": {
+			"post": {
+				"description": "**Permission**: *write:admin:user-note*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"userId": {
+										"type": "string"
+									},
+									"text": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"userId",
+									"text"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/antennas/create": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"name": {
+										"type": "string"
+									},
+									"src": {
+										"type": "string"
+									},
+									"userListId": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"keywords": {
+										"type": "array"
+									},
+									"excludeKeywords": {
+										"type": "array"
+									},
+									"users": {
+										"type": "array"
+									},
+									"caseSensitive": {
+										"type": "boolean"
+									},
+									"localOnly": {
+										"type": "boolean"
+									},
+									"excludeBots": {
+										"type": "boolean"
+									},
+									"withReplies": {
+										"type": "boolean"
+									},
+									"withFile": {
+										"type": "boolean"
+									},
+									"excludeNotesInSensitiveChannel": {
+										"type": "boolean"
+									}
+								},
+								"required": [
+									"name",
+									"src",
+									"keywords",
+									"excludeKeywords",
+									"users",
+									"caseSensitive",
+									"withReplies",
+									"withFile"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/antennas/delete": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"antennaId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"antennaId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/antennas/list": {
+			"post": {
+				"description": "**Permission**: *read:account*"
+			}
+		},
+		"/antennas/notes": {
+			"post": {
+				"description": "**Permission**: *read:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"antennaId": {
+										"type": "string"
+									},
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									}
+								},
+								"required": [
+									"antennaId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/antennas/remove-note": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"antennaId": {
+										"type": "string"
+									},
+									"noteId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"antennaId",
+									"noteId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/antennas/show": {
+			"post": {
+				"description": "**Permission**: *read:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"antennaId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"antennaId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/antennas/update": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"antennaId": {
+										"type": "string"
+									},
+									"name": {
+										"type": "string"
+									},
+									"src": {
+										"type": "string"
+									},
+									"userListId": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"keywords": {
+										"type": "array"
+									},
+									"excludeKeywords": {
+										"type": "array"
+									},
+									"users": {
+										"type": "array"
+									},
+									"caseSensitive": {
+										"type": "boolean"
+									},
+									"localOnly": {
+										"type": "boolean"
+									},
+									"excludeBots": {
+										"type": "boolean"
+									},
+									"withReplies": {
+										"type": "boolean"
+									},
+									"withFile": {
+										"type": "boolean"
+									},
+									"excludeNotesInSensitiveChannel": {
+										"type": "boolean"
+									}
+								},
+								"required": [
+									"antennaId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/ap/get": {
+			"post": {
+				"description": "**Permission**: *read:federation*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"uri": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"uri"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/ap/show": {
+			"post": {
+				"description": "**Permission**: *read:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"uri": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"uri"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/blocking/create": {
+			"post": {
+				"description": "**Permission**: *write:blocks*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"userId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"userId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/blocking/delete": {
+			"post": {
+				"description": "**Permission**: *write:blocks*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"userId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"userId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/blocking/list": {
+			"post": {
+				"description": "**Permission**: *read:blocks*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/bubble-game/register": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"score": {
+										"type": "integer"
+									},
+									"seed": {
+										"type": "string"
+									},
+									"logs": {
+										"type": "array"
+									},
+									"gameMode": {
+										"type": "string"
+									},
+									"gameVersion": {
+										"type": "integer"
+									}
+								},
+								"required": [
+									"score",
+									"seed",
+									"logs",
+									"gameMode",
+									"gameVersion"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/channels/create": {
+			"post": {
+				"description": "**Permission**: *write:channels*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"name": {
+										"type": "string"
+									},
+									"description": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"bannerId": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"color": {
+										"type": "string"
+									},
+									"isSensitive": {
+										"type": [
+											"boolean",
+											"null"
+										]
+									},
+									"allowRenoteToExternal": {
+										"type": [
+											"boolean",
+											"null"
+										]
+									}
+								},
+								"required": [
+									"name"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/channels/favorite": {
+			"post": {
+				"description": "**Permission**: *write:channels*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"channelId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"channelId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/channels/follow": {
+			"post": {
+				"description": "**Permission**: *write:channels*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"channelId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"channelId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/channels/followed": {
+			"post": {
+				"description": "**Permission**: *read:channels*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									},
+									"limit": {
+										"type": "integer"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/channels/mute/create": {
+			"post": {
+				"description": "**Permission**: *write:channels*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"channelId": {
+										"type": "string"
+									},
+									"expiresAt": {
+										"type": [
+											"integer",
+											"null"
+										]
+									}
+								},
+								"required": [
+									"channelId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/channels/mute/delete": {
+			"post": {
+				"description": "**Permission**: *write:channels*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"channelId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"channelId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/channels/mute/list": {
+			"post": {
+				"description": "**Permission**: *read:channels*"
+			}
+		},
+		"/channels/my-favorites": {
+			"post": {
+				"description": "**Permission**: *read:channels*"
+			}
+		},
+		"/channels/owned": {
+			"post": {
+				"description": "**Permission**: *read:channels*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									},
+									"limit": {
+										"type": "integer"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/channels/unfavorite": {
+			"post": {
+				"description": "**Permission**: *write:channels*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"channelId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"channelId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/channels/unfollow": {
+			"post": {
+				"description": "**Permission**: *write:channels*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"channelId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"channelId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/channels/update": {
+			"post": {
+				"description": "**Permission**: *write:channels*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"channelId": {
+										"type": "string"
+									},
+									"name": {
+										"type": "string"
+									},
+									"description": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"bannerId": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"isArchived": {
+										"type": [
+											"boolean",
+											"null"
+										]
+									},
+									"pinnedNoteIds": {
+										"type": "array"
+									},
+									"color": {
+										"type": "string"
+									},
+									"isSensitive": {
+										"type": [
+											"boolean",
+											"null"
+										]
+									},
+									"allowRenoteToExternal": {
+										"type": [
+											"boolean",
+											"null"
+										]
+									}
+								},
+								"required": [
+									"channelId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/chat/history": {
+			"post": {
+				"description": "**Permission**: *read:chat*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"room": {
+										"type": "boolean"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/chat/messages/create-to-room": {
+			"post": {
+				"description": "**Permission**: *write:chat*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"text": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"fileId": {
+										"type": "string"
+									},
+									"toRoomId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"toRoomId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/chat/messages/create-to-user": {
+			"post": {
+				"description": "**Permission**: *write:chat*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"text": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"fileId": {
+										"type": "string"
+									},
+									"toUserId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"toUserId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/chat/messages/delete": {
+			"post": {
+				"description": "**Permission**: *write:chat*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"messageId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"messageId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/chat/messages/react": {
+			"post": {
+				"description": "**Permission**: *write:chat*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"messageId": {
+										"type": "string"
+									},
+									"reaction": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"messageId",
+									"reaction"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/chat/messages/room-timeline": {
+			"post": {
+				"description": "**Permission**: *read:chat*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									},
+									"roomId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"roomId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/chat/messages/search": {
+			"post": {
+				"description": "**Permission**: *read:chat*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"query": {
+										"type": "string"
+									},
+									"limit": {
+										"type": "integer"
+									},
+									"userId": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"roomId": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								},
+								"required": [
+									"query"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/chat/messages/show": {
+			"post": {
+				"description": "**Permission**: *read:chat*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"messageId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"messageId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/chat/messages/unreact": {
+			"post": {
+				"description": "**Permission**: *write:chat*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"messageId": {
+										"type": "string"
+									},
+									"reaction": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"messageId",
+									"reaction"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/chat/messages/user-timeline": {
+			"post": {
+				"description": "**Permission**: *read:chat*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									},
+									"userId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"userId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/chat/read-all": {
+			"post": {
+				"description": "**Permission**: *write:chat*"
+			}
+		},
+		"/chat/rooms/create": {
+			"post": {
+				"description": "**Permission**: *write:chat*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"name": {
+										"type": "string"
+									},
+									"description": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"name"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/chat/rooms/delete": {
+			"post": {
+				"description": "**Permission**: *write:chat*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"roomId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"roomId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/chat/rooms/invitations/create": {
+			"post": {
+				"description": "**Permission**: *write:chat*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"roomId": {
+										"type": "string"
+									},
+									"userId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"roomId",
+									"userId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/chat/rooms/invitations/ignore": {
+			"post": {
+				"description": "**Permission**: *write:chat*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"roomId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"roomId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/chat/rooms/invitations/inbox": {
+			"post": {
+				"description": "**Permission**: *read:chat*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/chat/rooms/invitations/outbox": {
+			"post": {
+				"description": "**Permission**: *read:chat*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"roomId": {
+										"type": "string"
+									},
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									}
+								},
+								"required": [
+									"roomId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/chat/rooms/join": {
+			"post": {
+				"description": "**Permission**: *write:chat*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"roomId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"roomId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/chat/rooms/joining": {
+			"post": {
+				"description": "**Permission**: *read:chat*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/chat/rooms/leave": {
+			"post": {
+				"description": "**Permission**: *write:chat*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"roomId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"roomId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/chat/rooms/members": {
+			"post": {
+				"description": "**Permission**: *write:chat*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"roomId": {
+										"type": "string"
+									},
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									}
+								},
+								"required": [
+									"roomId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/chat/rooms/mute": {
+			"post": {
+				"description": "**Permission**: *write:chat*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"roomId": {
+										"type": "string"
+									},
+									"mute": {
+										"type": "boolean"
+									}
+								},
+								"required": [
+									"roomId",
+									"mute"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/chat/rooms/owned": {
+			"post": {
+				"description": "**Permission**: *read:chat*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/chat/rooms/show": {
+			"post": {
+				"description": "**Permission**: *read:chat*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"roomId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"roomId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/chat/rooms/update": {
+			"post": {
+				"description": "**Permission**: *write:chat*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"roomId": {
+										"type": "string"
+									},
+									"name": {
+										"type": "string"
+									},
+									"description": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"roomId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/clips/add-note": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"clipId": {
+										"type": "string"
+									},
+									"noteId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"clipId",
+									"noteId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/clips/create": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"name": {
+										"type": "string"
+									},
+									"isPublic": {
+										"type": "boolean"
+									},
+									"description": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								},
+								"required": [
+									"name"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/clips/delete": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"clipId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"clipId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/clips/favorite": {
+			"post": {
+				"description": "**Permission**: *write:clip-favorite*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"clipId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"clipId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/clips/list": {
+			"post": {
+				"description": "**Permission**: *read:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/clips/my-favorites": {
+			"post": {
+				"description": "**Permission**: *read:clip-favorite*"
+			}
+		},
+		"/clips/notes": {
+			"post": {
+				"description": "**Permission**: *read:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"clipId": {
+										"type": "string"
+									},
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									},
+									"search": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								},
+								"required": [
+									"clipId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/clips/remove-note": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"clipId": {
+										"type": "string"
+									},
+									"noteId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"clipId",
+									"noteId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/clips/show": {
+			"post": {
+				"description": "**Permission**: *read:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"clipId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"clipId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/clips/unfavorite": {
+			"post": {
+				"description": "**Permission**: *write:clip-favorite*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"clipId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"clipId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/clips/update": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"clipId": {
+										"type": "string"
+									},
+									"name": {
+										"type": "string"
+									},
+									"isPublic": {
+										"type": "boolean"
+									},
+									"description": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								},
+								"required": [
+									"clipId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/drive": {
+			"post": {
+				"description": "**Permission**: *read:drive*"
+			}
+		},
+		"/drive/files": {
+			"post": {
+				"description": "**Permission**: *read:drive*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									},
+									"folderId": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"type": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"sort": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/drive/files/attached-chat-messages": {
+			"post": {
+				"description": "**Permission**: *read:drive*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									},
+									"limit": {
+										"type": "integer"
+									},
+									"fileId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"fileId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/drive/files/attached-notes": {
+			"post": {
+				"description": "**Permission**: *read:drive*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									},
+									"limit": {
+										"type": "integer"
+									},
+									"fileId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"fileId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/drive/files/check-existence": {
+			"post": {
+				"description": "**Permission**: *read:drive*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"md5": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"md5"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/drive/files/create": {
+			"post": {
+				"description": "**Permission**: *write:drive*"
+			}
+		},
+		"/drive/files/delete": {
+			"post": {
+				"description": "**Permission**: *write:drive*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"fileId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"fileId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/drive/files/find": {
+			"post": {
+				"description": "**Permission**: *read:drive*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"name": {
+										"type": "string"
+									},
+									"folderId": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								},
+								"required": [
+									"name"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/drive/files/find-by-hash": {
+			"post": {
+				"description": "**Permission**: *read:drive*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"md5": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"md5"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/drive/files/move-bulk": {
+			"post": {
+				"description": "**Permission**: *write:drive*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"fileIds": {
+										"type": "array"
+									},
+									"folderId": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								},
+								"required": [
+									"fileIds"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/drive/files/show": {
+			"post": {
+				"description": "**Permission**: *read:drive*"
+			}
+		},
+		"/drive/files/update": {
+			"post": {
+				"description": "**Permission**: *write:drive*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"fileId": {
+										"type": "string"
+									},
+									"folderId": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"name": {
+										"type": "string"
+									},
+									"isSensitive": {
+										"type": "boolean"
+									},
+									"comment": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								},
+								"required": [
+									"fileId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/drive/files/upload-from-url": {
+			"post": {
+				"description": "**Permission**: *write:drive*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"url": {
+										"type": "string"
+									},
+									"folderId": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"isSensitive": {
+										"type": "boolean"
+									},
+									"comment": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"marker": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"force": {
+										"type": "boolean"
+									}
+								},
+								"required": [
+									"url"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/drive/folders": {
+			"post": {
+				"description": "**Permission**: *read:drive*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									},
+									"folderId": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/drive/folders/create": {
+			"post": {
+				"description": "**Permission**: *write:drive*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"name": {
+										"type": "string"
+									},
+									"parentId": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/drive/folders/delete": {
+			"post": {
+				"description": "**Permission**: *write:drive*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"folderId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"folderId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/drive/folders/find": {
+			"post": {
+				"description": "**Permission**: *read:drive*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"name": {
+										"type": "string"
+									},
+									"parentId": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								},
+								"required": [
+									"name"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/drive/folders/show": {
+			"post": {
+				"description": "**Permission**: *read:drive*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"folderId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"folderId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/drive/folders/update": {
+			"post": {
+				"description": "**Permission**: *write:drive*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"folderId": {
+										"type": "string"
+									},
+									"name": {
+										"type": "string"
+									},
+									"parentId": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								},
+								"required": [
+									"folderId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/drive/stream": {
+			"post": {
+				"description": "**Permission**: *read:drive*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									},
+									"type": {
+										"type": "string"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/federation/update-remote-user": {
+			"post": {
+				"description": "**Permission**: *read:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"userId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"userId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/flash/create": {
+			"post": {
+				"description": "**Permission**: *write:flash*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"title": {
+										"type": "string"
+									},
+									"summary": {
+										"type": "string"
+									},
+									"script": {
+										"type": "string"
+									},
+									"permissions": {
+										"type": "array"
+									},
+									"visibility": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"title",
+									"summary",
+									"script",
+									"permissions"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/flash/delete": {
+			"post": {
+				"description": "**Permission**: *write:flash*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"flashId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"flashId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/flash/like": {
+			"post": {
+				"description": "**Permission**: *write:flash-likes*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"flashId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"flashId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/flash/my": {
+			"post": {
+				"description": "**Permission**: *read:flash*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/flash/my-likes": {
+			"post": {
+				"description": "**Permission**: *read:flash-likes*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									},
+									"search": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/flash/unlike": {
+			"post": {
+				"description": "**Permission**: *write:flash-likes*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"flashId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"flashId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/flash/update": {
+			"post": {
+				"description": "**Permission**: *write:flash*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"flashId": {
+										"type": "string"
+									},
+									"title": {
+										"type": "string"
+									},
+									"summary": {
+										"type": "string"
+									},
+									"script": {
+										"type": "string"
+									},
+									"permissions": {
+										"type": "array"
+									},
+									"visibility": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"flashId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/following/create": {
+			"post": {
+				"description": "**Permission**: *write:following*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"userId": {
+										"type": "string"
+									},
+									"withReplies": {
+										"type": "boolean"
+									}
+								},
+								"required": [
+									"userId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/following/delete": {
+			"post": {
+				"description": "**Permission**: *write:following*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"userId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"userId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/following/invalidate": {
+			"post": {
+				"description": "**Permission**: *write:following*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"userId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"userId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/following/list": {
+			"post": {
+				"description": "**Permission**: *read:following*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"notification": {
+										"type": "boolean"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									},
+									"limit": {
+										"type": "integer"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/following/requests/accept": {
+			"post": {
+				"description": "**Permission**: *write:following*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"userId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"userId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/following/requests/cancel": {
+			"post": {
+				"description": "**Permission**: *write:following*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"userId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"userId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/following/requests/list": {
+			"post": {
+				"description": "**Permission**: *read:following*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									},
+									"limit": {
+										"type": "integer"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/following/requests/reject": {
+			"post": {
+				"description": "**Permission**: *write:following*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"userId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"userId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/following/requests/sent": {
+			"post": {
+				"description": "**Permission**: *read:following*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									},
+									"limit": {
+										"type": "integer"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/following/update": {
+			"post": {
+				"description": "**Permission**: *write:following*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"userId": {
+										"type": "string"
+									},
+									"notify": {
+										"type": "string"
+									},
+									"withReplies": {
+										"type": "boolean"
+									}
+								},
+								"required": [
+									"userId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/following/update-all": {
+			"post": {
+				"description": "**Permission**: *write:following*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"notify": {
+										"type": "string"
+									},
+									"withReplies": {
+										"type": "boolean"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/gallery/posts/create": {
+			"post": {
+				"description": "**Permission**: *write:gallery*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"title": {
+										"type": "string"
+									},
+									"description": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"fileIds": {
+										"type": "array"
+									},
+									"isSensitive": {
+										"type": "boolean"
+									}
+								},
+								"required": [
+									"title",
+									"fileIds"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/gallery/posts/delete": {
+			"post": {
+				"description": "**Permission**: *write:gallery*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"postId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"postId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/gallery/posts/like": {
+			"post": {
+				"description": "**Permission**: *write:gallery-likes*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"postId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"postId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/gallery/posts/unlike": {
+			"post": {
+				"description": "**Permission**: *write:gallery-likes*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"postId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"postId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/gallery/posts/update": {
+			"post": {
+				"description": "**Permission**: *write:gallery*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"postId": {
+										"type": "string"
+									},
+									"title": {
+										"type": "string"
+									},
+									"description": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"fileIds": {
+										"type": "array"
+									},
+									"isSensitive": {
+										"type": "boolean"
+									}
+								},
+								"required": [
+									"postId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/i": {
+			"post": {
+				"description": "**Permission**: *read:account*"
+			}
+		},
+		"/i/claim-achievement": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"name": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"name"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/i/favorites": {
+			"post": {
+				"description": "**Permission**: *read:favorites*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/i/gallery/likes": {
+			"post": {
+				"description": "**Permission**: *read:gallery-likes*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/i/gallery/posts": {
+			"post": {
+				"description": "**Permission**: *read:gallery*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/i/notifications": {
+			"post": {
+				"description": "**Permission**: *read:notifications*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									},
+									"markAsRead": {
+										"type": "boolean"
+									},
+									"includeTypes": {
+										"type": "array"
+									},
+									"excludeTypes": {
+										"type": "array"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/i/notifications-grouped": {
+			"post": {
+				"description": "**Permission**: *read:notifications*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									},
+									"markAsRead": {
+										"type": "boolean"
+									},
+									"includeTypes": {
+										"type": "array"
+									},
+									"excludeTypes": {
+										"type": "array"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/i/page-likes": {
+			"post": {
+				"description": "**Permission**: *read:page-likes*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/i/pages": {
+			"post": {
+				"description": "**Permission**: *read:pages*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/i/pin": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"noteId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"noteId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/i/read-announcement": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"announcementId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"announcementId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/i/registry/get": {
+			"post": {
+				"description": "**Permission**: *read:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"key": {
+										"type": "string"
+									},
+									"scope": {
+										"type": "array"
+									},
+									"domain": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								},
+								"required": [
+									"key",
+									"scope"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/i/registry/get-all": {
+			"post": {
+				"description": "**Permission**: *read:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"scope": {
+										"type": "array"
+									},
+									"domain": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								},
+								"required": [
+									"scope"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/i/registry/get-detail": {
+			"post": {
+				"description": "**Permission**: *read:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"key": {
+										"type": "string"
+									},
+									"scope": {
+										"type": "array"
+									},
+									"domain": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								},
+								"required": [
+									"key",
+									"scope"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/i/registry/keys": {
+			"post": {
+				"description": "**Permission**: *read:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"scope": {
+										"type": "array"
+									},
+									"domain": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								},
+								"required": [
+									"scope"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/i/registry/keys-with-type": {
+			"post": {
+				"description": "**Permission**: *read:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"scope": {
+										"type": "array"
+									},
+									"domain": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								},
+								"required": [
+									"scope"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/i/registry/remove": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"key": {
+										"type": "string"
+									},
+									"scope": {
+										"type": "array"
+									},
+									"domain": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								},
+								"required": [
+									"key",
+									"scope"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/i/registry/set": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"key": {
+										"type": "string"
+									},
+									"value": {},
+									"scope": {
+										"type": "array"
+									},
+									"domain": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								},
+								"required": [
+									"key",
+									"value",
+									"scope"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/i/unpin": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"noteId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"noteId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/i/update": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"name": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"description": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"followedMessage": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"location": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"birthday": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"lang": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"avatarId": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"avatarDecorations": {
+										"type": "array"
+									},
+									"bannerId": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"fields": {
+										"type": "array"
+									},
+									"isLocked": {
+										"type": "boolean"
+									},
+									"isExplorable": {
+										"type": "boolean"
+									},
+									"hideOnlineStatus": {
+										"type": "boolean"
+									},
+									"publicReactions": {
+										"type": "boolean"
+									},
+									"carefulBot": {
+										"type": "boolean"
+									},
+									"autoAcceptFollowed": {
+										"type": "boolean"
+									},
+									"noCrawle": {
+										"type": "boolean"
+									},
+									"preventAiLearning": {
+										"type": "boolean"
+									},
+									"requireSigninToViewContents": {
+										"type": "boolean"
+									},
+									"makeNotesFollowersOnlyBefore": {
+										"type": [
+											"integer",
+											"null"
+										]
+									},
+									"makeNotesHiddenBefore": {
+										"type": [
+											"integer",
+											"null"
+										]
+									},
+									"isBot": {
+										"type": "boolean"
+									},
+									"isCat": {
+										"type": "boolean"
+									},
+									"injectFeaturedNote": {
+										"type": "boolean"
+									},
+									"receiveAnnouncementEmail": {
+										"type": "boolean"
+									},
+									"alwaysMarkNsfw": {
+										"type": "boolean"
+									},
+									"autoSensitive": {
+										"type": "boolean"
+									},
+									"followingVisibility": {
+										"type": "string"
+									},
+									"followersVisibility": {
+										"type": "string"
+									},
+									"chatScope": {
+										"type": "string"
+									},
+									"pinnedPageId": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"mutedWords": {
+										"type": "array"
+									},
+									"hardMutedWords": {
+										"type": "array"
+									},
+									"mutedInstances": {
+										"type": "array"
+									},
+									"notificationRecieveConfig": {
+										"type": "object"
+									},
+									"emailNotificationTypes": {
+										"type": "array"
+									},
+									"alsoKnownAs": {
+										"type": "array"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/i/webhooks/create": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"name": {
+										"type": "string"
+									},
+									"url": {
+										"type": "string"
+									},
+									"secret": {
+										"type": "string"
+									},
+									"on": {
+										"type": "array"
+									}
+								},
+								"required": [
+									"name",
+									"url",
+									"on"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/i/webhooks/delete": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"webhookId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"webhookId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/i/webhooks/list": {
+			"post": {
+				"description": "**Permission**: *read:account*"
+			}
+		},
+		"/i/webhooks/show": {
+			"post": {
+				"description": "**Permission**: *read:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"webhookId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"webhookId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/i/webhooks/test": {
+			"post": {
+				"description": "**Permission**: *read:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"webhookId": {
+										"type": "string"
+									},
+									"type": {
+										"type": "string"
+									},
+									"override": {
+										"type": "object"
+									}
+								},
+								"required": [
+									"webhookId",
+									"type"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/i/webhooks/update": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"webhookId": {
+										"type": "string"
+									},
+									"name": {
+										"type": "string"
+									},
+									"url": {
+										"type": "string"
+									},
+									"secret": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"on": {
+										"type": "array"
+									},
+									"active": {
+										"type": "boolean"
+									}
+								},
+								"required": [
+									"webhookId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/invite/create": {
+			"post": {
+				"description": "**Permission**: *write:invite-codes*"
+			}
+		},
+		"/invite/delete": {
+			"post": {
+				"description": "**Permission**: *write:invite-codes*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"inviteId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"inviteId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/invite/limit": {
+			"post": {
+				"description": "**Permission**: *read:invite-codes*"
+			}
+		},
+		"/invite/list": {
+			"post": {
+				"description": "**Permission**: *read:invite-codes*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/mute/create": {
+			"post": {
+				"description": "**Permission**: *write:mutes*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"userId": {
+										"type": "string"
+									},
+									"expiresAt": {
+										"type": [
+											"integer",
+											"null"
+										]
+									}
+								},
+								"required": [
+									"userId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/mute/delete": {
+			"post": {
+				"description": "**Permission**: *write:mutes*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"userId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"userId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/mute/list": {
+			"post": {
+				"description": "**Permission**: *read:mutes*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/my/apps": {
+			"post": {
+				"description": "**Permission**: *read:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"offset": {
+										"type": "integer"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/notes/create": {
+			"post": {
+				"description": "**Permission**: *write:notes*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"visibility": {
+										"type": "string"
+									},
+									"visibleUserIds": {
+										"type": "array"
+									},
+									"cw": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"localOnly": {
+										"type": "boolean"
+									},
+									"reactionAcceptance": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"noExtractMentions": {
+										"type": "boolean"
+									},
+									"noExtractHashtags": {
+										"type": "boolean"
+									},
+									"noExtractEmojis": {
+										"type": "boolean"
+									},
+									"replyId": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"renoteId": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"channelId": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"text": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"fileIds": {
+										"type": "array"
+									},
+									"mediaIds": {
+										"type": "array"
+									},
+									"poll": {
+										"type": [
+											"object",
+											"null"
+										]
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/notes/delete": {
+			"post": {
+				"description": "**Permission**: *write:notes*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"noteId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"noteId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/notes/drafts/count": {
+			"post": {
+				"description": "**Permission**: *read:account*"
+			}
+		},
+		"/notes/drafts/create": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"visibility": {
+										"type": "string"
+									},
+									"visibleUserIds": {
+										"type": "array"
+									},
+									"cw": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"hashtag": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"localOnly": {
+										"type": "boolean"
+									},
+									"reactionAcceptance": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"replyId": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"renoteId": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"channelId": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"text": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"fileIds": {
+										"type": "array"
+									},
+									"poll": {
+										"type": [
+											"object",
+											"null"
+										]
+									},
+									"scheduledAt": {
+										"type": [
+											"integer",
+											"null"
+										]
+									},
+									"isActuallyScheduled": {
+										"type": "boolean"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/notes/drafts/delete": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"draftId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"draftId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/notes/drafts/list": {
+			"post": {
+				"description": "**Permission**: *read:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									},
+									"scheduled": {
+										"type": [
+											"boolean",
+											"null"
+										]
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/notes/drafts/update": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"draftId": {
+										"type": "string"
+									},
+									"visibility": {
+										"type": "string"
+									},
+									"visibleUserIds": {
+										"type": "array"
+									},
+									"cw": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"hashtag": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"localOnly": {
+										"type": "boolean"
+									},
+									"reactionAcceptance": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"replyId": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"renoteId": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"channelId": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"text": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"fileIds": {
+										"type": "array"
+									},
+									"poll": {
+										"type": [
+											"object",
+											"null"
+										]
+									},
+									"scheduledAt": {
+										"type": [
+											"integer",
+											"null"
+										]
+									},
+									"isActuallyScheduled": {
+										"type": "boolean"
+									}
+								},
+								"required": [
+									"draftId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/notes/favorites/create": {
+			"post": {
+				"description": "**Permission**: *write:favorites*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"noteId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"noteId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/notes/favorites/delete": {
+			"post": {
+				"description": "**Permission**: *write:favorites*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"noteId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"noteId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/notes/hybrid-timeline": {
+			"post": {
+				"description": "**Permission**: *read:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									},
+									"allowPartial": {
+										"type": "boolean"
+									},
+									"includeMyRenotes": {
+										"type": "boolean"
+									},
+									"includeRenotedMyNotes": {
+										"type": "boolean"
+									},
+									"includeLocalRenotes": {
+										"type": "boolean"
+									},
+									"withFiles": {
+										"type": "boolean"
+									},
+									"withRenotes": {
+										"type": "boolean"
+									},
+									"withReplies": {
+										"type": "boolean"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/notes/mentions": {
+			"post": {
+				"description": "**Permission**: *read:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"following": {
+										"type": "boolean"
+									},
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									},
+									"visibility": {
+										"type": "string"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/notes/polls/recommendation": {
+			"post": {
+				"description": "**Permission**: *read:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"offset": {
+										"type": "integer"
+									},
+									"excludeChannels": {
+										"type": "boolean"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/notes/polls/vote": {
+			"post": {
+				"description": "**Permission**: *write:votes*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"noteId": {
+										"type": "string"
+									},
+									"choice": {
+										"type": "integer"
+									}
+								},
+								"required": [
+									"noteId",
+									"choice"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/notes/reactions/create": {
+			"post": {
+				"description": "**Permission**: *write:reactions*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"noteId": {
+										"type": "string"
+									},
+									"reaction": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"noteId",
+									"reaction"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/notes/reactions/delete": {
+			"post": {
+				"description": "**Permission**: *write:reactions*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"noteId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"noteId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/notes/state": {
+			"post": {
+				"description": "**Permission**: *read:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"noteId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"noteId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/notes/thread-muting/create": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"noteId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"noteId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/notes/thread-muting/delete": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"noteId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"noteId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/notes/timeline": {
+			"post": {
+				"description": "**Permission**: *read:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									},
+									"allowPartial": {
+										"type": "boolean"
+									},
+									"includeMyRenotes": {
+										"type": "boolean"
+									},
+									"includeRenotedMyNotes": {
+										"type": "boolean"
+									},
+									"includeLocalRenotes": {
+										"type": "boolean"
+									},
+									"withFiles": {
+										"type": "boolean"
+									},
+									"withRenotes": {
+										"type": "boolean"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/notes/translate": {
+			"post": {
+				"description": "**Permission**: *read:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"noteId": {
+										"type": "string"
+									},
+									"targetLang": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"noteId",
+									"targetLang"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/notes/unrenote": {
+			"post": {
+				"description": "**Permission**: *write:notes*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"noteId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"noteId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/notes/user-list-timeline": {
+			"post": {
+				"description": "**Permission**: *read:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"listId": {
+										"type": "string"
+									},
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									},
+									"allowPartial": {
+										"type": "boolean"
+									},
+									"includeMyRenotes": {
+										"type": "boolean"
+									},
+									"includeRenotedMyNotes": {
+										"type": "boolean"
+									},
+									"includeLocalRenotes": {
+										"type": "boolean"
+									},
+									"withRenotes": {
+										"type": "boolean"
+									},
+									"withFiles": {
+										"type": "boolean"
+									}
+								},
+								"required": [
+									"listId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/notifications/create": {
+			"post": {
+				"description": "**Permission**: *write:notifications*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"body": {
+										"type": "string"
+									},
+									"header": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"icon": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								},
+								"required": [
+									"body"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/notifications/flush": {
+			"post": {
+				"description": "**Permission**: *write:notifications*"
+			}
+		},
+		"/notifications/mark-all-as-read": {
+			"post": {
+				"description": "**Permission**: *write:notifications*"
+			}
+		},
+		"/notifications/test-notification": {
+			"post": {
+				"description": "**Permission**: *write:notifications*"
+			}
+		},
+		"/pages/create": {
+			"post": {
+				"description": "**Permission**: *write:pages*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"title": {
+										"type": "string"
+									},
+									"name": {
+										"type": "string"
+									},
+									"summary": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"content": {
+										"type": "array"
+									},
+									"variables": {
+										"type": "array"
+									},
+									"script": {
+										"type": "string"
+									},
+									"eyeCatchingImageId": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"font": {
+										"type": "string"
+									},
+									"alignCenter": {
+										"type": "boolean"
+									},
+									"hideTitleWhenPinned": {
+										"type": "boolean"
+									}
+								},
+								"required": [
+									"title",
+									"name",
+									"content",
+									"variables",
+									"script"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/pages/delete": {
+			"post": {
+				"description": "**Permission**: *write:pages*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"pageId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"pageId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/pages/like": {
+			"post": {
+				"description": "**Permission**: *write:page-likes*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"pageId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"pageId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/pages/unlike": {
+			"post": {
+				"description": "**Permission**: *write:page-likes*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"pageId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"pageId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/pages/update": {
+			"post": {
+				"description": "**Permission**: *write:pages*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"pageId": {
+										"type": "string"
+									},
+									"title": {
+										"type": "string"
+									},
+									"name": {
+										"type": "string"
+									},
+									"summary": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"content": {
+										"type": "array"
+									},
+									"variables": {
+										"type": "array"
+									},
+									"script": {
+										"type": "string"
+									},
+									"eyeCatchingImageId": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"font": {
+										"type": "string"
+									},
+									"alignCenter": {
+										"type": "boolean"
+									},
+									"hideTitleWhenPinned": {
+										"type": "boolean"
+									}
+								},
+								"required": [
+									"pageId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/promo/read": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"noteId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"noteId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/renote-mute/create": {
+			"post": {
+				"description": "**Permission**: *write:mutes*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"userId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"userId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/renote-mute/delete": {
+			"post": {
+				"description": "**Permission**: *write:mutes*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"userId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"userId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/renote-mute/list": {
+			"post": {
+				"description": "**Permission**: *read:mutes*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/reversi/cancel-match": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"userId": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/reversi/invitations": {
+			"post": {
+				"description": "**Permission**: *read:account*"
+			}
+		},
+		"/reversi/match": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"userId": {
+										"type": [
+											"string",
+											"null"
+										]
+									},
+									"noIrregularRules": {
+										"type": "boolean"
+									},
+									"multiple": {
+										"type": "boolean"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/reversi/surrender": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"gameId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"gameId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/roles/list": {
+			"post": {
+				"description": "**Permission**: *read:account*"
+			}
+		},
+		"/roles/notes": {
+			"post": {
+				"description": "**Permission**: *read:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"roleId": {
+										"type": "string"
+									},
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									}
+								},
+								"required": [
+									"roleId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/users/get-following-users-by-birthday": {
+			"post": {
+				"description": "**Permission**: *read:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"offset": {
+										"type": "integer"
+									},
+									"birthday": {}
+								},
+								"required": [
+									"birthday"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/users/lists/create": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"name": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"name"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/users/lists/create-from-public": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"name": {
+										"type": "string"
+									},
+									"listId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"name",
+									"listId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/users/lists/delete": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"listId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"listId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/users/lists/favorite": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"listId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"listId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/users/lists/get-memberships": {
+			"post": {
+				"description": "**Permission**: *read:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"listId": {
+										"type": "string"
+									},
+									"forPublic": {
+										"type": "boolean"
+									},
+									"limit": {
+										"type": "integer"
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									}
+								},
+								"required": [
+									"listId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/users/lists/list": {
+			"post": {
+				"description": "**Permission**: *read:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"userId": {
+										"type": "string"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/users/lists/pull": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"listId": {
+										"type": "string"
+									},
+									"userId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"listId",
+									"userId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/users/lists/push": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"listId": {
+										"type": "string"
+									},
+									"userId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"listId",
+									"userId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/users/lists/show": {
+			"post": {
+				"description": "**Permission**: *read:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"listId": {
+										"type": "string"
+									},
+									"forPublic": {
+										"type": "boolean"
+									}
+								},
+								"required": [
+									"listId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/users/lists/unfavorite": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"listId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"listId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/users/lists/update": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"listId": {
+										"type": "string"
+									},
+									"name": {
+										"type": "string"
+									},
+									"isPublic": {
+										"type": "boolean"
+									}
+								},
+								"required": [
+									"listId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/users/lists/update-membership": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"listId": {
+										"type": "string"
+									},
+									"userId": {
+										"type": "string"
+									},
+									"withReplies": {
+										"type": "boolean"
+									}
+								},
+								"required": [
+									"listId",
+									"userId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/users/recommendation": {
+			"post": {
+				"description": "**Permission**: *read:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"limit": {
+										"type": "integer"
+									},
+									"offset": {
+										"type": "integer"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/users/relation": {
+			"post": {
+				"description": "**Permission**: *read:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"userId": {}
+								},
+								"required": [
+									"userId"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/users/report-abuse": {
+			"post": {
+				"description": "**Permission**: *write:report-abuse*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"userId": {
+										"type": "string"
+									},
+									"comment": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"userId",
+									"comment"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/users/update-memo": {
+			"post": {
+				"description": "**Permission**: *write:account*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"userId": {
+										"type": "string"
+									},
+									"memo": {
+										"type": [
+											"string",
+											"null"
+										]
+									}
+								},
+								"required": [
+									"userId",
+									"memo"
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/v2/admin/emoji/list": {
+			"post": {
+				"description": "**Permission**: *read:admin:emoji*",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"query": {
+										"type": [
+											"object",
+											"null"
+										]
+									},
+									"sinceId": {
+										"type": "string"
+									},
+									"untilId": {
+										"type": "string"
+									},
+									"sinceDate": {
+										"type": "integer"
+									},
+									"untilDate": {
+										"type": "integer"
+									},
+									"limit": {
+										"type": "integer"
+									},
+									"page": {
+										"type": "integer"
+									},
+									"sortKeys": {
+										"type": "array"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}

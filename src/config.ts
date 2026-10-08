@@ -34,6 +34,12 @@ type Config = {
 	masterNicknameIntervalMinutes?: number | string;
 	/** 以前の書き方(時間)。masterNicknameIntervalMinutes があれば、そちらを使う */
 	masterNicknameIntervalHours?: number | string;
+	/** マスターの表示名を、頼まれたあだ名に変える機能を使えるようにするか(既定 false。オンオフはコマンドで) */
+	masterRenameEnabled?: boolean;
+	/** 表示名を変える方式。approval(既定): 承認してから、immediate: すぐ */
+	masterRenameMode?: 'approval' | 'immediate';
+	/** 承認を待つ時間(分。既定 60) */
+	masterRenameApprovalMinutes?: number | string;
 };
 
 import config from '../config.json' with { type: 'json' };

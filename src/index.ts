@@ -35,6 +35,7 @@ import PollModule from './modules/poll/index.js';
 import ReminderModule from './modules/reminder/index.js';
 import CheckCustomEmojisModule from './modules/check-custom-emojis/index.js';
 import AiChatModule from './modules/aichat/index.js';
+import MasterNicknameModule from './modules/master-nickname/index.js';
 
 console.log('   __    ____  _____  ___ ');
 console.log('  /__\\  (_  _)(  _  )/ __)');
@@ -75,6 +76,7 @@ promiseRetry(retry => {
 	new 藍(account, [
 		new CoreModule(),
 		new KeywordModule(), // マスター用コマンドが、トークなどの反応より先に処理されるようにここに置く
+		new MasterNicknameModule(), // マスターのあだ名のコマンドと承認の返事を、トークの反応より先に処理する
 		new AiChatModule(),
 		new ReminderModule(),
 		new TalkModule(),

@@ -103,6 +103,7 @@ upstream(`syuilo/ai`)に対して、このフォークで追加・変更した�
 | `/forget 語句` | 語句を忘れて、以後も覚えないようにする(語句は完全一致。`「語句」` と括ってもよい)。まだ覚えていない語句にも使える |
 | `/unforget 語句` | 覚えないようにした語句を、また覚えられるようにする |
 | `/poll` | アンケートを今すぐ投稿する(`poll` モジュール。upstream にあるコマンドを、ローカルのマスターだけに限った) |
+| `/nickname …` | マスターのあだ名の設定と、マスターの表示名の変更(下の「マスターのあだ名」の「コマンド」) |
 
 マスターかどうかは、ユーザー名が `master` と同じで、このサーバのユーザー(他のサーバに同じユーザー名の人がいても、マスターにしない)かで判定する
 (`src/utils/is-master.ts`)。マスター以外が送ったコマンドには、反応しない。
@@ -272,6 +273,60 @@ upstream(`syuilo/ai`)に対して、このフォークで追加・変更した�
   戻すと、マスターには届いているのに、何度でも頼めてしまうため。呼び名の変更は、頼んだ人への返事より先に行う。頼んだ人の回数は、その人の記録(talk モジュールの `masterNickname`)、
   最後に伝えた時刻は、talk モジュールのデータ(`masterNicknameNotifiedAt`)に置く。
 - 実装は `src/modules/talk/master-nickname.ts`(設定の解釈と制限の判定)と、`talk/index.ts` の `adanaForMaster()`。
+  設定(コマンドで変えた値を含む)は、`masterNickname` モジュール(`src/modules/master-nickname/`)から取る。
+
+#### コマンド(`/nickname`)
+
+マスター本人だけが使える(メンションかチャット。表示名の変更のコマンドは、許可の URL などを含むのでチャットだけ)。
+コマンドで変えた設定は、`masterNickname` モジュールのデータに残り、**`config.json` の値より優先する**(再起動しても残る)。`config.json` は初期値の役割になる。
+
+| コマンド | 内容 |
+|---|---|
+| `/nickname status` | 今の設定と、表示名の変更の状態(オンオフ、方式、許可の検証の結果、承認待ち、変える前の名前) |
+| `/nickname on` / `off` | マスターのあだ名を使うか |
+| `/nickname notify off\|mention\|chat` | 伝え方(`masterNicknameNotify`) |
+| `/nickname callname on\|off` | 考えたあだ名を、藍が呼ぶ呼び名にするか(`masterNicknameUpdateName`) |
+| `/nickname visibility public\|home\|specified` | メンションの公開範囲の上限(`masterNicknameMentionVisibility`) |
+| `/nickname daily <回数>` / `interval <分>` | 同じ人の1日の回数と、マスターに伝える間隔(0 で制限しない) |
+| `/nickname reset` | コマンドで変えた設定を消して、`config.json` の値に戻す |
+| `/nickname rename on` / `off` | 表示名の変更を使うか(**初期状態はオフ**) |
+| `/nickname rename mode approval\|immediate` | 承認してから変えるか、すぐ変えるか |
+| `/nickname rename setup` | 許可(MiAuth)の URL を出す |
+| `/nickname rename check` | 許可(トークン)を、もう一度確かめる |
+| `/nickname rename revert` | 表示名を、最初に変える前の名前に戻す |
+| `/nickname rename forget` | 許可(トークン)を消して、オフにする(Misskey の設定の「連携」からも取り消す) |
+
+コマンドは、トークなどの反応より先に処理する(`src/index.ts` で、`MasterNicknameModule` を `TalkModule` より前に置いている)。
+
+#### マスターの表示名を変える
+
+「マスターのあだ名」と頼まれたら、考えたあだ名で、マスターの Misskey の表示名を**丸ごと置き換える**。既定はオフで、2段階でオンにする。
+
+1. `config.json` の `masterRenameEnabled` を `true` にする(使えるようにするだけ)。
+2. マスターがチャットで `/nickname rename setup` と送り、出てきた URL で許可する。藍が、許可(トークン)を受け取って確かめる。
+3. `/nickname rename on` でオンにする。
+
+- **許可(MiAuth)**: 求める権限は `read:account`(本人の確認)と `write:account`(表示名の変更)だけ。許可を受け取るまで、5秒おきに、最長10分待つ。
+  トークンは `masterNickname` モジュールのデータ(`data/memory.json`)に残す。ログには出さない。
+- **許可の検証**(起動のたびと、受け取ったとき・`check` のとき)。次のどれかなら、**表示名の変更だけを止めて**(藍の本体は動く)、理由をログに残し、マスターにチャットで知らせる(同じ理由は1回だけ)。
+  - 持ち主がマスター本人でない(このサーバーの、`master` のユーザーでない)
+  - ブラウザのログインのトークン(secure な API の `i/apps` が通る。すべての権限を持つ)
+  - `read:account`・`write:account` が無い、またはそれ以外の権限が1つでもある
+  - 権限の一覧が取れない、調べた結果が分からない(レート制限など。安全のため止める)
+  - 表示名を変えるときに、トークンが使えないエラー(`PERMISSION_DENIED`・`AUTHENTICATION_FAILED` など)が返った
+- **権限の調べ方**(`token-check.ts`): Misskey の API は「secure の確認 → レート制限 → 権限の確認 → パラメーターの検査 → 処理」の順で動く。
+  サーバーの `/api.json` から、権限ごとに API を1つ選び、型の違う値(object)をわざと送る。権限が無ければ `PERMISSION_DENIED`、あれば `INVALID_PARAM` になり、どちらでも処理は動かない。
+  型のあるプロパティが無い API しかない権限は、読み取りなら実際に呼び(読むだけ)、書き込みなら調べない(Misskey 2026.10.0 では `write:admin:drive` だけ。MiAuth で発行するので、付くことはない)。
+  権限の一覧はサーバーから取るので、Misskey が更新されて権限が増えても、調べる対象に入る。
+- **承認(既定)**: マスターにチャットで「〇〇に頼まれて、…表示名を「X」に変えてもいいですか？」と聞き、`masterRenameApprovalMinutes`(既定 60)分以内の「はい」で変える。
+  「いいえ」なら変えない。期限を過ぎた返事には「取り消しました」と答える。返事は、チャットの文の頭の「はい」「いいえ」などで見分ける(ほかの発言は、普段の反応に回す)。
+  承認を待っている間の依頼は、表示名は聞かず、通常の連絡(伝え方の設定どおり)にする。承認の結果は、頼んだ人には知らせない。
+- **すぐ変える**(`masterRenameMode: immediate` か `/nickname rename mode immediate`): すぐ変えて、マスターにチャットで知らせる。頼んだ人にも「表示名も変えておきました」と返す。
+- 表示名を変える設定のときは、マスターへの連絡は、承認の問いかけ(または変えたことの知らせ)にまとめる(伝え方の設定より優先)。回数・間隔の制限は、通常と同じ。
+  表示名を変えられなかったときは、通常と同じく回数の記録を戻し、「伝えられませんでした」と答える。
+- 呼び名にする設定(`callname`)なら、表示名を変えたときに、藍の中のマスターの呼び名も変える。
+- 最初に変える前の表示名を残し、`/nickname rename revert` で戻す(表示名が無かったときは、無い状態に戻す)。
+- 実装は `src/modules/master-nickname/`(`index.ts`: コマンド・承認・表示名の変更、`commands.ts`: コマンドの解釈、`token-check.ts`: 許可の検証、`miauth.ts`: 許可の受け取り)。
 
 ## 親愛度
 

@@ -66,6 +66,12 @@
 | `masterNicknamePerUserDaily` | `1` | 同じ人が1日(日本時間の0時区切り)に頼める回数。`0` で制限しない |
 | `masterNicknameIntervalMinutes` | `180` | マスターに伝える間隔(**分**)。誰からの依頼でもまとめて数える。`0` で制限しない |
 | `masterNicknameIntervalHours` | なし | 以前の書き方(時間)。`masterNicknameIntervalMinutes` が無いときだけ使う(時間 × 60 分)。新しく書くなら `masterNicknameIntervalMinutes` を使う |
+| `masterRenameEnabled` | `false` | `true` で、マスターの Misskey の表示名を、頼まれたあだ名に変える機能を使えるようにする。実際に使うには、マスターがチャットで許可(`/nickname rename setup`)してオン(`/nickname rename on`)にする |
+| `masterRenameMode` | `approval` | 表示名を変える方式。`approval`(マスターが承認してから)、`immediate`(すぐ) |
+| `masterRenameApprovalMinutes` | `60` | 承認を待つ時間(分) |
+
+`masterNickname…` と `masterRename…` の多くは、マスターがチャットかメンションの `/nickname` コマンドで変えられる。コマンドで変えた値は、`config.json` より優先する
+(`/nickname reset` で、`config.json` の値に戻る)。詳しくは [features.md](features.md) の「マスターのあだ名」。
 
 ## 書き方の例(接続先などは仮の値)
 

@@ -9,6 +9,7 @@ import { byLove } from './by-love.js';
 import config from '@/config.js';
 import Friend from '@/friend.js';
 import { isMaster } from '@/utils/is-master.js';
+import type MasterNicknameModule from '@/modules/master-nickname/index.js';
 import { pickNickname, parseAdanaTarget, ADANA_WORDS, ADANA_REFUSE_WORDS, REROLL_WORDS, YES_WORDS, NO_WORDS, isChatReplyExpired, startsWithReplyWord } from './nickname.js';
 import { resolveMasterNicknameSettings, checkMasterNicknameLimit, nextMasterNicknameUserRecord, describeRequester, masterLabel, masterMentionVisibility, MasterNicknameSettings } from './master-nickname.js';
 
@@ -425,7 +426,9 @@ export default class extends Module {
 
 		// 「〇〇さんのあだ名」は、送った本人ではなく〇〇さんのあだ名を考える。
 		// 誰のあだ名かが増えるときは、parseAdanaTarget() の kind と、ここの分岐を増やす
-		const master = resolveMasterNicknameSettings(config);
+		// 設定は masterNickname モジュール(コマンドで変えた値を含む)から取る。読み込んでいないときだけ config.json から作る
+		const nickname = this.masterNicknameModule();
+		const master = nickname != null ? nickname.settings() : resolveMasterNicknameSettings(config);
 		// マスターのあだ名を使わないときも、マスターの名前は、送った本人のあだ名にしない(マスター本人が言ったときは、本人のあだ名)
 		const otherNames = master == null && config.master && !isMaster(msg.user, config.master) && Array.isArray(config.masterNicknameNames)
 			? config.masterNicknameNames.filter((name): name is string => typeof name === 'string' && name.length > 0)
@@ -469,6 +472,11 @@ export default class extends Module {
 			});
 		});
 		return { reaction: '🙌' };
+	}
+
+	/** マスターのあだ名の設定と、表示名の変更を受け持つモジュール(src/index.ts で読み込んでいなければ undefined) */
+	private masterNicknameModule(): MasterNicknameModule | undefined {
+		return this.ai.modules?.find(m => m.name === 'masterNickname') as MasterNicknameModule | undefined;
 	}
 
 	/**
@@ -530,6 +538,14 @@ export default class extends Module {
 		// 呼び名にする設定なら、提案ではなく、決まったこととして伝える(伝えない設定でも、呼び名を変えたことはチャットで知らせる)
 		const renamed = settings.updateName;
 		const label = masterLabel(settings);
+
+		// 表示名を変える設定なら、マスターへの連絡は、そちら(承認の問いかけ、または変えたことの知らせ)にまとめる。
+		// 承認を待っているものがあれば(busy)、表示名は変えず、通常の連絡をする
+		const nickname = this.masterNicknameModule();
+		if (nickname?.renameActive()) {
+			const result = await nickname.requestRename(msg, item, from, label);
+			if (result !== 'busy') return;
+		}
 
 		if (settings.notify === 'mention') {
 			const mention = `@${master.username}`;
