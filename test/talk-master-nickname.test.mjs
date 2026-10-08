@@ -357,6 +357,65 @@ test('伝えられなかったら、記録を元に戻して、そう答える',
 	} finally { restore(); }
 });
 
+test('マスターに伝えたあとの失敗(頼んだ人への返事・呼び名の変更)は、伝えられなかったことにしない', { skip: !hasConfig && 'config.json がない' }, async () => {
+	// チャットで伝える設定。マスターへのチャットは届き、頼んだ人への返事が失敗する
+	{
+		const { mod, ai, calls, restore } = await setup({ master: 'boss', masterNicknameNames: ['マスター'], masterNicknameNotify: 'chat', masterNicknameUpdateName: true, masterNicknameIntervalMinutes: 0 });
+		try {
+			const replies = [];
+			const failing = message(ai, 'マスターのあだ名', replies);
+			failing.reply = async t => { replies.push(t); throw new Error('reply failed'); };
+			mod.adana(failing);
+			await tick(); await tick();
+			assert.equal(calls.chats.length, 1, 'マスターには届いている');
+			assert.equal(replies.length, 1, '「伝えられませんでした」とは答え直さない');
+			assert.ok(!replies[0].includes('うまく伝えられませんでした'));
+			assert.ok(ai.lookupFriend('m1')?.name, '呼び名は変える(返事の失敗で、変え損ねない)');
+
+			const again = [];
+			mod.adana(message(ai, 'マスターのあだ名', again));
+			await tick();
+			assert.match(again[0], /今日はもう、マスターに伝えたんでした/, '回数の記録は戻さない');
+			assert.equal(calls.chats.length, 1);
+		} finally { restore(); }
+	}
+
+	// メンションで伝える設定。呼び名の変更が失敗する
+	{
+		const { mod, ai, calls, restore } = await setup({ master: 'boss', masterNicknameNames: ['マスター'], masterNicknameNotify: 'mention', masterNicknameUpdateName: true, masterNicknameIntervalMinutes: 0 });
+		try {
+			const replies = [];
+			const msg = message(ai, 'マスターのあだ名', replies);
+			const lookup = ai.lookupFriend;
+			ai.lookupFriend = userId => userId === 'm1' ? { updateName() { throw new Error('save failed'); } } : lookup(userId);
+			mod.adana(msg);
+			await tick(); await tick();
+			assert.equal(calls.posts.length, 1, 'マスターには届いている');
+			assert.deepEqual(replies, [], '投稿で頼まれたら、メンションの投稿が返事。「伝えられませんでした」とは答えない');
+		} finally { restore(); }
+	}
+});
+
+test('マスターに伝えられなかったときの返事が失敗しても、未処理のエラーにしない。回数の記録は戻す', { skip: !hasConfig && 'config.json がない' }, async () => {
+	const { mod, ai, calls, restore } = await setup({ master: 'boss', masterNicknameNames: ['マスター'], masterNicknameNotify: 'mention', masterNicknameUpdateName: false });
+	const unhandled = [];
+	const onUnhandled = err => unhandled.push(err);
+	process.on('unhandledRejection', onUnhandled);
+	try {
+		calls.failPost = true;
+		const msg = message(ai, 'マスターのあだ名', []);
+		msg.reply = async () => { throw new Error('reply failed'); };
+		mod.adana(msg);
+		await tick(); await tick(); await tick();
+		assert.deepEqual(unhandled, []);
+
+		calls.failPost = false;
+		mod.adana(message(ai, 'マスターのあだ名', []));
+		await tick();
+		assert.equal(calls.posts.length, 1, '記録は戻っているので、すぐ頼み直せる');
+	} finally { process.off('unhandledRejection', onUnhandled); restore(); }
+});
+
 test('マスター本人が言ったときは、本人のあだ名として聞く', { skip: !hasConfig && 'config.json がない' }, async () => {
 	const { mod, ai, calls, restore } = await setup({ master: 'boss', masterNicknameNames: ['マスター'], masterNicknameNotify: 'mention', masterNicknameUpdateName: true });
 	try {
