@@ -86,7 +86,8 @@
 ## バージョン
 
 - バージョンは `package.json` の `_v`(`<upstream>-mk<X>.<Y>.<Z>`、例: `2.0.1-mk2.1.0`)。X は破壊的変更、Y は機能追加、Z は不具合修正。
-- 機能や修正を入れたときは、同じコミットか別の `chore:` コミットで `_v` を上げ、[docs/changelog.md](docs/changelog.md) に追記する。
+- 機能や修正を入れたときは、`_v` を上げ、[docs/changelog.md](docs/changelog.md) に追記する。**push していない変更は1つのバージョンにまとめる**
+  (機能ごとのコミットでは上げず、push の直前に、前回 push した版から1回だけ、`chore:` コミットで上げる)。
   `docs`・`chore`・`ci` では上げない。Git のタグは付けない。
 - 破壊的変更の定義や、複数の種類が混ざるときの扱いは [docs/versioning.md](docs/versioning.md) を参照。
 
