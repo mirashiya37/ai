@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { resolveMasterNicknameSettings, checkMasterNicknameLimit, nextMasterNicknameUserRecord, describeRequester, masterLabel } from '../built/modules/talk/master-nickname.js';
+import { resolveMasterNicknameSettings, checkMasterNicknameLimit, nextMasterNicknameUserRecord, describeRequester, masterLabel, masterMentionVisibility } from '../built/modules/talk/master-nickname.js';
 import { parseAdanaTarget } from '../built/modules/talk/nickname.js';
 
 const ROOT = new URL('..', import.meta.url).pathname;
@@ -19,13 +19,13 @@ test('マスターのユーザー名が無いか、伝えず呼び名にもし�
 
 test('設定の既定値と、文字列で書いた数', () => {
 	assert.deepEqual(resolveMasterNicknameSettings({ master: 'm', masterNicknameNotify: 'mention' }), {
-		username: 'm', names: [], notify: 'mention', updateName: false, perUserDaily: 1, interval: 3 * HOUR,
+		username: 'm', names: [], notify: 'mention', mentionVisibility: 'home', updateName: false, perUserDaily: 1, interval: 3 * HOUR,
 	});
 	assert.deepEqual(resolveMasterNicknameSettings({
 		master: 'm', masterNicknameNames: ['マスター', '', 1, 'ご主人'], masterNicknameNotify: 'off', masterNicknameUpdateName: true,
 		masterNicknamePerUserDaily: '2', masterNicknameIntervalHours: '0.5',
 	}), {
-		username: 'm', names: ['マスター', 'ご主人'], notify: 'off', updateName: true, perUserDaily: 2, interval: 0.5 * HOUR,
+		username: 'm', names: ['マスター', 'ご主人'], notify: 'off', mentionVisibility: 'home', updateName: true, perUserDaily: 2, interval: 0.5 * HOUR,
 	}, '伝えなくても、呼び名にするなら使う');
 	assert.equal(resolveMasterNicknameSettings({ master: 'm', masterNicknameNotify: 'chat', masterNicknameIntervalHours: -1 }).interval, 3 * HOUR, '負の数は既定値');
 });
@@ -158,6 +158,42 @@ test('通知と返事でマスターを呼ぶ言い方は、masterNicknameNames 
 		await tick();
 		assert.match(limit[0], /^ご主人のあだ名は、「.+」とかどうでしょう？ ・・・あれ、ご主人にうまく伝えられませんでした・・・$/);
 	} finally { restore(); }
+});
+
+test('メンションの公開範囲は、頼まれた投稿と上限の狭いほう。フォロワー限定はダイレクトにする', () => {
+	const table = [
+		// [頼まれた投稿, 上限 public, 上限 home, 上限 specified]
+		['public', 'public', 'home', 'specified'],
+		['home', 'home', 'home', 'specified'],
+		['followers', 'specified', 'specified', 'specified'],
+		['specified', 'specified', 'specified', 'specified'],
+	];
+	for (const [requested, ...expected] of table) {
+		assert.deepEqual(['public', 'home', 'specified'].map(max => masterMentionVisibility(requested, max)), expected, requested);
+	}
+});
+
+test('メンションの公開範囲の上限の設定: 既定は home。知らない値は既定', () => {
+	const visibility = value => resolveMasterNicknameSettings({ master: 'm', masterNicknameNotify: 'mention', masterNicknameMentionVisibility: value }).mentionVisibility;
+	assert.equal(visibility(undefined), 'home');
+	assert.equal(visibility('public'), 'public');
+	assert.equal(visibility('home'), 'home');
+	assert.equal(visibility('specified'), 'specified');
+	assert.equal(visibility('followers'), 'home', 'followers は選べない(藍がフォローされているとは限らないため)');
+	assert.equal(visibility('unknown'), 'home');
+});
+
+test('メンション: 公開で頼まれても、既定ではホームまで。上限を変えると、そのとおりになる', { skip: !hasConfig && 'config.json がない' }, async () => {
+	for (const [cap, expected] of [[undefined, 'home'], ['home', 'home'], ['public', 'public'], ['specified', 'specified']]) {
+		const { mod, ai, calls, restore } = await setup({ master: 'boss', masterNicknameNames: ['マスター'], masterNicknameNotify: 'mention', masterNicknameMentionVisibility: cap, masterNicknamePerUserDaily: 0, masterNicknameIntervalHours: 0 });
+		try {
+			mod.adana(message(ai, 'マスターのあだ名', [], { visibility: 'public' }));
+			await tick();
+			assert.equal(calls.posts[0].visibility, expected, `上限 ${cap}`);
+			assert.deepEqual(calls.posts[0].visibleUserIds, expected === 'specified' ? ['u1', 'm1'] : undefined);
+			assert.equal(calls.posts[0].replyId, 'note1', '頼んだ人の投稿への返信');
+		} finally { restore(); }
+	}
 });
 
 const tick = () => new Promise(r => setTimeout(r, 0));

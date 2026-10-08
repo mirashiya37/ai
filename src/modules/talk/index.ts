@@ -10,7 +10,7 @@ import config from '@/config.js';
 import Friend from '@/friend.js';
 import { isMaster } from '@/utils/is-master.js';
 import { pickNickname, parseAdanaTarget, ADANA_WORDS, REROLL_WORDS, YES_WORDS, NO_WORDS, isChatReplyExpired, startsWithReplyWord } from './nickname.js';
-import { resolveMasterNicknameSettings, checkMasterNicknameLimit, nextMasterNicknameUserRecord, describeRequester, masterLabel, MasterNicknameSettings } from './master-nickname.js';
+import { resolveMasterNicknameSettings, checkMasterNicknameLimit, nextMasterNicknameUserRecord, describeRequester, masterLabel, masterMentionVisibility, MasterNicknameSettings } from './master-nickname.js';
 
 export default class extends Module {
 	public readonly name = 'talk';
@@ -523,7 +523,7 @@ export default class extends Module {
 			case 'mention': {
 				const mention = `@${master.username}`;
 				const text = renamed ? serifs.core.adanaMasterRenamedMention(mention, from, item, label) : serifs.core.adanaMasterMention(mention, from, item, label);
-				await this.ai.post(this.masterMentionParams(msg, master, text));
+				await this.ai.post(this.masterMentionParams(msg, master, text, settings.mentionVisibility));
 
 				// チャットで頼まれたときは、メンションの投稿が頼んだ人に見えない(ダイレクト投稿)ので、チャットにも返す。
 				// マスターには伝え終わっているので、ここで失敗しても、伝えられなかったことにはしない
@@ -548,15 +548,16 @@ export default class extends Module {
 
 	/**
 	 * マスターへのメンションの投稿。頼んだ人の投稿への返信にして、公開範囲は msg.reply() と同じ考え方にする。
-	 * チャットで頼まれたときは、チャットの内容が公開されないように、頼んだ人とマスターだけのダイレクト投稿にする
+	 * チャットで頼まれたときは、チャットの内容が公開されないように、頼んだ人とマスターだけのダイレクト投稿にする。
+	 * 頼まれた投稿が公開でも、設定の上限(masterNicknameMentionVisibility)より広くはしない
 	 */
-	private masterMentionParams(msg: Message, master: any, text: string) {
+	private masterMentionParams(msg: Message, master: any, text: string, max: MasterNicknameSettings['mentionVisibility']) {
 		if (msg.isChat) {
 			const acct = msg.user.host ? `@${msg.user.username}@${msg.user.host}` : `@${msg.user.username}`;
 			return { text: `${acct} ${text}`, visibility: 'specified', visibleUserIds: [msg.userId, master.id] };
 		}
 
-		const visibility = msg.visibility === 'followers' || msg.visibility === 'specified' ? 'specified' : msg.visibility;
+		const visibility = masterMentionVisibility(msg.visibility ?? 'public', max);
 		return {
 			replyId: msg.id,
 			text,

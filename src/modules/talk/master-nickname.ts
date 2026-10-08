@@ -1,12 +1,17 @@
 /** マスターのあだ名を伝える方法。off なら伝えない */
 export type MasterNicknameNotify = 'off' | 'mention' | 'chat';
 
+/** マスターへのメンションの投稿の、公開範囲の上限。頼まれた投稿がこれより広くても、ここまでに狭める */
+export type MasterNicknameMentionVisibility = 'public' | 'home' | 'specified';
+
 export type MasterNicknameSettings = {
 	/** マスターのユーザー名(config.json の master) */
 	username: string;
 	/** 「〇〇のあだ名」の〇〇が、これならマスターとみなす */
 	names: string[];
 	notify: MasterNicknameNotify;
+	/** notify が mention のとき、マスターへのメンションの公開範囲の上限 */
+	mentionVisibility: MasterNicknameMentionVisibility;
 	/** 考えたあだ名を、マスターの呼び名にするか */
 	updateName: boolean;
 	/** 同じ人が1日(日本時間の0時で区切る)に頼める回数。0 なら制限しない */
@@ -23,6 +28,7 @@ export function masterLabel(settings: Pick<MasterNicknameSettings, 'names'>): st
 	return settings.names[0] ?? DEFAULT_LABEL;
 }
 
+const DEFAULT_MENTION_VISIBILITY: MasterNicknameMentionVisibility = 'home';
 const DEFAULT_PER_USER_DAILY = 1;
 const DEFAULT_INTERVAL_HOURS = 3;
 
@@ -41,6 +47,7 @@ export function resolveMasterNicknameSettings(config: {
 	master?: string;
 	masterNicknameNames?: unknown;
 	masterNicknameNotify?: unknown;
+	masterNicknameMentionVisibility?: unknown;
 	masterNicknameUpdateName?: unknown;
 	masterNicknamePerUserDaily?: unknown;
 	masterNicknameIntervalHours?: unknown;
@@ -59,6 +66,7 @@ export function resolveMasterNicknameSettings(config: {
 		username: config.master,
 		names,
 		notify,
+		mentionVisibility: config.masterNicknameMentionVisibility === 'public' || config.masterNicknameMentionVisibility === 'specified' ? config.masterNicknameMentionVisibility : DEFAULT_MENTION_VISIBILITY,
 		updateName,
 		perUserDaily: toNumber(config.masterNicknamePerUserDaily, DEFAULT_PER_USER_DAILY),
 		interval: toNumber(config.masterNicknameIntervalHours, DEFAULT_INTERVAL_HOURS) * 1000 * 60 * 60,
@@ -124,4 +132,16 @@ export function describeRequester(user: { username: string; host?: string | null
 
 	const display = chars.length > MAX_DISPLAY_NAME_LENGTH ? chars.slice(0, MAX_DISPLAY_NAME_LENGTH).join('') + '…' : chars.join('');
 	return `${display}(${acct})`;
+}
+
+const VISIBILITY_RANK: Record<string, number> = { public: 0, home: 1, followers: 2, specified: 3 };
+
+/**
+ * マスターへのメンションの公開範囲。頼まれた投稿の公開範囲と、上限のうち、狭いほうにする。
+ * フォロワー限定は、藍がその人にフォローされているとは限らないので、ダイレクト(specified)にする(msg.reply() と同じ)。
+ * @param requested 頼まれた投稿の公開範囲(public / home / followers / specified)
+ */
+export function masterMentionVisibility(requested: string, max: MasterNicknameMentionVisibility): 'public' | 'home' | 'specified' {
+	const wanted = requested === 'followers' ? 'specified' : requested;
+	return (VISIBILITY_RANK[wanted] ?? 0) >= VISIBILITY_RANK[max] ? (wanted as 'public' | 'home' | 'specified') : max;
 }

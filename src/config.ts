@@ -28,6 +28,7 @@ type Config = {
 	memoryDir?: string;
 	masterNicknameNames?: string[];
 	masterNicknameNotify?: 'off' | 'mention' | 'chat';
+	masterNicknameMentionVisibility?: 'public' | 'home' | 'specified';
 	masterNicknameUpdateName?: boolean;
 	masterNicknamePerUserDaily?: number | string;
 	masterNicknameIntervalHours?: number | string;
