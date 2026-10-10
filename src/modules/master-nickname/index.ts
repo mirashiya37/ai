@@ -106,6 +106,16 @@ export default class extends Module {
 		return this.rename().mode ?? (config.masterRenameMode === 'immediate' ? 'immediate' : 'approval');
 	}
 
+	/**
+	 * 表示名を変えるかをマスターに聞いている最中で、いま頼まれても、また聞けないか(承認待ちで、期限内のものがある)。
+	 * talk モジュールは、これが true で呼び名にもしない設定なら、マスターには何もせず、ふつうの提案にする
+	 */
+	@bindThis
+	public renameBusy(): boolean {
+		const pending = this.rename().pending;
+		return this.renameActive() && this.renameMode() === 'approval' && pending != null && this.isPendingAlive(pending);
+	}
+
 	/** 返事でマスターを呼ぶ言い方(talk モジュールのあだ名のセリフと同じ。masterNicknameNames の先頭か、既定の「ご主人様」) */
 	private label(): string {
 		return masterLabel({ names: masterNames(config) });
@@ -502,7 +512,7 @@ export default class extends Module {
 		const lines: string[] = [];
 
 		if (settings == null) {
-			lines.push(`${this.label()}のあだ名: 使わない${overrides.enabled === false ? '(/nickname off)' : '(伝え方が off で、呼び名にも、表示名にもしない設定)'}`);
+			lines.push(`${this.label()}のあだ名: 使わない${overrides.enabled === false ? '(/nickname off)' : '(呼び名にも、表示名にもしない設定)'}`);
 		} else {
 			lines.push(`${this.label()}のあだ名: 使う`);
 			lines.push(`伝え方: ${settings.notify}${settings.notify === 'mention' ? `(公開範囲の上限: ${settings.mentionVisibility})` : ''}`);

@@ -10,16 +10,18 @@ const ROOT = new URL('..', import.meta.url).pathname;
 const hasConfig = existsSync(ROOT + 'config.json');
 const HOUR = 1000 * 60 * 60;
 
-test('マスターのユーザー名が無いか、伝えず呼び名にもしないなら、使わない', () => {
-	assert.equal(resolveMasterNicknameSettings({ masterNicknameNotify: 'mention' }), null);
+test('マスターのユーザー名が無いか、呼び名にも表示名にもしないなら、使わない(伝え方が何でも)', () => {
+	assert.equal(resolveMasterNicknameSettings({ masterNicknameNotify: 'mention', masterNicknameUpdateName: true }), null, 'master が無い');
 	assert.equal(resolveMasterNicknameSettings({ master: 'm' }), null, '既定はオフ');
 	assert.equal(resolveMasterNicknameSettings({ master: 'm', masterNicknameNotify: 'off', masterNicknameUpdateName: false }), null);
+	assert.equal(resolveMasterNicknameSettings({ master: 'm', masterNicknameNotify: 'mention' }), null, '伝えるだけでは、マスターには何も起きないので、使わない');
+	assert.equal(resolveMasterNicknameSettings({ master: 'm', masterNicknameNotify: 'chat', masterNicknameUpdateName: false }), null);
 	assert.equal(resolveMasterNicknameSettings({ master: 'm', masterNicknameNotify: 'unknown' }), null, '知らない値はオフ');
 });
 
 test('設定の既定値と、文字列で書いた数', () => {
-	assert.deepEqual(resolveMasterNicknameSettings({ master: 'm', masterNicknameNotify: 'mention' }), {
-		username: 'm', names: [], notify: 'mention', mentionVisibility: 'public', updateName: false, perUserDaily: 1, interval: 3 * HOUR,
+	assert.deepEqual(resolveMasterNicknameSettings({ master: 'm', masterNicknameNotify: 'mention', masterNicknameUpdateName: true }), {
+		username: 'm', names: [], notify: 'mention', mentionVisibility: 'public', updateName: true, perUserDaily: 1, interval: 3 * HOUR,
 	});
 	assert.deepEqual(resolveMasterNicknameSettings({
 		master: 'm', masterNicknameNames: ['マスター', '', 1, 'ご主人'], masterNicknameNotify: 'off', masterNicknameUpdateName: true,
@@ -27,7 +29,7 @@ test('設定の既定値と、文字列で書いた数', () => {
 	}), {
 		username: 'm', names: ['マスター', 'ご主人'], notify: 'off', mentionVisibility: 'public', updateName: true, perUserDaily: 2, interval: 0.5 * HOUR,
 	}, '伝えなくても、呼び名にするなら使う');
-	assert.equal(resolveMasterNicknameSettings({ master: 'm', masterNicknameNotify: 'chat', masterNicknameIntervalHours: -1 }).interval, 3 * HOUR, '負の数は既定値');
+	assert.equal(resolveMasterNicknameSettings({ master: 'm', masterNicknameNotify: 'chat', masterNicknameUpdateName: true, masterNicknameIntervalHours: -1 }).interval, 3 * HOUR, '負の数は既定値');
 });
 
 test('同じ人は1日の回数まで。日付が変わればまた頼める', () => {
@@ -141,15 +143,15 @@ test('通知と返事でマスターを呼ぶ言い方は、masterNicknameNames 
 	assert.equal(masterLabel({ names: ['ご主人', 'マスター'] }), 'ご主人');
 	assert.equal(masterLabel({ names: [] }), 'ご主人様');
 
-	const { mod, ai, calls, serifs, restore } = await setup({ master: 'boss', masterNicknameNames: ['ご主人', 'マスター'], masterNicknameNotify: 'chat', masterNicknameUpdateName: false, masterNicknamePerUserDaily: 0, masterNicknameIntervalHours: 0 });
+	const { mod, ai, calls, serifs, restore } = await setup({ master: 'boss', masterNicknameNames: ['ご主人', 'マスター'], masterNicknameNotify: 'chat', masterNicknameUpdateName: true, masterNicknamePerUserDaily: 0, masterNicknameIntervalHours: 0 });
 	try {
 		const replies = [];
 		mod.adana(message(ai, 'マスターのあだ名', replies));
 		await tick();
-		const item = calls.chats[0].text.match(/「(.+?)」とかいかがでしょうか/)?.[1];
-		assert.equal(calls.chats[0].text, serifs.core.adanaMasterToMaster('@alice', item, 'ご主人'));
-		assert.match(calls.chats[0].text, /^@aliceに頼まれて、ご主人のあだ名を考えました！/);
-		assert.deepEqual(replies, [`ご主人のあだ名は、「${item}」とかどうでしょう？ ご主人に伝えておきました！`]);
+		const item = calls.chats[0].text.match(/呼び名を「(.+?)」にしました/)?.[1];
+		assert.equal(calls.chats[0].text, serifs.core.adanaMasterRenamedToMaster('@alice', item, 'ご主人'));
+		assert.match(calls.chats[0].text, /^@aliceに頼まれて、ご主人の呼び名を/);
+		assert.deepEqual(replies, [serifs.core.adanaMasterRenamedToSender(item, 'ご主人')]);
 
 		// 制限・失敗のときも同じ言い方
 		const limit = [];
@@ -174,7 +176,7 @@ test('メンションの公開範囲は、頼まれた投稿と上限の狭い�
 });
 
 test('コマンドで変えた設定は、config.json より優先する。off なら使わない。表示名を変えるなら、伝え方が off でも使う', () => {
-	const config = { master: 'm', masterNicknameNotify: 'mention', masterNicknamePerUserDaily: 1, masterNicknameIntervalMinutes: 180 };
+	const config = { master: 'm', masterNicknameNotify: 'mention', masterNicknameUpdateName: true, masterNicknamePerUserDaily: 1, masterNicknameIntervalMinutes: 180 };
 	const settings = resolveMasterNicknameSettings(config, { notify: 'chat', updateName: true, mentionVisibility: 'specified', perUserDaily: 0, intervalMinutes: 5 });
 	assert.equal(settings.notify, 'chat');
 	assert.equal(settings.updateName, true);
@@ -184,12 +186,13 @@ test('コマンドで変えた設定は、config.json より優先する。off �
 	assert.equal(resolveMasterNicknameSettings(config, { enabled: false }), null);
 	assert.equal(resolveMasterNicknameSettings(config, { enabled: true }).notify, 'mention', '上書きの無い項目は config.json の値');
 	assert.equal(resolveMasterNicknameSettings({ master: 'm' }, {}, false), null, '何もしない設定なら使わない');
+	assert.equal(resolveMasterNicknameSettings({ master: 'm', masterNicknameNotify: 'chat' }, { notify: 'mention' }, false), null, '伝え方を決めても、呼び名にも表示名にもしないなら使わない');
 	assert.equal(resolveMasterNicknameSettings({ master: 'm' }, {}, true).notify, 'off', '表示名を変えるなら使う');
 	assert.equal(resolveMasterNicknameSettings({}, { enabled: true }, true), null, 'master が無ければ使わない');
 });
 
 test('マスターに伝える間隔は分で指定する。以前の時間の指定も使える(分があれば分が先)', () => {
-	const interval = config => resolveMasterNicknameSettings({ master: 'm', masterNicknameNotify: 'mention', ...config }).interval;
+	const interval = config => resolveMasterNicknameSettings({ master: 'm', masterNicknameNotify: 'mention', masterNicknameUpdateName: true, ...config }).interval;
 	const MINUTE = 60 * 1000;
 	assert.equal(interval({}), 180 * MINUTE, '既定は180分(3時間)');
 	assert.equal(interval({ masterNicknameIntervalMinutes: 30 }), 30 * MINUTE);
@@ -204,7 +207,7 @@ test('マスターに伝える間隔は分で指定する。以前の時間の�
 });
 
 test('メンションの公開範囲の上限の設定: 既定は public(これまでどおり)。知らない値は既定', () => {
-	const visibility = value => resolveMasterNicknameSettings({ master: 'm', masterNicknameNotify: 'mention', masterNicknameMentionVisibility: value }).mentionVisibility;
+	const visibility = value => resolveMasterNicknameSettings({ master: 'm', masterNicknameNotify: 'mention', masterNicknameUpdateName: true, masterNicknameMentionVisibility: value }).mentionVisibility;
 	assert.equal(visibility(undefined), 'public');
 	assert.equal(visibility('public'), 'public');
 	assert.equal(visibility('home'), 'home');
@@ -215,7 +218,7 @@ test('メンションの公開範囲の上限の設定: 既定は public(これ�
 
 test('メンション: 公開で頼まれたら、既定では公開のまま。上限を決めると、そこまでに狭める', { skip: !hasConfig && 'config.json がない' }, async () => {
 	for (const [cap, expected] of [[undefined, 'public'], ['public', 'public'], ['home', 'home'], ['specified', 'specified']]) {
-		const { mod, ai, calls, restore } = await setup({ master: 'boss', masterNicknameNames: ['マスター'], masterNicknameNotify: 'mention', masterNicknameMentionVisibility: cap, masterNicknamePerUserDaily: 0, masterNicknameIntervalHours: 0 });
+		const { mod, ai, calls, restore } = await setup({ master: 'boss', masterNicknameNames: ['マスター'], masterNicknameNotify: 'mention', masterNicknameUpdateName: true, masterNicknameMentionVisibility: cap, masterNicknamePerUserDaily: 0, masterNicknameIntervalHours: 0 });
 		try {
 			mod.adana(message(ai, 'マスターのあだ名', [], { visibility: 'public' }));
 			await tick();
@@ -250,14 +253,14 @@ test('メンション: 頼んだ人の投稿への返信で、マスターにメ
 });
 
 test('メンション: フォロワー限定・チャットで頼まれたら、頼んだ人とマスターだけのダイレクト投稿にする', { skip: !hasConfig && 'config.json がない' }, async () => {
-	const { mod, ai, calls, restore } = await setup({ master: 'boss', masterNicknameNames: ['マスター'], masterNicknameNotify: 'mention', masterNicknameUpdateName: false, masterNicknameIntervalHours: 0 });
+	const { mod, ai, calls, restore } = await setup({ master: 'boss', masterNicknameNames: ['マスター'], masterNicknameNotify: 'mention', masterNicknameUpdateName: true, masterNicknameIntervalHours: 0 });
 	try {
 		mod.adana(message(ai, 'マスターのあだ名', [], { visibility: 'followers' }));
 		await tick();
 		assert.equal(calls.posts[0].visibility, 'specified');
 		assert.deepEqual(calls.posts[0].visibleUserIds, ['u1', 'm1']);
 		assert.equal(calls.posts[0].replyId, 'note1');
-		assert.equal(ai.lookupFriend('m1'), null, '呼び名にしない設定なら、マスターの記録も作らない');
+		assert.ok(ai.lookupFriend('m1')?.name, '呼び名にする設定なので、マスターの呼び名を残す');
 
 		mod.adana(message(ai, 'マスターのあだ名', [], { user: { id: 'u2', username: 'bob', host: 'remote.example' }, isChat: true }));
 		await tick();
@@ -269,13 +272,13 @@ test('メンション: フォロワー限定・チャットで頼まれたら、
 });
 
 test('メンション: チャットで頼まれたら、チャットにも「伝えておきました」と返す。返事が失敗しても、伝えたことにする', { skip: !hasConfig && 'config.json がない' }, async () => {
-	const { mod, ai, calls, serifs, restore } = await setup({ master: 'boss', masterNicknameNames: ['マスター'], masterNicknameNotify: 'mention', masterNicknameUpdateName: false, masterNicknameIntervalHours: 0, masterNicknamePerUserDaily: 0 });
+	const { mod, ai, calls, serifs, restore } = await setup({ master: 'boss', masterNicknameNames: ['マスター'], masterNicknameNotify: 'mention', masterNicknameUpdateName: true, masterNicknameIntervalHours: 0, masterNicknamePerUserDaily: 0 });
 	try {
 		const replies = [];
 		mod.adana(message(ai, 'マスターのあだ名', replies, { isChat: true }));
 		await tick();
-		const item = calls.posts[0].text.match(/「(.+?)」とかいかがでしょうか/)?.[1];
-		assert.deepEqual(replies, [serifs.core.adanaMasterToSender(item, 'マスター')]);
+		const item = calls.posts[0].text.match(/呼び名を「(.+?)」にしました/)?.[1];
+		assert.deepEqual(replies, [serifs.core.adanaMasterRenamedToSender(item, 'マスター')]);
 
 		const notChat = [];
 		mod.adana(message(ai, 'マスターのあだ名', notChat));
@@ -304,7 +307,7 @@ test('メンション: チャットで頼まれ、呼び名にする設定なら
 });
 
 test('チャット: マスターにチャットで伝え、頼んだ人には「伝えておきました」と返す', { skip: !hasConfig && 'config.json がない' }, async () => {
-	const { mod, ai, calls, serifs, restore } = await setup({ master: 'boss', masterNicknameNames: ['マスター'], masterNicknameNotify: 'chat', masterNicknameUpdateName: false });
+	const { mod, ai, calls, serifs, restore } = await setup({ master: 'boss', masterNicknameNames: ['マスター'], masterNicknameNotify: 'chat', masterNicknameUpdateName: true });
 	try {
 		const replies = [];
 		const msg = message(ai, 'マスターさんのあだ名', replies, { user: { id: 'u1', username: 'alice', host: null, name: 'アリス' } });
@@ -313,9 +316,9 @@ test('チャット: マスターにチャットで伝え、頼んだ人には「
 		await tick();
 
 		assert.equal(calls.chats.length, 1);
-		const item = calls.chats[0].text.match(/「(.+?)」とかいかがでしょうか/)?.[1];
-		assert.deepEqual(calls.chats[0], { userId: 'm1', text: serifs.core.adanaMasterToMaster('アリス(@alice)', item, 'マスター') }, '頼んだ人は、表示名とユーザー名で書く(藍が付けた呼び名「ポテト」ではなく)');
-		assert.deepEqual(replies, [serifs.core.adanaMasterToSender(item, 'マスター')]);
+		const item = calls.chats[0].text.match(/呼び名を「(.+?)」にしました/)?.[1];
+		assert.deepEqual(calls.chats[0], { userId: 'm1', text: serifs.core.adanaMasterRenamedToMaster('アリス(@alice)', item, 'マスター') }, '頼んだ人は、表示名とユーザー名で書く(藍が付けた呼び名「ポテト」ではなく)');
+		assert.deepEqual(replies, [serifs.core.adanaMasterRenamedToSender(item, 'マスター')]);
 		assert.deepEqual(calls.posts, []);
 	} finally { restore(); }
 });
@@ -333,7 +336,7 @@ test('伝えない設定で呼び名にするなら、マスターにはチャ�
 });
 
 test('制限: 同じ人の2回目は「また明日」、ほかの人でも間隔内なら次に伝えられる時刻を添える。どちらも、あだ名は考えて返す', { skip: !hasConfig && 'config.json がない' }, async () => {
-	const { mod, ai, calls, restore } = await setup({ master: 'boss', masterNicknameNames: ['マスター'], masterNicknameNotify: 'mention', masterNicknameUpdateName: false });
+	const { mod, ai, calls, restore } = await setup({ master: 'boss', masterNicknameNames: ['マスター'], masterNicknameNotify: 'mention', masterNicknameUpdateName: true });
 	try {
 		const before = Date.now();
 		mod.adana(message(ai, 'マスターのあだ名', []));
@@ -413,7 +416,7 @@ test('マスターに伝えたあとの失敗(頼んだ人への返事・呼び�
 });
 
 test('マスターに伝えられなかったときの返事が失敗しても、未処理のエラーにしない。回数の記録は戻す', { skip: !hasConfig && 'config.json がない' }, async () => {
-	const { mod, ai, calls, restore } = await setup({ master: 'boss', masterNicknameNames: ['マスター'], masterNicknameNotify: 'mention', masterNicknameUpdateName: false });
+	const { mod, ai, calls, restore } = await setup({ master: 'boss', masterNicknameNames: ['マスター'], masterNicknameNotify: 'mention', masterNicknameUpdateName: true });
 	const unhandled = [];
 	const onUnhandled = err => unhandled.push(err);
 	process.on('unhandledRejection', onUnhandled);
@@ -444,7 +447,7 @@ test('マスター本人が言ったときは、本人のあだ名として聞�
 	} finally { restore(); }
 });
 
-test('呼び名にする設定なら、チャットでも「いかがでしょうか」と聞かず、決まったこととして伝える。しない設定なら提案', { skip: !hasConfig && 'config.json がない' }, async () => {
+test('呼び名にする設定なら、チャットでも「いかがでしょうか」と聞かず、決まったこととして伝える。しない設定は「使わない」ので、ほかの人と同じ提案(マスターには何も送らない)', { skip: !hasConfig && 'config.json がない' }, async () => {
 	const on = await setup({ master: 'boss', masterNicknameNames: ['マスター'], masterNicknameNotify: 'chat', masterNicknameUpdateName: true });
 	try {
 		const replies = [];
@@ -456,10 +459,18 @@ test('呼び名にする設定なら、チャットでも「いかがでしょ�
 		for (const text of [on.calls.chats[0].text, replies[0]]) assert.ok(!/いかがでしょうか|どうでしょう/.test(text), text);
 	} finally { on.restore(); }
 
-	const off = await setup({ master: 'boss', masterNicknameNames: ['マスター'], masterNicknameNotify: 'mention', masterNicknameUpdateName: false });
-	try {
-		off.mod.adana(message(off.ai, 'マスターのあだ名', []));
-		await tick();
-		assert.match(off.calls.posts[0].text, /^@alice @boss @aliceに頼まれて、マスターのあだ名を考えました！ 「.+」とかいかがでしょうか？$/);
-	} finally { off.restore(); }
+	for (const notify of ['mention', 'chat', 'off']) {
+		const off = await setup({ master: 'boss', masterNicknameNames: ['マスター'], masterNicknameNotify: notify, masterNicknameUpdateName: false });
+		try {
+			const replies = [];
+			off.mod.adana(message(off.ai, 'マスターのあだ名', replies));
+			await tick();
+			assert.match(replies[0], /^マスターのあだ名は、「.+」とかいかがでしょうか？$/, `伝え方 ${notify}: ほかの人のあだ名と同じ提案`);
+			assert.deepEqual(off.calls.posts, [], 'マスターに投稿しない');
+			assert.deepEqual(off.calls.chats, [], 'マスターにチャットしない');
+			assert.equal(off.calls.subscribed.length, 1, '返事を待つ(引き直せる)');
+			assert.equal(off.calls.subscribed[0].data.target, 'マスター', '送った本人の呼び名は変えない');
+			assert.equal(off.ai.lookupFriend('m1'), null, 'マスターの記録も作らない');
+		} finally { off.restore(); }
+	}
 });

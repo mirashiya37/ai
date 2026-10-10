@@ -64,7 +64,7 @@ export type MasterNicknameOverrides = {
 
 /**
  * config.json の値と、コマンドで変えた値から、マスターのあだ名の設定を作る。使わないなら null。
- * 伝えない(notify が off)うえに呼び名にもせず、表示名も変えないなら、マスターには何も起きないので使わない
+ * 呼び名にもせず、表示名も変えないなら、マスターには何も起きない(伝え方 notify は、変えたことの知らせの送り先だけを決める)ので、使わない
  * (「〇〇さんのあだ名」として、ほかの人と同じに扱う)。
  * @param overrides コマンドで変えた設定
  * @param renameActive 表示名の変更が使える状態か(オンで、トークンの検証が済んでいる)
@@ -85,7 +85,7 @@ export function resolveMasterNicknameSettings(config: {
 	const notify: MasterNicknameNotify = overrides.notify
 		?? (config.masterNicknameNotify === 'mention' || config.masterNicknameNotify === 'chat' ? config.masterNicknameNotify : 'off');
 	const updateName = overrides.updateName ?? config.masterNicknameUpdateName === true;
-	if (notify === 'off' && !updateName && !renameActive) return null;
+	if (!updateName && !renameActive) return null;
 
 	const names = masterNames(config);
 

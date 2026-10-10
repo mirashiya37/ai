@@ -518,6 +518,9 @@ export default class extends Module {
 		// マスター本人が言ったときは、本人のあだ名
 		if (isMaster(msg.user, config.master)) return this.adanaForSelf(msg);
 
+		// 表示名を変えるかを聞いている最中で、呼び名にもしないなら、マスターには何も起きないので、ほかの人と同じ提案にする
+		if (!settings.updateName && this.masterNicknameModule()?.renameBusy()) return this.adanaForOther(msg, masterLabel(settings));
+
 		const item = this.thinkNickname(msg);
 		if (item == null) return { reaction: '🙌' };
 
@@ -551,7 +554,8 @@ export default class extends Module {
 	}
 
 	/**
-	 * マスターに、頼まれて考えたあだ名を伝える。呼び名にする設定なら、伝えられたあとで呼び名にする。
+	 * マスターに、頼まれて考えたあだ名を伝えて、呼び名にする(表示名を変える設定なら、そちらにまとめる)。
+	 * 呼び名にも表示名にもしない設定は「使わない」(settings が null)ので、ここには来ない。
 	 * 失敗とみなす(呼び出し元が記録を戻す)のは、マスターに伝えられなかったときだけ。
 	 * 伝え終わったあとの、呼び名の変更と頼んだ人への返事は、失敗してもログに残すだけにする
 	 * (マスターには届いているのに、回数の記録を戻して「伝えられませんでした」と答えると、何度でも頼めてしまうため)
@@ -563,7 +567,7 @@ export default class extends Module {
 
 		// 表示名を変える設定なら、マスターへの連絡は、そちら(承認の問いかけ、または変えたことの知らせ)にまとめる。
 		// 承認の問いかけはチャット。すぐ変えたことの知らせは、伝え方が mention ならメンションの投稿で伝える。
-		// 承認を待っているものがあれば(busy)、表示名は変えず、通常の連絡をする
+		// 承認を待っているものがあれば(busy。呼び名にもしない設定なら、adanaForMaster で、ふつうの提案にしている)、表示名は変えず、呼び名を変えた知らせをする
 		const nickname = this.masterNicknameModule();
 		if (nickname?.renameActive()) {
 			const mention = settings.notify === 'mention' ? async (text: string) => {
@@ -575,31 +579,26 @@ export default class extends Module {
 		}
 
 		const master: any = await this.ai.api('users/show', { username: settings.username });
-		// 呼び名にする設定なら、提案ではなく、決まったこととして伝える(伝えない設定でも、呼び名を変えたことはチャットで知らせる)
-		const renamed = settings.updateName;
-
+		// 提案ではなく、決まったこととして伝える(伝えない設定でも、呼び名を変えたことはチャットで知らせる)
 		if (settings.notify === 'mention') {
 			const mention = `@${master.username}`;
-			const text = renamed ? serifs.core.adanaMasterRenamedMention(mention, from, item, label) : serifs.core.adanaMasterMention(mention, from, item, label);
-			await this.ai.post(this.masterMentionParams(msg, master, text, settings.mentionVisibility));
+			await this.ai.post(this.masterMentionParams(msg, master, serifs.core.adanaMasterRenamedMention(mention, from, item, label), settings.mentionVisibility));
 		} else {
-			await this.ai.sendMessage(master.id, { text: renamed ? serifs.core.adanaMasterRenamedToMaster(from, item, label) : serifs.core.adanaMasterToMaster(from, item, label) });
+			await this.ai.sendMessage(master.id, { text: serifs.core.adanaMasterRenamedToMaster(from, item, label) });
 		}
 
 		// ここから先は、マスターに伝え終わっている
-		if (settings.updateName) {
-			try {
-				const friend = this.ai.lookupFriend(master.id) ?? new Friend(this.ai, { user: master });
-				friend.updateName(item);
-			} catch (err) {
-				this.log(`Failed to rename the master: ${err}`);
-			}
+		try {
+			const friend = this.ai.lookupFriend(master.id) ?? new Friend(this.ai, { user: master });
+			friend.updateName(item);
+		} catch (err) {
+			this.log(`Failed to rename the master: ${err}`);
 		}
 
 		// メンションの投稿は、投稿で頼まれたなら、頼んだ人への返信そのもの。
 		// チャットで頼まれたときは、メンションの投稿(ダイレクト)が頼んだ人のチャットには出ないので、チャットにも返す
 		if (settings.notify !== 'mention' || msg.isChat) {
-			await replyWithMention(msg, renamed ? serifs.core.adanaMasterRenamedToSender(item, label) : serifs.core.adanaMasterToSender(item, label))
+			await replyWithMention(msg, serifs.core.adanaMasterRenamedToSender(item, label))
 				.catch(err => this.log(`Failed to reply to the requester: ${err}`));
 		}
 	}

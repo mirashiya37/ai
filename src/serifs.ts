@@ -209,22 +209,15 @@ export default {
 		adanaOtherNo: (target: string) => `わかりました、${target}のあだ名は、またいいのを考えておきますね！`,
 
 		/**
-		 * マスターのあだ名(from は頼んだ人、label はマスターの呼び方。config.json の masterNicknameNames の先頭)。呼び名にしない設定のときは提案、呼び名にする設定のときは、決まったこととして伝える。
-		 * ほかの人のあだ名と違い、呼び名にする設定なら「いかがでしょうか？」とは聞かない
+		 * マスターのあだ名(from は頼んだ人、label はマスターの呼び方。config.json の masterNicknameNames の先頭)。呼び名にする設定のときだけ使う(しない設定は、ほかの人のあだ名と同じ提案)。
+		 * 提案ではなく、決まったこととして伝える
 		 */
-		adanaMasterMention: (master: string, from: string, item: string, label: string) =>
-			`${master} ${from}に頼まれて、${label}のあだ名を考えました！ 「${item}」とかいかがでしょうか？`,
-
-		adanaMasterToMaster: (from: string, item: string, label: string) => `${from}に頼まれて、${label}のあだ名を考えました！ 「${item}」とかいかがでしょうか？`,
-
 		adanaMasterRenamedMention: (master: string, from: string, item: string, label: string) =>
 			`${master} ${from}に頼まれて、${label}の呼び名を「${item}」にしました！ 戻すときは「〇〇って呼んで」と言ってくださいね`,
 
 		adanaMasterRenamedToMaster: (from: string, item: string, label: string) => `${from}に頼まれて、${label}の呼び名を「${item}」にしました！ 戻すときは「〇〇って呼んで」と言ってくださいね`,
 
 		/** マスターに伝え終わったあとの、頼んだ人への返事(チャットで伝えたときも、メンションで伝えたときも同じ) */
-		adanaMasterToSender: (item: string, label: string) => `${label}のあだ名は、「${item}」とかどうでしょう？ ${label}に伝えておきました！`,
-
 		adanaMasterRenamedToSender: (item: string, label: string) => `${label}のあだ名は、「${item}」にしてみました！ ${label}にも伝えておきました！`,
 
 		adanaMasterLimitDaily: (item: string, label: string) => `${label}のあだ名は、「${item}」とかどうでしょう？ ...あっ、今日はもう、${label}に伝えたんでした！ また明日、お願いしますね`,

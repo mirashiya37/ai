@@ -46,7 +46,7 @@ async function setup(settings = {}) {
 	const Talk = (await import('../built/modules/talk/index.js')).default;
 
 	const saved = {};
-	const all = { master: 'boss', masterNicknameNames: ['ご主人'], masterNicknameNotify: 'chat', masterNicknameUpdateName: false, masterNicknamePerUserDaily: 0, masterNicknameIntervalMinutes: 0, masterNicknameIntervalHours: undefined, masterNicknameMentionVisibility: undefined, masterRenameEnabled: true, masterRenameMode: undefined, masterRenameApprovalMinutes: undefined, ...settings };
+	const all = { master: 'boss', masterNicknameNames: ['ご主人'], masterNicknameNotify: 'chat', masterNicknameUpdateName: true, masterNicknamePerUserDaily: 0, masterNicknameIntervalMinutes: 0, masterNicknameIntervalHours: undefined, masterNicknameMentionVisibility: undefined, masterRenameEnabled: true, masterRenameMode: undefined, masterRenameApprovalMinutes: undefined, ...settings };
 	for (const [key, value] of Object.entries(all)) { saved[key] = config[key]; config[key] = value; }
 	const restore = () => { for (const [key, value] of Object.entries(saved)) config[key] = value; };
 
@@ -326,9 +326,46 @@ test('承認を待っている間の依頼は、表示名は聞かず、通常�
 		ai.modules[1].adana(message(ai, 'ご主人のあだ名', second, { user: { id: 'u2', username: 'carol', host: null }, isChat: false }));
 		await tick(); await tick();
 		assert.equal(state.chats.length, 2);
-		assert.match(state.chats[1].text, /^@carolに頼まれて、ご主人のあだ名を考えました！ 「.+」とかいかがでしょうか？$/, '通常の連絡(chat)');
-		assert.match(second[0], /ご主人に伝えておきました！$/);
+		assert.match(state.chats[1].text, /^@carolに頼まれて、ご主人の呼び名を「.+」にしました！/, '呼び名を変えた知らせ(chat)');
+		assert.match(second[0], /ご主人にも伝えておきました！$/);
 		assert.equal(nickname.rename().pending.from, 'アリス(@alice)', '最初の承認待ちはそのまま');
+	} finally { restore(); }
+});
+
+test('承認を待っている間の依頼で、呼び名にもしない設定なら、マスターには何もせず、ふつうの提案(返事も待つ)にする', { skip: !hasConfig && 'config.json がない' }, async () => {
+	const { nickname, ai, state, restore } = await setup({ masterNicknameUpdateName: false });
+	try {
+		await turnOn(nickname, ai);
+		state.chats.length = 0;
+		ai.modules[1].adana(message(ai, 'ご主人のあだ名', [], { user: ALICE, isChat: false }));
+		await tick(); await tick();
+		assert.equal(state.chats.length, 1, '最初の依頼の、承認の問いかけだけ');
+		assert.equal(nickname.renameBusy(), true);
+
+		const second = [];
+		const subscribed = [];
+		ai.subscribeReply = (...args) => { subscribed.push(args); };
+		ai.modules[1].adana(message(ai, 'ご主人のあだ名', second, { user: { id: 'u2', username: 'carol', host: null }, isChat: false }));
+		await tick(); await tick();
+		assert.equal(state.chats.length, 1, 'マスターには連絡しない');
+		assert.deepEqual(state.posts, []);
+		assert.match(second[0], /^ご主人のあだ名は、「.+」とかいかがでしょうか？$/, 'ほかの人のあだ名と同じ提案');
+		assert.equal(subscribed.length, 1, '返事を待つ(引き直せる)');
+		assert.equal(nickname.rename().pending.from, 'アリス(@alice)', '最初の承認待ちはそのまま');
+		assert.equal(ai.lookupFriend('m1')?.name ?? null, null, 'マスターの呼び名は変えない');
+	} finally { restore(); }
+});
+
+test('承認待ちが無ければ、呼び名にもしない設定でも、表示名を変える流れの対象(承認を聞く)', { skip: !hasConfig && 'config.json がない' }, async () => {
+	const { nickname, ai, state, restore } = await setup({ masterNicknameUpdateName: false });
+	try {
+		await turnOn(nickname, ai);
+		assert.equal(nickname.renameBusy(), false);
+		state.chats.length = 0;
+		ai.modules[1].adana(message(ai, 'ご主人のあだ名', [], { user: ALICE, isChat: false }));
+		await tick(); await tick();
+		assert.match(state.chats[0].text, /表示名を「.+」に変えてもいいですか？/);
+		assert.equal(nickname.renameBusy(), true);
 	} finally { restore(); }
 });
 
@@ -361,7 +398,7 @@ test('すぐ変えたときの文面: 「あだ名を決めて、表示名も変
 });
 
 test('すぐ変える設定で、伝え方が mention なら、マスターへの知らせはメンションの投稿(頼んだ人への返信)。チャットは使わず、頼んだ人への返事も重ねない', { skip: !hasConfig && 'config.json がない' }, async () => {
-	const { nickname, ai, state, serifs, restore } = await setup({ masterNicknameNotify: 'mention' });
+	const { nickname, ai, state, serifs, restore } = await setup({ masterNicknameNotify: 'mention', masterNicknameUpdateName: false });
 	try {
 		await turnOn(nickname, ai, 'immediate');
 		state.chats.length = 0;
@@ -382,7 +419,7 @@ test('すぐ変える設定で、伝え方が mention なら、マスターへ�
 });
 
 test('すぐ変える設定で、伝え方が mention のとき、チャットで頼まれたら、頼んだ人とマスターだけのダイレクト投稿にして、チャットにも返す', { skip: !hasConfig && 'config.json がない' }, async () => {
-	const { nickname, ai, state, serifs, restore } = await setup({ masterNicknameNotify: 'mention' });
+	const { nickname, ai, state, serifs, restore } = await setup({ masterNicknameNotify: 'mention', masterNicknameUpdateName: false });
 	try {
 		await turnOn(nickname, ai, 'immediate');
 		const requester = [];
@@ -398,7 +435,7 @@ test('すぐ変える設定で、伝え方が mention のとき、チャット�
 });
 
 test('すぐ変える設定で、伝え方が mention でも、メンションの投稿に失敗したら、チャットで知らせて頼んだ人にも返す(表示名は変わっている)', { skip: !hasConfig && 'config.json がない' }, async () => {
-	const { nickname, ai, state, serifs, restore } = await setup({ masterNicknameNotify: 'mention' });
+	const { nickname, ai, state, serifs, restore } = await setup({ masterNicknameNotify: 'mention', masterNicknameUpdateName: false });
 	try {
 		await turnOn(nickname, ai, 'immediate');
 		state.chats.length = 0;
@@ -446,7 +483,7 @@ test('表示名を変えられないとき: 回数の記録を戻して「伝え
 		const again = [];
 		ai.modules[1].adana(message(ai, 'ご主人のあだ名', again, { user: ALICE, isChat: false }));
 		await tick(); await tick();
-		assert.match(again[0], /ご主人に伝えておきました！$/);
+		assert.match(again[0], /ご主人にも伝えておきました！$/);
 		assert.equal(state.name, 'ボス');
 	} finally { restore(); }
 });
@@ -551,7 +588,7 @@ test('承認待ちのとき、マスターのチャットの「はい」は、�
 });
 
 test('表示名を変える流れでは、マスターのユーザー情報(users/show)を取らない(使わないうえ、失敗すると止まってしまうため)', { skip: !hasConfig && 'config.json がない' }, async () => {
-	const { nickname, ai, state, serifs, restore } = await setup();
+	const { nickname, ai, state, serifs, restore } = await setup({ masterNicknameUpdateName: false });
 	try {
 		await turnOn(nickname, ai, 'immediate');
 		const api = ai.api;
