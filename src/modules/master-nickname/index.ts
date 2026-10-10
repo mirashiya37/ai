@@ -286,7 +286,8 @@ export default class extends Module {
 	/**
 	 * 頼まれたあだ名で、マスターの表示名を変える(talk モジュールから呼ぶ)。
 	 * - 承認(approval): マスターにチャットで聞く。承認を待っているものがあれば、聞かずに busy を返す(呼び出し元が、通常の連絡をする)
-	 * - すぐ(immediate): 表示名を変えて、マスターに知らせる。mention を渡されたときは、チャットでなく、それ(メンションの投稿)で知らせる
+	 * - すぐ(immediate): 表示名を変えて、マスターに知らせる。mention を渡されたときは、チャットでなく、それ(メンションの投稿)で知らせる。
+	 *   頼んだ人への返事は、メンションの投稿と同じ文(マスターへのチャットだけ、最後に頼んだ人を書く)
 	 * マスターに伝えられなかった(聞けなかった・変えられなかった)ときは、投げる(呼び出し元が、回数の記録を戻す)。
 	 * 頼んだ人への返事は、ここで行う
 	 */
@@ -310,7 +311,9 @@ export default class extends Module {
 		}
 
 		await this.applyRename(item);
-		const text = serifs.core.adanaMasterRenamedNow(from, item, label);
+		// 頼んだ人にも、メンションの投稿にも同じ文を使う。マスターへのチャットには、誰に頼まれたかを最後に足す
+		const callname = this.settings()?.updateName === true;
+		const text = serifs.core.adanaMasterRenamedNow(item, label, callname);
 		let mentioned = false;
 		if (mention) {
 			try {
@@ -320,10 +323,10 @@ export default class extends Module {
 				this.log(`Failed to mention the master: ${err}`);
 			}
 		}
-		if (!mentioned) await this.tellMaster(text);
+		if (!mentioned) await this.tellMaster(serifs.core.adanaMasterRenamedNow(item, label, callname, from));
 		// 投稿で頼まれたときは、メンションの投稿が頼んだ人への返信そのものなので、別には返さない
 		if (!mentioned || msg.isChat) {
-			await replyWithMention(msg, serifs.core.adanaMasterRenamedNowToSender(item, label)).catch(err => this.log(`Failed to reply to the requester: ${err}`));
+			await replyWithMention(msg, text).catch(err => this.log(`Failed to reply to the requester: ${err}`));
 		}
 		return 'renamed';
 	}

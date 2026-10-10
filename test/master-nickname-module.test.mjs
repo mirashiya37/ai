@@ -342,9 +342,21 @@ test('すぐ変える設定: 頼まれたら表示名を変えて、マスター
 		await tick(); await tick(); await tick();
 		const item = state.name;
 		assert.notEqual(item, 'ボス');
-		assert.deepEqual(state.chats, [{ userId: 'm1', text: serifs.core.adanaMasterRenamedNow('アリス(@alice)', item, 'ご主人') }]);
-		assert.deepEqual(requester, [serifs.core.adanaMasterRenamedNowToSender(item, 'ご主人')]);
+		assert.deepEqual(state.chats, [{ userId: 'm1', text: serifs.core.adanaMasterRenamedNow(item, 'ご主人', true, 'アリス(@alice)') }]);
+		assert.deepEqual(requester, [serifs.core.adanaMasterRenamedNow(item, 'ご主人', true)]);
 		assert.equal(ai.lookupFriend('m1')?.name, item, '藍の中の呼び名も変える');
+	} finally { restore(); }
+});
+
+test('すぐ変えたときの文面: 「あだ名を決めて、表示名も変えました」。呼び名にする設定なら「呼び名と表示名」。依頼者の行は、マスターへのチャットだけ', { skip: !hasConfig && 'config.json がない' }, async () => {
+	const { serifs, restore } = await setup();
+	try {
+		const f = serifs.core.adanaMasterRenamedNow;
+		assert.equal(f('X', 'ご主人様', true), 'ご主人様のあだ名は「X」にしましょう！\n呼び名と表示名も変えました！');
+		assert.equal(f('X', 'ご主人様', false), 'ご主人様のあだ名は「X」にしましょう！\n表示名も変えました！');
+		assert.equal(f('X', 'みやらし', true, 'アリス(@alice)'), 'みやらしのあだ名は「X」にしましょう！\n呼び名と表示名も変えました！\n（依頼者：アリス(@alice)）');
+		assert.equal(f('X', 'みやらし', false, 'アリス(@alice)'), 'みやらしのあだ名は「X」にしましょう！\n表示名も変えました！\n（依頼者：アリス(@alice)）');
+		assert.equal(serifs.core.adanaMasterRenamedNowToSender, undefined, '頼んだ人への返事は、マスターへの知らせと同じ文');
 	} finally { restore(); }
 });
 
@@ -360,7 +372,7 @@ test('すぐ変える設定で、伝え方が mention なら、マスターへ�
 		assert.notEqual(item, 'ボス');
 		assert.deepEqual(state.posts, [{
 			replyId: 'note1',
-			text: '@boss ' + serifs.core.adanaMasterRenamedNow('アリス(@alice)', item, 'ご主人'),
+			text: '@boss ' + serifs.core.adanaMasterRenamedNow(item, 'ご主人', false),
 			visibility: 'public',
 			visibleUserIds: undefined,
 		}]);
@@ -378,10 +390,10 @@ test('すぐ変える設定で、伝え方が mention のとき、チャット�
 		await tick(); await tick(); await tick();
 		const item = state.name;
 		assert.equal(state.posts.length, 1);
-		assert.equal(state.posts[0].text, '@alice @boss ' + serifs.core.adanaMasterRenamedNow('アリス(@alice)', item, 'ご主人'));
+		assert.equal(state.posts[0].text, '@alice @boss ' + serifs.core.adanaMasterRenamedNow(item, 'ご主人', false));
 		assert.equal(state.posts[0].visibility, 'specified');
 		assert.deepEqual(state.posts[0].visibleUserIds, ['u1', 'm1']);
-		assert.deepEqual(requester, [serifs.core.adanaMasterRenamedNowToSender(item, 'ご主人')]);
+		assert.deepEqual(requester, [serifs.core.adanaMasterRenamedNow(item, 'ご主人', false)]);
 	} finally { restore(); }
 });
 
@@ -396,8 +408,8 @@ test('すぐ変える設定で、伝え方が mention でも、メンション�
 		await tick(); await tick(); await tick();
 		const item = state.name;
 		assert.notEqual(item, 'ボス');
-		assert.deepEqual(state.chats, [{ userId: 'm1', text: serifs.core.adanaMasterRenamedNow('アリス(@alice)', item, 'ご主人') }]);
-		assert.deepEqual(requester, [serifs.core.adanaMasterRenamedNowToSender(item, 'ご主人')]);
+		assert.deepEqual(state.chats, [{ userId: 'm1', text: serifs.core.adanaMasterRenamedNow(item, 'ご主人', false, 'アリス(@alice)') }]);
+		assert.deepEqual(requester, [serifs.core.adanaMasterRenamedNow(item, 'ご主人', false)]);
 	} finally { restore(); }
 });
 
@@ -539,7 +551,7 @@ test('承認待ちのとき、マスターのチャットの「はい」は、�
 });
 
 test('表示名を変える流れでは、マスターのユーザー情報(users/show)を取らない(使わないうえ、失敗すると止まってしまうため)', { skip: !hasConfig && 'config.json がない' }, async () => {
-	const { nickname, ai, state, restore } = await setup();
+	const { nickname, ai, state, serifs, restore } = await setup();
 	try {
 		await turnOn(nickname, ai, 'immediate');
 		const api = ai.api;
@@ -550,7 +562,7 @@ test('表示名を変える流れでは、マスターのユーザー情報(user
 		await tick(); await tick(); await tick();
 		assert.notEqual(state.name, 'ボス', '表示名は変わる');
 		assert.deepEqual(calls, []);
-		assert.match(requester[0], /表示名も変えておきました/);
+		assert.equal(requester[0], serifs.core.adanaMasterRenamedNow(state.name, 'ご主人', false));
 	} finally { restore(); }
 });
 

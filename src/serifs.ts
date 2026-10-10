@@ -248,11 +248,12 @@ export default {
 
 		adanaMasterRenameFailed: '表示名を変えられませんでした...',
 
-		/** マスターの表示名を変える(すぐ変える設定) */
-		adanaMasterRenamedNow: (from: string, item: string, label: string) =>
-			`${from}に頼まれて、${label}の表示名を「${item}」にしました！`,
-
-		adanaMasterRenamedNowToSender: (item: string, label: string) => `${label}のあだ名は、「${item}」にしてみました！ 表示名も変えておきました！`,
+		/**
+		 * マスターの表示名を変える(すぐ変える設定)。マスターへの知らせにも、頼んだ人への返事にも使う。
+		 * callname は、藍の中のマスターの呼び名も変えたか。from は、頼んだ人(マスターへのチャットのときだけ渡して、最後の行に書く)
+		 */
+		adanaMasterRenamedNow: (item: string, label: string, callname: boolean, from?: string) =>
+			`${label}のあだ名は「${item}」にしましょう！\n${callname ? '呼び名と表示名' : '表示名'}も変えました！${from ? `\n（依頼者：${from}）` : ''}`,
 
 		adanaMasterRenameStopped: (problems: string) => `表示名の変更を止めました。${problems}`,
 
