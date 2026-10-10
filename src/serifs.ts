@@ -147,7 +147,7 @@ export default {
 		// 以下機能追加分
 
 		mom: {
-			normal: name => name ? [`はい、${name}のママですよ〜`, `${name}よしよし～`] : [`はい、ママですよ〜`, `よしよし～`],
+			normal: name => name ? [`はい、${name}のママですよ～`, `${name}よしよし～`] : [`はい、ママですよ～`, `よしよし～`],
 
 			love: name => name ? [`${name}、ふふふ、よーしよし、ぎゅ～`, `${name}のママですよ～`] : ['ふふふ、よーしよし、ぎゅ～', 'あなただけのママですよ～'],
 
@@ -186,9 +186,9 @@ export default {
 			hate: '...'
 		},
 
-		nade: 'なでなで〜',
+		nade: 'なでなで～',
 
-		adana: (item, name) => item ? name ? `${name}、「${item}」とかいかがでしょうか？` : `「${item}」とかいかがでしょうか？` : "すみません、いまはあだ名が思い浮かばないです・・・",
+		adana: (item, name) => item ? name ? `${name}、「${item}」とかいかがでしょうか？` : `「${item}」とかいかがでしょうか？` : "すみません、いまはあだ名が思い浮かばないです...",
 
 		/** 「あだ名で呼ばないで」と言われたとき(name は藍が呼んでいる名前。無ければ null) */
 		adanaStop: name => name ? `わかりました、あだ名はやめて、これからも${name}とお呼びしますね！` : 'わかりました、あだ名はやめておきますね！',
@@ -227,12 +227,12 @@ export default {
 
 		adanaMasterRenamedToSender: (item: string, label: string) => `${label}のあだ名は、「${item}」にしてみました！ ${label}にも伝えておきました！`,
 
-		adanaMasterLimitDaily: (item: string, label: string) => `${label}のあだ名は、「${item}」とかどうでしょう？ ・・・あっ、今日はもう、${label}に伝えたんでした！ また明日、お願いしますね`,
+		adanaMasterLimitDaily: (item: string, label: string) => `${label}のあだ名は、「${item}」とかどうでしょう？ ...あっ、今日はもう、${label}に伝えたんでした！ また明日、お願いしますね`,
 
 		/** nextAt は、また伝えられるようになる時刻(Unix 時間、秒)。MFM の unixtime で、見る人の時刻で表示する */
-		adanaMasterLimitInterval: (item: string, nextAt: number, label: string) => `${label}のあだ名は、「${item}」とかどうでしょう？ ・・・あっ、${label}には、さっき伝えたばかりでした！ $[unixtime ${nextAt}] からなら、また伝えられます`,
+		adanaMasterLimitInterval: (item: string, nextAt: number, label: string) => `${label}のあだ名は、「${item}」とかどうでしょう？ ...あっ、${label}には、さっき伝えたばかりでした！ $[unixtime ${nextAt}] からなら、また伝えられます`,
 
-		adanaMasterFailed: (item: string, label: string) => `${label}のあだ名は、「${item}」とかどうでしょう？ ・・・あれ、${label}にうまく伝えられませんでした・・・`,
+		adanaMasterFailed: (item: string, label: string) => `${label}のあだ名は、「${item}」とかどうでしょう？ ...あれ、${label}にうまく伝えられませんでした...`,
 
 		/** マスターの表示名を変える(承認してから変える設定)。マスターへの問いかけ */
 		adanaMasterRenameAsk: (from: string, item: string, label: string, minutes: number) =>
@@ -246,7 +246,7 @@ export default {
 
 		adanaMasterRenameExpired: (minutes: number) => `ごめんなさい、${minutes}分を過ぎたので、表示名の変更は取り消しました`,
 
-		adanaMasterRenameFailed: '表示名を変えられませんでした・・・',
+		adanaMasterRenameFailed: '表示名を変えられませんでした...',
 
 		/** マスターの表示名を変える(すぐ変える設定) */
 		adanaMasterRenamedNow: (from: string, item: string, label: string) =>
@@ -258,9 +258,9 @@ export default {
 
 		/** 藍自身のあだ名を考えてと言われたとき(やんわり断る) */
 		adanaForAi: {
-			normal: ['私のあだ名を、私が考えるんですか・・・？ ちょっと恥ずかしいので、遠慮しておきますね', '自分のあだ名を自分で考えるのは、ちょっと照れちゃいます・・・'],
+			normal: ['私のあだ名を、私が考えるんですか...？ ちょっと恥ずかしいので、遠慮しておきますね', '自分のあだ名を自分で考えるのは、ちょっと照れちゃいます...'],
 
-			love: name => name ? [`${name}、私のあだ名を私が・・・？ ふふ、それなら${name}が考えてくれたほうがうれしいです！`, `うーん、自分のあだ名は思いつかないです・・・${name}がつけてくれませんか？`] : ['私のあだ名を私が・・・？ ふふ、それならあなたが考えてくれたほうがうれしいです！'],
+			love: name => name ? [`${name}、私のあだ名を私が...？ ふふ、それなら${name}が考えてくれたほうがうれしいです！`, `うーん、自分のあだ名は思いつかないです...${name}がつけてくれませんか？`] : ['私のあだ名を私が...？ ふふ、それならあなたが考えてくれたほうがうれしいです！'],
 
 			hate: '自分のあだ名くらい、自分で考えます。'
 		},
@@ -272,7 +272,7 @@ export default {
 		otukare: name => name ? `${name}、お疲れ様です！！` : 'お疲れ様です！！',
 
 		hightouch: {
-			normal: name => name ? `${name}！ハイターッチ！! ` : "ハイターッチ！！",
+			normal: name => name ? `${name}！ハイターッチ！！` : "ハイターッチ！！",
 
 			hate: '触りたくないです...'
 		},
@@ -292,7 +292,7 @@ export default {
 
 			love: name => name ? [`私も${name}のおかげでいつも元気でいられます！ありがとうございます！！`] : ['私もご主人様のおかげでいつも元気でいられます！ありがとうございます！！'],
 
-			hate: 'なんで感謝されてるんですか・・・変態・・・'
+			hate: 'なんで感謝されてるんですか...変態...'
 		},
 
 		sugoi: {
@@ -302,10 +302,10 @@ export default {
 
 		height: '154cmです！',
 
-		weight: 'なんでそんなこと聞くんですか・・・？',
+		weight: 'なんでそんなこと聞くんですか...？',
 
 		sorry: {
-			normal: 'なんで謝るんですか・・・？',
+			normal: 'なんで謝るんですか...？',
 
 			hate: '...今さら何ですか？'
 		},
@@ -516,7 +516,7 @@ export default {
 
 		reminds: 'やること一覧です！',
 
-		forget: 'えーっと・・・なに言おうとしたんでしたっけ・・・？',
+		forget: 'えーっと...なに言おうとしたんでしたっけ...？',
 
 		notify: (name) => name ? `${name}、これやりましたか？ #remAInder` : `これやりましたか？ #remAInder`,
 

@@ -480,7 +480,7 @@ export default class extends Module {
 				} catch (err) {
 					this.onApiError(err);
 					this.log(`Failed to revert the master's name: ${err}`);
-					reply('表示名を戻せませんでした・・・');
+					reply('表示名を戻せませんでした...');
 				}
 				return;
 			}

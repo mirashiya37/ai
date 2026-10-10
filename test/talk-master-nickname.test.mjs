@@ -156,7 +156,7 @@ test('通知と返事でマスターを呼ぶ言い方は、masterNicknameNames 
 		ai.sendMessage = async () => { throw new Error('chat failed'); };
 		mod.adana(message(ai, 'ご主人のあだ名', limit));
 		await tick();
-		assert.match(limit[0], /^ご主人のあだ名は、「.+」とかどうでしょう？ ・・・あれ、ご主人にうまく伝えられませんでした・・・$/);
+		assert.match(limit[0], /^ご主人のあだ名は、「.+」とかどうでしょう？ \.\.\.あれ、ご主人にうまく伝えられませんでした\.\.\.$/);
 	} finally { restore(); }
 });
 
@@ -343,7 +343,7 @@ test('制限: 同じ人の2回目は「また明日」、ほかの人でも間�
 		mod.adana(message(ai, 'マスターのあだ名', again));
 		await tick();
 		assert.equal(calls.posts.length, 1, '伝えない');
-		assert.match(again[0], /^マスターのあだ名は、「.+」とかどうでしょう？ ・・・あっ、今日はもう、マスターに伝えたんでした！ また明日、お願いしますね$/);
+		assert.match(again[0], /^マスターのあだ名は、「.+」とかどうでしょう？ \.\.\.あっ、今日はもう、マスターに伝えたんでした！ また明日、お願いしますね$/);
 
 		const other = [];
 		mod.adana(message(ai, 'マスターのあだ名', other, { user: { id: 'u2', username: 'bob', host: null } }));
