@@ -14,6 +14,8 @@ const FIRST_RUN_COUNT = 5;
 // 連続の取得・投稿の間隔(ミリ秒)
 const FETCH_INTERVAL = 50;
 const POST_INTERVAL = 1000;
+// 個別投稿の設定でも、この件数を超えたら、まとめ投稿にする(連投と、投稿数の上限を避ける)
+const INDIVIDUAL_MAX = 20;
 
 // トークンやアカウントの権限が足りないときのエラーか(Misskey は 401・403 を返す)
 function isPermissionError(err: unknown): boolean {
@@ -64,10 +66,10 @@ export default class extends Module {
 		const lastEmoji = this.lastEmoji.find({});
 
 		const lastId = lastEmoji.length != 0 ? lastEmoji[0].id : null;
-		let emojisData:any[] | null = null;
+		let fetched: { emojis: any[]; hasMore: boolean; } | null = null;
 		let fetchError: unknown = null;
 		try {
-			emojisData = await this.checkCumstomEmojis(lastId);
+			fetched = await this.checkCumstomEmojis(lastId);
 		} catch (err: unknown) {
 			fetchError = err;
 			this.log('Error By API(admin/emoji/list)');
@@ -75,7 +77,7 @@ export default class extends Module {
 				this.log(`${err.name}\n${err.message}`);
 			}
 		}
-		if (emojisData === null) {
+		if (fetched === null) {
 			// 頼まれたときは頼んだ人へ返事をし、定期の確認ではマスターにチャットで知らせる
 			const errMessage = isPermissionError(fetchError)
 				? serifs.checkCustomEmojis.errorPermission
@@ -88,12 +90,12 @@ export default class extends Module {
 			}
 			return;
 		}
-		else if (emojisData.length == 0) {
+		const emojisData = fetched.emojis;
+		const hasMore = fetched.hasMore;
+		if (emojisData.length == 0) {
 			this.log('No CustomEmojis Added.');
 			if (msg) {
-				await this.ai.post({
-					text: serifs.checkCustomEmojis.nothing
-				});
+				await msg.reply(serifs.checkCustomEmojis.nothing);
 			}
 			return;
 		}
@@ -103,29 +105,41 @@ export default class extends Module {
 		const server_name = config.serverName ? config.serverName : 'このサーバー';
 		this.log('Posting...');
 
+		// 投稿で頼まれたときは、最初のノートを頼んだ投稿への返信にし、続くノートも同じ公開範囲にする
+		let scope: { visibility?: string; visibleUserIds?: string[]; } = {};
+		const postFirst = async (text: string) => {
+			if (msg && !msg.isChat) {
+				const posted = await msg.reply(text);
+				scope = { visibility: posted.visibility, visibleUserIds: posted.visibleUserIds };
+				return posted;
+			}
+			return await this.ai.post({ text });
+		};
+
 		// 一気に投稿しないver
-		if (!config.checkEmojisAtOnce){
+		if (!config.checkEmojisAtOnce && emojiSize <= INDIVIDUAL_MAX){
 			// 概要について投稿
 			this.log(serifs.checkCustomEmojis.post(server_name, emojiSize));
-			await this.ai.post({
-				text: serifs.checkCustomEmojis.post(server_name, emojiSize)
-			});
+			await postFirst(serifs.checkCustomEmojis.post(server_name, emojiSize));
 
 			// 各絵文字について投稿
 			for (const emoji of emojisData){
 				await this.sleep(POST_INTERVAL);
 				await this.ai.post({
-					text: serifs.checkCustomEmojis.emojiPost(emoji.name)
+					text: serifs.checkCustomEmojis.emojiPost(emoji.name),
+					...scope
 				});
 				this.log(serifs.checkCustomEmojis.emojiPost(emoji.name));
 			}
 		} else {
 			// 一気に投稿ver(件数や文字数が多いときは、複数のノートに分ける)
+			// 取得の上限で止まったときは、続きを次の回に出すことを1ノート目に書く
+			const firstText = (text: string) => hasMore ? `${serifs.checkCustomEmojis.continued}\n${text}` : text;
 			const render = (index: number, chunk: any[]) => {
 				const text = chunk.map(emoji => serifs.checkCustomEmojis.emojiOnce(emoji.name)).join('');
 				// 2ノート目以降のページ表記は、桁数が最大になる値で見積もる(ページ数は件数以下)
 				return index === 0
-					? serifs.checkCustomEmojis.postOnce(server_name, emojiSize, text)
+					? serifs.checkCustomEmojis.postOnce(server_name, emojiSize, firstText(text))
 					: serifs.checkCustomEmojis.postOncePage(emojiSize, emojiSize, text);
 			};
 			const chunks = splitEmojis(emojisData, resolveChunkSize(config.checkEmojisChunkSize), MAX_NOTE_LENGTH, render);
@@ -136,15 +150,14 @@ export default class extends Module {
 				if (i > 0) await this.sleep(POST_INTERVAL);
 				const text = chunks[i].map(emoji => serifs.checkCustomEmojis.emojiOnce(emoji.name)).join('');
 				const message = i === 0
-					? serifs.checkCustomEmojis.postOnce(server_name, emojiSize, text)
+					? serifs.checkCustomEmojis.postOnce(server_name, emojiSize, firstText(text))
 					: serifs.checkCustomEmojis.postOncePage(i + 1, chunks.length, text);
 				this.log(message);
-				const posted = await this.ai.post(prevNoteId ? {
+				const posted = prevNoteId ? await this.ai.post({
 					text: message,
-					replyId: prevNoteId
-				} : {
-					text: message
-				});
+					replyId: prevNoteId,
+					...scope
+				}) : await postFirst(message);
 				prevNoteId = posted.id;
 			}
 		}
@@ -161,7 +174,7 @@ export default class extends Module {
 	}
 
 	/**
-	 * 新しく追加された絵文字を、古い順に返す
+	 * 新しく追加された絵文字を、古い順に返す。hasMore は、取得の上限で止まり、続きが残っているか
 	 */
 	@bindThis
 	private async checkCumstomEmojis(lastId : any) {
@@ -172,7 +185,7 @@ export default class extends Module {
 			const emojisData = await this.ai.api('admin/emoji/list', {
 				limit: FIRST_RUN_COUNT
 			}) as any[];
-			return emojisData.reverse();
+			return { emojis: emojisData.reverse(), hasMore: false };
 		}
 
 		this.log('lastId is **not** null');
@@ -186,12 +199,18 @@ export default class extends Module {
 				limit: FETCH_LIMIT
 			}) as any[];
 			emojisData.push(...res);
-			if (res.length < FETCH_LIMIT) return emojisData;
+			if (res.length < FETCH_LIMIT) return { emojis: emojisData, hasMore: false };
 			sinceId = res[res.length - 1].id;
 		}
 		// 上限に達したぶんは、翌日以降に続きを取る(保存するIDは取得した最後のもの)
+		// ちょうど上限の件数で終わっていることもあるので、続きがあるかを1件だけ取って確かめる
+		await this.sleep(FETCH_INTERVAL);
+		const rest = await this.ai.api('admin/emoji/list', {
+			sinceId,
+			limit: 1
+		}) as any[];
 		this.log(`CustomEmojis fetch reached the page limit (${FETCH_MAX_PAGES}).`);
-		return emojisData;
+		return { emojis: emojisData, hasMore: rest.length > 0 };
 	}
 
 	@bindThis

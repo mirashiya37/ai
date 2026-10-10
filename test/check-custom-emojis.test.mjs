@@ -86,17 +86,14 @@ async function setup({ existing = [], lastId = null, atOnce = false, chunkSize, 
 // 頼まれたときのメッセージ(Message の代わり)。投稿への返信は、Message.reply と同じく公開範囲を引き継ぐ想定で返す
 function fakeMessage({ isChat = false } = {}) {
 	const replies = [];
-	const obj = {
+	return {
 		isChat,
 		replies,
-		replyOpts: [],
-		reply: async (text, opts) => {
+		reply: async text => {
 			replies.push(text);
-			obj.replyOpts.push(opts);
 			return isChat ? {} : { id: 'r' + replies.length, visibility: 'specified', visibleUserIds: ['requester'] };
 		},
 	};
-	return obj;
 }
 
 // 投稿に出てくる絵文字名を、順に取り出す
@@ -123,27 +120,33 @@ for (const n of [0, 3, 50, 250]) {
 	});
 }
 
-for (const n of [0, 1, 30, 31, 100, 150, 1100]) {
+for (const n of [0, 1, 20, 21, 30, 100, 150, 1000, 1100]) {
 	test(`2回目以降(lastId あり): 新着が ${n} 件なら、全件を古い順に集めて、最後のIDを保存する`, { skip }, async () => {
 		const old = makeEmojis(1, 10);
 		const added = makeEmojis(11, 10 + n);
 		const t = await setup({ existing: [...old, ...added], lastId: old[9].id });
 		try {
 			await t.mod.post();
-			// 1回100件で、100件に満たなくなるまで取る。ただし10回まで
+			// 1回100件で、100件に満たなくなるまで取る。ただし10回まで(10回目も100件なら、続きがあるかを1件だけ取って確かめる)
 			const expectedFetched = Math.min(n, 1000);
-			const expectedCalls = Math.min(Math.floor(expectedFetched / 100) + 1, 10);
+			const expectedCalls = n >= 1000 ? 11 : Math.floor(n / 100) + 1;
 			assert.equal(t.calls.length, expectedCalls);
-			assert.ok(t.calls.every(c => c.limit === 100 && c.sinceId != null));
+			assert.ok(t.calls.slice(0, 10).every(c => c.limit === 100 && c.sinceId != null));
+			if (n >= 1000) assert.deepEqual(t.calls[10], { sinceId: added[999].id, limit: 1 });
 			assert.equal(t.calls[0].sinceId, old[9].id);
 			if (n === 0) {
 				assert.equal(t.posts.length, 0);
 				assert.deepEqual(t.savedId(), [old[9].id], '新着がなければ保存済みのIDのまま');
 				return;
 			}
-			assert.equal(t.posts[0].text, t.serifs.checkCustomEmojis.post('テスト鯖', expectedFetched), '件数は取得した全件数');
-			assert.equal(t.posts.length, 1 + expectedFetched);
-			assert.deepEqual(t.posts.slice(1).map(p => namesIn(p.text)[0]), added.slice(0, expectedFetched).map(e => e.name));
+			assert.ok(t.posts[0].text.startsWith(t.serifs.checkCustomEmojis.post('テスト鯖', expectedFetched)), '件数は取得した全件数');
+			// 20件までは1件ずつ、21件からはまとめ投稿
+			if (n <= 20) assert.equal(t.posts.length, 1 + expectedFetched);
+			else assert.ok(namesIn(t.posts[0].text).length > 0, 'まとめ投稿になる');
+			assert.deepEqual(t.posts.flatMap(p => namesIn(p.text)), added.slice(0, expectedFetched).map(e => e.name));
+			// 続きがあるときだけ、1ノート目に「続きは次の回に」と書く
+			assert.equal(t.posts[0].text.includes(t.serifs.checkCustomEmojis.continued), n > 1000);
+			assert.ok(t.posts.slice(1).every(p => !p.text.includes(t.serifs.checkCustomEmojis.continued)));
 			assert.deepEqual(t.savedId(), [added[expectedFetched - 1].id]);
 		} finally { t.restore(); }
 	});
@@ -155,13 +158,16 @@ test('上限(10ページ)で止まったぶんは、次の回に続きから取�
 	const t = await setup({ existing: [...old, ...added], lastId: old[0].id });
 	try {
 		await t.mod.post();
-		assert.equal(t.calls.length, 10);
+		assert.equal(t.calls.length, 11, '10回 + 続きの確認');
 		assert.deepEqual(t.savedId(), [added[999].id]);
+		assert.ok(t.posts[0].text.startsWith('テスト鯖に1000件の絵文字が追加されました！\n' + t.serifs.checkCustomEmojis.continued + '\n:'));
 		t.calls.length = 0;
+		t.posts.length = 0;
 		await t.mod.post();
 		assert.equal(t.calls.length, 3, '残り200件 + 100件に満たない回');
 		assert.deepEqual(t.savedId(), [added[1199].id]);
 		assert.equal(t.calls[0].sinceId, added[999].id);
+		assert.ok(t.posts[0].text.startsWith('テスト鯖に200件の絵文字が追加されました！\n:'), '残りを出し切った回には書かない');
 	} finally { t.restore(); }
 });
 
@@ -173,8 +179,14 @@ test('取得の間(2ページ目以降)とノートの間に待ち時間を入�
 		const fetches = t.events.filter(e => e === 'api').length;
 		assert.equal(fetches, 3);
 		assert.equal(t.sleeps.filter(ms => ms === 50).length, 2, '取得の間は、取得の回数 - 1');
-		assert.equal(t.sleeps.filter(ms => ms >= 1000).length, 250, '個別投稿は、概要のあとの各絵文字の前');
+		assert.equal(t.sleeps.filter(ms => ms >= 1000).length, t.posts.length - 1, 'まとめ投稿は、ノートの間');
 	} finally { t.restore(); }
+	const t2 = await setup({ existing: [...old, ...makeEmojis(2, 21)], lastId: old[0].id });
+	try {
+		await t2.mod.post();
+		assert.equal(t2.posts.length, 21);
+		assert.equal(t2.sleeps.filter(ms => ms >= 1000).length, 20, '個別投稿は、概要のあとの各絵文字の前');
+	} finally { t2.restore(); }
 });
 
 test('まとめ投稿: チャンクサイズ 20 で 45 件が 20/20/5 の3ノートに分かれ、2ノート目以降にページ表記が付く', { skip }, async () => {
@@ -243,14 +255,29 @@ test('まとめ投稿: チャンクサイズが大きくても、3000字を超�
 	} finally { t.restore(); }
 });
 
-test('個別投稿でも、概要の件数は取得した全件数', { skip }, async () => {
+test('個別投稿: 20件までは1件ずつ投稿し、返信でつなげない', { skip }, async () => {
 	const old = makeEmojis(1, 1);
-	const t = await setup({ existing: [...old, ...makeEmojis(2, 151)], lastId: old[0].id });
+	const t = await setup({ existing: [...old, ...makeEmojis(2, 21)], lastId: old[0].id });
 	try {
 		await t.mod.post();
-		assert.equal(t.posts[0].text, 'テスト鯖に150件の絵文字が追加されました！');
-		assert.equal(t.posts.length, 151);
+		assert.equal(t.posts[0].text, 'テスト鯖に20件の絵文字が追加されました！');
+		assert.equal(t.posts.length, 21);
 		assert.ok(t.posts.every(p => p.replyId === undefined), '個別投稿は返信でつなげない');
+		assert.ok(t.posts.every(p => p.visibility === undefined), '定期の確認は、既定の公開範囲');
+	} finally { t.restore(); }
+});
+
+test('個別投稿: 21件以上なら、まとめ投稿(チャンクサイズの設定どおり)に切り替える', { skip }, async () => {
+	const old = makeEmojis(1, 1);
+	const added = makeEmojis(2, 151);
+	const t = await setup({ existing: [...old, ...added], lastId: old[0].id, chunkSize: 50 });
+	try {
+		await t.mod.post();
+		assert.deepEqual(t.posts.map(p => namesIn(p.text).length), [50, 50, 50]);
+		assert.ok(t.posts[0].text.startsWith('テスト鯖に150件の絵文字が追加されました！\n'));
+		assert.ok(t.posts[1].text.startsWith('(2/3)\n'));
+		assert.equal(t.posts[1].replyId, 'n1');
+		assert.deepEqual(t.posts.flatMap(p => namesIn(p.text)), added.map(e => e.name));
 	} finally { t.restore(); }
 });
 
@@ -318,5 +345,62 @@ test('取得が失敗: マスターへのチャットが失敗しても、エラ
 		t.mod.ai.sendMessage = async () => { throw new Error('not mutual'); };
 		await t.mod.post();
 		assert.equal(t.posts.length, 0);
+	} finally { t.restore(); }
+});
+
+test('頼まれて追加が無いときは、頼んだ人に返事をする(定期の確認では何もしない)', { skip }, async () => {
+	const old = makeEmojis(1, 1);
+	for (const isChat of [false, true]) {
+		const t = await setup({ existing: old, lastId: old[0].id });
+		try {
+			const msg = fakeMessage({ isChat });
+			await t.mod.post(msg);
+			assert.deepEqual(msg.replies, [t.serifs.checkCustomEmojis.nothing]);
+			assert.equal(t.posts.length, 0);
+			t.mod.ai.post = async () => assert.fail('定期の確認では投稿しない');
+			await t.mod.post();
+		} finally { t.restore(); }
+	}
+});
+
+test('投稿で頼まれたとき: 個別投稿は、概要を頼んだ投稿への返信にし、各絵文字も同じ公開範囲で投稿する', { skip }, async () => {
+	const old = makeEmojis(1, 1);
+	const t = await setup({ existing: [...old, ...makeEmojis(2, 4)], lastId: old[0].id });
+	try {
+		const msg = fakeMessage();
+		await t.mod.post(msg);
+		assert.deepEqual(msg.replies, ['テスト鯖に3件の絵文字が追加されました！']);
+		assert.equal(t.posts.length, 3);
+		assert.ok(t.posts.every(p => p.visibility === 'specified' && p.visibleUserIds?.[0] === 'requester' && p.replyId === undefined));
+		assert.deepEqual(t.savedId(), ['000004']);
+	} finally { t.restore(); }
+});
+
+test('投稿で頼まれたとき: まとめ投稿は、1ノート目を頼んだ投稿への返信にし、続きをそれにつなげる', { skip }, async () => {
+	const old = makeEmojis(1, 1);
+	const added = makeEmojis(2, 46);
+	const t = await setup({ existing: [...old, ...added], lastId: old[0].id, atOnce: true });
+	try {
+		const msg = fakeMessage();
+		await t.mod.post(msg);
+		assert.equal(msg.replies.length, 1);
+		assert.ok(msg.replies[0].startsWith('テスト鯖に45件の絵文字が追加されました！\n'));
+		assert.equal(t.posts.length, 2);
+		assert.equal(t.posts[0].replyId, 'r1', '2ノート目は、頼んだ人への返信(1ノート目)につなげる');
+		assert.equal(t.posts[1].replyId, 'n1');
+		assert.ok(t.posts.every(p => p.visibility === 'specified' && p.visibleUserIds?.[0] === 'requester'));
+		assert.deepEqual([msg.replies[0], ...t.posts.map(p => p.text)].flatMap(namesIn), added.map(e => e.name));
+	} finally { t.restore(); }
+});
+
+test('チャットで頼まれたとき: 結果は、定期の確認と同じく公開の投稿にする', { skip }, async () => {
+	const old = makeEmojis(1, 1);
+	const t = await setup({ existing: [...old, ...makeEmojis(2, 3)], lastId: old[0].id });
+	try {
+		const msg = fakeMessage({ isChat: true });
+		await t.mod.post(msg);
+		assert.equal(msg.replies.length, 0);
+		assert.equal(t.posts.length, 3);
+		assert.ok(t.posts.every(p => p.visibility === undefined && p.replyId === undefined));
 	} finally { t.restore(); }
 });
