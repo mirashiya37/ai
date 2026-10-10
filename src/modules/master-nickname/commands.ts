@@ -17,16 +17,16 @@ export type NicknameCommand =
 	| { type: 'renameMode'; value: RenameMode }
 	| { type: 'error'; message: string };
 
-/** コマンドの書き方(help で返す) */
-export const NICKNAME_HELP = [
-	'マスターのあだ名のコマンド(チャットで送ってください)',
+/** コマンドの書き方(help で返す)。label は、マスターを呼ぶ言い方(masterLabel()) */
+export const nicknameHelp = (label: string) => [
+	`${label}のあだ名のコマンド(チャットで送ってください)`,
 	'/nickname status: 今の設定',
-	'/nickname on | off: マスターのあだ名を使うか',
+	`/nickname on | off: ${label}のあだ名を使うか`,
 	'/nickname notify off | mention | chat: 伝え方',
 	'/nickname callname on | off: 考えたあだ名を、私が呼ぶ呼び名にするか',
 	'/nickname visibility public | home | specified: メンションの公開範囲の上限',
 	'/nickname daily <回数>: 同じ人が1日に頼める回数(0 で制限しない)',
-	'/nickname interval <分>: マスターに伝える間隔(0 で制限しない)',
+	`/nickname interval <分>: ${label}に伝える間隔(0 で制限しない)`,
 	'/nickname reset: コマンドで変えた設定を消して、config.json の値に戻す',
 	'/nickname rename on | off: 表示名を変えるか',
 	'/nickname rename mode approval | immediate: 承認してから変えるか、すぐ変えるか',

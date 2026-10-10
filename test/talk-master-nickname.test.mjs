@@ -137,9 +137,9 @@ test('頼んだ人の表示名は、メンション・MFM・URL・絵文字コ�
 	assert.equal(name('   '), '@alice');
 });
 
-test('通知と返事でマスターを呼ぶ言い方は、masterNicknameNames の先頭。無ければ「マスター」', { skip: !hasConfig && 'config.json がない' }, async () => {
+test('通知と返事でマスターを呼ぶ言い方は、masterNicknameNames の先頭。無ければ「ご主人様」', { skip: !hasConfig && 'config.json がない' }, async () => {
 	assert.equal(masterLabel({ names: ['ご主人', 'マスター'] }), 'ご主人');
-	assert.equal(masterLabel({ names: [] }), 'マスター');
+	assert.equal(masterLabel({ names: [] }), 'ご主人様');
 
 	const { mod, ai, calls, serifs, restore } = await setup({ master: 'boss', masterNicknameNames: ['ご主人', 'マスター'], masterNicknameNotify: 'chat', masterNicknameUpdateName: false, masterNicknamePerUserDaily: 0, masterNicknameIntervalHours: 0 });
 	try {

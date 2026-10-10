@@ -23,9 +23,9 @@ export type MasterNicknameSettings = {
 };
 
 /** 通知や返事で、マスターを呼ぶ言い方の既定(masterNicknameNames が空のとき) */
-const DEFAULT_LABEL = 'マスター';
+export const DEFAULT_LABEL = 'ご主人様';
 
-/** 通知や返事で、マスターを呼ぶ言い方。masterNicknameNames の先頭。無ければ「マスター」 */
+/** 通知や返事で、マスターを呼ぶ言い方。masterNicknameNames の先頭。無ければ「ご主人様」 */
 export function masterLabel(settings: Pick<MasterNicknameSettings, 'names'>): string {
 	return settings.names[0] ?? DEFAULT_LABEL;
 }

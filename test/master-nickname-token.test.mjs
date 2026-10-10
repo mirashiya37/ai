@@ -109,9 +109,11 @@ test('持ち主がマスターでない(ほかの人、ほかのサーバーの�
 		const server = fakeServer({ username, host });
 		const result = await checkToken(server.call, fetchSpec, 'boss');
 		assert.equal(result.ok, false);
-		assert.match(result.problems[0], /マスター\(@boss\)のトークンではありません/);
+		assert.match(result.problems[0], /^ご主人様\(@boss\)のトークンではありません/, '呼び方を渡さなければ、既定の「ご主人様」');
 		assert.deepEqual(server.executed, ['i']);
 	}
+	const named = await checkToken(fakeServer({ username: 'alice' }).call, fetchSpec, 'boss', 'みやらし');
+	assert.equal(named.problems[0], 'みやらし(@boss)のトークンではありません(@alice)', '呼び方(masterNicknameNames の先頭)を渡したら、それで呼ぶ');
 	assert.equal((await checkToken(fakeServer({ username: 'Boss' }).call, fetchSpec, 'boss')).ok, true, '大文字小文字は問わない');
 });
 

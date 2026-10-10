@@ -8,9 +8,9 @@ import config from '@/config.js';
 import Friend from '@/friend.js';
 import { isMaster } from '@/utils/is-master.js';
 import { replyWithMention } from '@/utils/reply-with-mention.js';
-import { resolveMasterNicknameSettings, MasterNicknameOverrides, MasterNicknameSettings } from '@/modules/talk/master-nickname.js';
+import { resolveMasterNicknameSettings, masterLabel, masterNames, MasterNicknameOverrides, MasterNicknameSettings } from '@/modules/talk/master-nickname.js';
 import { YES_WORDS, NO_WORDS, startsWithWord } from '@/modules/talk/nickname.js';
-import { parseNicknameCommand, NICKNAME_HELP, NicknameCommand, RenameMode } from './commands.js';
+import { parseNicknameCommand, nicknameHelp, NicknameCommand, RenameMode } from './commands.js';
 import { checkToken, apiErrorCode, TokenCheckResult } from './token-check.js';
 import { miauthUrl, checkMiAuth, MIAUTH_TIMEOUT, MIAUTH_POLL_INTERVAL } from './miauth.js';
 
@@ -106,6 +106,11 @@ export default class extends Module {
 		return this.rename().mode ?? (config.masterRenameMode === 'immediate' ? 'immediate' : 'approval');
 	}
 
+	/** 返事でマスターを呼ぶ言い方(talk モジュールのあだ名のセリフと同じ。masterNicknameNames の先頭か、既定の「ご主人様」) */
+	private label(): string {
+		return masterLabel({ names: masterNames(config) });
+	}
+
 	private approvalMinutes(): number {
 		const n = Number(config.masterRenameApprovalMinutes);
 		return config.masterRenameApprovalMinutes != null && Number.isFinite(n) && n > 0 ? n : DEFAULT_APPROVAL_MINUTES;
@@ -171,7 +176,7 @@ export default class extends Module {
 	 */
 	private async verifyToken(): Promise<TokenCheckResult> {
 		this.tokenState = { state: 'checking' };
-		const result = await checkToken((endpoint, params) => this.masterApi(endpoint, params), () => this.fetchApiSpec(), config.master ?? '');
+		const result = await checkToken((endpoint, params) => this.masterApi(endpoint, params), () => this.fetchApiSpec(), config.master ?? '', this.label());
 
 		if (result.ok) {
 			this.tokenState = { state: 'ok', unprobeable: result.unprobeable };
@@ -378,12 +383,12 @@ export default class extends Module {
 		}
 
 		switch (command.type) {
-			case 'help': reply(NICKNAME_HELP); return;
+			case 'help': reply(nicknameHelp(this.label())); return;
 			case 'error': reply(command.message); return;
 			case 'status': reply(this.statusText()); return;
 			case 'enabled':
 				this.updateOverrides({ enabled: command.value });
-				reply(`マスターのあだ名を${command.value ? '使うように' : '使わないように'}しました`);
+				reply(`${this.label()}のあだ名を${command.value ? '使うように' : '使わないように'}しました`);
 				return;
 			case 'notify':
 				this.updateOverrides({ notify: command.value });
@@ -403,7 +408,7 @@ export default class extends Module {
 				return;
 			case 'interval':
 				this.updateOverrides({ intervalMinutes: command.value });
-				reply(command.value === 0 ? 'マスターに伝える間隔を、制限しないようにしました' : `マスターに伝える間隔を ${command.value} 分にしました`);
+				reply(command.value === 0 ? `${this.label()}に伝える間隔を、制限しないようにしました` : `${this.label()}に伝える間隔を ${command.value} 分にしました`);
 				return;
 			case 'reset':
 				this.updateOverrides(null);
@@ -494,13 +499,13 @@ export default class extends Module {
 		const lines: string[] = [];
 
 		if (settings == null) {
-			lines.push(`マスターのあだ名: 使わない${overrides.enabled === false ? '(/nickname off)' : '(伝え方が off で、呼び名にも、表示名にもしない設定)'}`);
+			lines.push(`${this.label()}のあだ名: 使わない${overrides.enabled === false ? '(/nickname off)' : '(伝え方が off で、呼び名にも、表示名にもしない設定)'}`);
 		} else {
-			lines.push('マスターのあだ名: 使う');
+			lines.push(`${this.label()}のあだ名: 使う`);
 			lines.push(`伝え方: ${settings.notify}${settings.notify === 'mention' ? `(公開範囲の上限: ${settings.mentionVisibility})` : ''}`);
 			lines.push(`私が呼ぶ呼び名にする: ${settings.updateName ? 'する' : 'しない'}`);
 			lines.push(`同じ人が1日に頼める回数: ${settings.perUserDaily === 0 ? '制限しない' : `${settings.perUserDaily}回`}`);
-			lines.push(`マスターに伝える間隔: ${settings.interval === 0 ? '制限しない' : `${settings.interval / 60000}分`}`);
+			lines.push(`${this.label()}に伝える間隔: ${settings.interval === 0 ? '制限しない' : `${settings.interval / 60000}分`}`);
 		}
 
 		if (config.masterRenameEnabled !== true) {

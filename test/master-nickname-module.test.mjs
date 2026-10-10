@@ -154,7 +154,7 @@ test('設定のコマンド: config.json より優先し、reset で戻す', { s
 
 		await run('/nickname off');
 		assert.equal(nickname.settings(), null, 'off なら使わない');
-		assert.match(await run('/nickname status'), /^マスターのあだ名: 使わない\(\/nickname off\)/);
+		assert.match(await run('/nickname status'), /^ご主人のあだ名: 使わない\(\/nickname off\)/);
 
 		const talkReplies = [];
 		ai.modules[1].adana(message(ai, 'ご主人のあだ名', talkReplies, { user: ALICE, isChat: false }));
@@ -168,6 +168,30 @@ test('設定のコマンド: config.json より優先し、reset で戻す', { s
 		assert.match(await run('/nickname notify all'), /^書き方:/);
 		assert.match(await run('/nickname'), /\/nickname status/);
 	} finally { restore(); }
+});
+
+test('コマンドの返事では、マスターを masterNicknameNames の先頭の名前で呼ぶ。空なら「ご主人様」', { skip: !hasConfig && 'config.json がない' }, async () => {
+	for (const [names, label] of [[['みやらし', 'マスター'], 'みやらし'], [[], 'ご主人様']]) {
+		const { nickname, ai, restore } = await setup({ masterNicknameNames: names });
+		try {
+			const run = async text => { const replies = []; await nickname.mentionHook(message(ai, text, replies)); return replies[0]; };
+			const help = await run('/nickname help');
+			assert.equal(help.split('\n')[0], `${label}のあだ名のコマンド(チャットで送ってください)`, String(names));
+			assert.match(help, new RegExp(`^/nickname on \\| off: ${label}のあだ名を使うか$`, 'm'));
+			assert.match(help, new RegExp(`^/nickname interval <分>: ${label}に伝える間隔`, 'm'));
+			assert.doesNotMatch(help, /マスター/, 'ヘルプに、固定の「マスター」は残さない');
+
+			const status = await run('/nickname status');
+			assert.match(status, new RegExp(`^${label}のあだ名: 使う$`, 'm'));
+			assert.match(status, new RegExp(`^${label}に伝える間隔: 制限しない$`, 'm'));
+
+			assert.equal(await run('/nickname interval 30'), `${label}に伝える間隔を 30 分にしました`);
+			assert.equal(await run('/nickname interval 0'), `${label}に伝える間隔を、制限しないようにしました`);
+			assert.equal(await run('/nickname off'), `${label}のあだ名を使わないようにしました`);
+			assert.match(await run('/nickname status'), new RegExp(`^${label}のあだ名: 使わない\\(/nickname off\\)`));
+			assert.equal(await run('/nickname on'), `${label}のあだ名を使うようにしました`);
+		} finally { restore(); }
+	}
 });
 
 test('コマンドは、どれもチャットだけ(投稿への返信は公開になることがある)。config.json で使えるようにしていなければ、表示名の変更は使えない', { skip: !hasConfig && 'config.json がない' }, async () => {

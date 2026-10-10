@@ -7,6 +7,8 @@
  * 権限の一覧とパラメーターの形は、サーバーの /api.json から取る(Misskey が更新されて権限が増えても、調べる対象に入る)。
  */
 
+import { DEFAULT_LABEL } from '@/modules/talk/master-nickname.js';
+
 /** 表示名の変更で使う権限。これ以外の権限が1つでもあれば、使わない */
 export const ALLOWED_PERMISSIONS = ['read:account', 'write:account'] as const;
 
@@ -122,8 +124,9 @@ export type TokenCheckResult =
  * - 権限の一覧(/api.json)が取れない、調べた結果が分からない(安全のため、使わない)
  * @param call マスターのトークンで API を呼ぶ関数
  * @param fetchSpec サーバーの /api.json を取る関数
+ * @param label 理由の文で、マスターを呼ぶ言い方(masterLabel())
  */
-export async function checkToken(call: ApiCall, fetchSpec: () => Promise<any>, master: string): Promise<TokenCheckResult> {
+export async function checkToken(call: ApiCall, fetchSpec: () => Promise<any>, master: string, label = DEFAULT_LABEL): Promise<TokenCheckResult> {
 	const problems: string[] = [];
 
 	let user: any;
@@ -133,7 +136,7 @@ export async function checkToken(call: ApiCall, fetchSpec: () => Promise<any>, m
 		return { ok: false, problems: [`アカウントを読めません(${apiErrorCode(err) ?? '通信の失敗'})`], unprobeable: [] };
 	}
 	if (user?.username?.toLowerCase() !== master.toLowerCase() || user?.host != null) {
-		return { ok: false, problems: [`マスター(@${master})のトークンではありません(@${user?.username})`], unprobeable: [] };
+		return { ok: false, problems: [`${label}(@${master})のトークンではありません(@${user?.username})`], unprobeable: [] };
 	}
 
 	if ((await runProbe(call, { endpoint: 'i/apps', params: {} })) !== 'denied') {
