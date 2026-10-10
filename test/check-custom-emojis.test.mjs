@@ -86,14 +86,17 @@ async function setup({ existing = [], lastId = null, atOnce = false, chunkSize, 
 // 頼まれたときのメッセージ(Message の代わり)。投稿への返信は、Message.reply と同じく公開範囲を引き継ぐ想定で返す
 function fakeMessage({ isChat = false } = {}) {
 	const replies = [];
-	return {
+	const obj = {
 		isChat,
 		replies,
-		reply: async text => {
+		replyOpts: [],
+		reply: async (text, opts) => {
 			replies.push(text);
+			obj.replyOpts.push(opts);
 			return isChat ? {} : { id: 'r' + replies.length, visibility: 'specified', visibleUserIds: ['requester'] };
 		},
 	};
+	return obj;
 }
 
 // 投稿に出てくる絵文字名を、順に取り出す
@@ -139,10 +142,15 @@ for (const n of [0, 1, 20, 21, 30, 100, 150, 1000, 1100]) {
 				assert.deepEqual(t.savedId(), [old[9].id], '新着がなければ保存済みのIDのまま');
 				return;
 			}
-			assert.ok(t.posts[0].text.startsWith(t.serifs.checkCustomEmojis.post('テスト鯖', expectedFetched)), '件数は取得した全件数');
-			// 20件までは1件ずつ、21件からはまとめ投稿
-			if (n <= 20) assert.equal(t.posts.length, 1 + expectedFetched);
-			else assert.ok(namesIn(t.posts[0].text).length > 0, 'まとめ投稿になる');
+			// 20件までは1件ずつ(概要は本文)、21件からはまとめ投稿(概要は注釈)
+			if (n <= 20) {
+				assert.equal(t.posts.length, 1 + expectedFetched);
+				assert.equal(t.posts[0].text, t.serifs.checkCustomEmojis.post('テスト鯖', expectedFetched), '件数は取得した全件数');
+				assert.ok(t.posts.every(p => p.cw === undefined), '個別投稿は折りたたまない');
+			} else {
+				assert.ok(namesIn(t.posts[0].text).length > 0, 'まとめ投稿になる');
+				assert.ok(t.posts.every(p => p.cw.startsWith(t.serifs.checkCustomEmojis.post('テスト鯖', expectedFetched))), '件数は取得した全件数');
+			}
 			assert.deepEqual(t.posts.flatMap(p => namesIn(p.text)), added.slice(0, expectedFetched).map(e => e.name));
 			// 続きがあるときだけ、1ノート目に「続きは次の回に」と書く
 			assert.equal(t.posts[0].text.includes(t.serifs.checkCustomEmojis.continued), n > 1000);
@@ -160,14 +168,16 @@ test('上限(10ページ)で止まったぶんは、次の回に続きから取�
 		await t.mod.post();
 		assert.equal(t.calls.length, 11, '10回 + 続きの確認');
 		assert.deepEqual(t.savedId(), [added[999].id]);
-		assert.ok(t.posts[0].text.startsWith('テスト鯖に1000件の絵文字が追加されました！\n' + t.serifs.checkCustomEmojis.continued + '\n:'));
+		assert.ok(t.posts[0].cw.startsWith('テスト鯖に1000件の絵文字が追加されました！('));
+		assert.ok(t.posts[0].text.startsWith(t.serifs.checkCustomEmojis.continued + '\n:'));
 		t.calls.length = 0;
 		t.posts.length = 0;
 		await t.mod.post();
 		assert.equal(t.calls.length, 3, '残り200件 + 100件に満たない回');
 		assert.deepEqual(t.savedId(), [added[1199].id]);
 		assert.equal(t.calls[0].sinceId, added[999].id);
-		assert.ok(t.posts[0].text.startsWith('テスト鯖に200件の絵文字が追加されました！\n:'), '残りを出し切った回には書かない');
+		assert.ok(t.posts[0].cw.startsWith('テスト鯖に200件の絵文字が追加されました！('));
+		assert.ok(t.posts[0].text.startsWith(':'), '残りを出し切った回には書かない');
 	} finally { t.restore(); }
 });
 
@@ -196,10 +206,9 @@ test('まとめ投稿: チャンクサイズ 20 で 45 件が 20/20/5 の3ノー
 	try {
 		await t.mod.post();
 		assert.deepEqual(t.posts.map(p => namesIn(p.text).length), [20, 20, 5]);
-		assert.ok(t.posts[0].text.startsWith('テスト鯖に45件の絵文字が追加されました！'), '1ノート目に概要。件数は全件数');
-		assert.ok(t.posts[1].text.startsWith('(2/3)\n'));
-		assert.ok(t.posts[2].text.startsWith('(3/3)\n'));
-		assert.ok(!t.posts[1].text.includes('追加されました'));
+		// 絵文字の並びは折りたたみ、注釈に件数(全件数)とページを書く
+		assert.deepEqual(t.posts.map(p => p.cw), [1, 2, 3].map(i => `テスト鯖に45件の絵文字が追加されました！(${i}/3)`));
+		assert.ok(t.posts.every(p => p.text.startsWith(':emoji_') && !p.text.includes('追加されました')), '本文は絵文字の並びだけ');
 		assert.deepEqual(t.posts.flatMap(p => namesIn(p.text)), added.map(e => e.name), '全件が古い順に1回ずつ');
 		assert.ok(t.posts.every(p => p.text.endsWith('#AddCustomEmojis')));
 		assert.equal(t.posts[0].replyId, undefined, '1ノート目は返信にしない');
@@ -215,8 +224,8 @@ test('まとめ投稿: 20件以下なら1ノートで、ページ表記は付か
 	try {
 		await t.mod.post();
 		assert.equal(t.posts.length, 1);
-		assert.ok(t.posts[0].text.startsWith('テスト鯖に3件の絵文字が追加されました！\n'));
-		assert.ok(!/\(\d+\/\d+\)/.test(t.posts[0].text));
+		assert.equal(t.posts[0].cw, 'テスト鯖に3件の絵文字が追加されました！', '1ノートなら、注釈にページ表記は付かない');
+		assert.equal(t.posts[0].text, ':emoji_1:(`emoji_1`):emoji_2:(`emoji_2`):emoji_3:(`emoji_3`) #AddCustomEmojis');
 		assert.equal(t.posts[0].replyId, undefined);
 	} finally { t.restore(); }
 });
@@ -248,11 +257,26 @@ test('まとめ投稿: チャンクサイズが大きくても、3000字を超�
 		assert.ok(t.posts.length > 1);
 		assert.ok(t.posts.every(p => p.text.length <= 3000), t.posts.map(p => p.text.length).join(','));
 		const total = t.posts.length;
-		t.posts.slice(1).forEach((p, i) => assert.ok(p.text.startsWith(`(${i + 2}/${total})\n`)));
+		t.posts.forEach((p, i) => assert.equal(p.cw, `テスト鯖に300件の絵文字が追加されました！(${i + 1}/${total})`));
 		t.posts.forEach((p, i) => assert.equal(p.replyId, i === 0 ? undefined : 'n' + i));
 		assert.equal(t.posts.flatMap(p => [...p.text.matchAll(/:(emoji_\d+_x+):/g)]).length, 300);
 		assert.deepEqual(t.savedId(), [added[299].id]);
 	} finally { t.restore(); }
+});
+
+test('まとめ投稿: 注釈が100字を超えるときは、サーバーの呼び名を「このサーバー」にする', { skip }, async () => {
+	const old = makeEmojis(1, 1);
+	// 「に45件の絵文字が追加されました！(n/3)」が22字なので、呼び名は78字までなら、そのまま使う
+	for (const [name, expected] of [['あ'.repeat(78), 'あ'.repeat(78) + 'に45件の絵文字が追加されました！(1/3)'], ['あ'.repeat(79), 'このサーバーに45件の絵文字が追加されました！(1/3)']]) {
+		const t = await setup({ existing: [...old, ...makeEmojis(2, 46)], lastId: old[0].id, atOnce: true });
+		try {
+			const config = (await import('../built/config.js')).default;
+			config.serverName = name;
+			await t.mod.post();
+			assert.equal(t.posts[0].cw, expected);
+			assert.ok(t.posts.every(p => p.cw.length <= 100));
+		} finally { t.restore(); }
+	}
 });
 
 test('個別投稿: 20件までは1件ずつ投稿し、返信でつなげない', { skip }, async () => {
@@ -274,8 +298,8 @@ test('個別投稿: 21件以上なら、まとめ投稿(チャンクサイズの
 	try {
 		await t.mod.post();
 		assert.deepEqual(t.posts.map(p => namesIn(p.text).length), [50, 50, 50]);
-		assert.ok(t.posts[0].text.startsWith('テスト鯖に150件の絵文字が追加されました！\n'));
-		assert.ok(t.posts[1].text.startsWith('(2/3)\n'));
+		assert.equal(t.posts[0].cw, 'テスト鯖に150件の絵文字が追加されました！(1/3)');
+		assert.equal(t.posts[1].cw, 'テスト鯖に150件の絵文字が追加されました！(2/3)');
 		assert.equal(t.posts[1].replyId, 'n1');
 		assert.deepEqual(t.posts.flatMap(p => namesIn(p.text)), added.map(e => e.name));
 	} finally { t.restore(); }
@@ -384,7 +408,8 @@ test('投稿で頼まれたとき: まとめ投稿は、1ノート目を頼ん�
 		const msg = fakeMessage();
 		await t.mod.post(msg);
 		assert.equal(msg.replies.length, 1);
-		assert.ok(msg.replies[0].startsWith('テスト鯖に45件の絵文字が追加されました！\n'));
+		assert.equal(msg.replyOpts[0].cw, 'テスト鯖に45件の絵文字が追加されました！(1/3)', '頼んだ人への返信も折りたたむ');
+		assert.ok(t.posts.every(p => p.cw.startsWith('テスト鯖に45件の絵文字が追加されました！')));
 		assert.equal(t.posts.length, 2);
 		assert.equal(t.posts[0].replyId, 'r1', '2ノート目は、頼んだ人への返信(1ノート目)につなげる');
 		assert.equal(t.posts[1].replyId, 'n1');

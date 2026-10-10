@@ -27,7 +27,7 @@
 | `reversiEnabled` | 無効 | `true` で、リバーシの対局を使う |
 | `serverMonitoring` | 無効 | `true` で、サーバー監視を使う |
 | `checkEmojisEnabled` | 無効 | `true` で、カスタム絵文字チェックを使う。藍のアカウントに管理者権限と「絵文字を見る」権限のトークンが要る |
-| `checkEmojisAtOnce` | `false` | `true` で、絵文字チェックの投稿をまとめる(1ノートに `checkEmojisChunkSize` 件まで。多いときは複数のノートに分ける)。`false` でも、20件を超えるときはまとめる |
+| `checkEmojisAtOnce` | `false` | `true` で、絵文字チェックの投稿をまとめる(1ノートに `checkEmojisChunkSize` 件まで。多いときは複数のノートに分ける。絵文字の並びは CW で折りたたむ)。`false` でも、20件を超えるときはまとめる |
 | `checkEmojisChunkSize` | `20` | まとめ投稿で、1ノートに入れる絵文字の数。正の整数で指定する(それ以外は 20)。数が多くて 3000 字を超えるときは、この数より少なくして分ける |
 
 ## 語句の学習と形態素解析

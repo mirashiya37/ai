@@ -2,6 +2,8 @@ export const DEFAULT_CHUNK_SIZE = 20;
 
 // Misskey のノートの最大文字数の既定値
 export const MAX_NOTE_LENGTH = 3000;
+// Misskey の注釈(CW)の最大文字数
+export const MAX_CW_LENGTH = 100;
 
 // 設定値が正の整数でなければ既定値にする
 export function resolveChunkSize(value: unknown): number {

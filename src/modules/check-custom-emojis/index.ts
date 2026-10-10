@@ -4,7 +4,7 @@ import Module from '@/module.js';
 import serifs from '@/serifs.js';
 import config from '@/config.js';
 import Message from '@/message.js';
-import { MAX_NOTE_LENGTH, resolveChunkSize, splitEmojis } from './chunk.js';
+import { MAX_CW_LENGTH, MAX_NOTE_LENGTH, resolveChunkSize, splitEmojis } from './chunk.js';
 
 // 新着の取得: 1回の件数と、繰り返す回数の上限
 const FETCH_LIMIT = 100;
@@ -107,13 +107,13 @@ export default class extends Module {
 
 		// 投稿で頼まれたときは、最初のノートを頼んだ投稿への返信にし、続くノートも同じ公開範囲にする
 		let scope: { visibility?: string; visibleUserIds?: string[]; } = {};
-		const postFirst = async (text: string) => {
+		const postFirst = async (text: string, cw?: string) => {
 			if (msg && !msg.isChat) {
-				const posted = await msg.reply(text);
+				const posted = await msg.reply(text, { cw });
 				scope = { visibility: posted.visibility, visibleUserIds: posted.visibleUserIds };
 				return posted;
 			}
-			return await this.ai.post({ text });
+			return await this.ai.post({ text, cw });
 		};
 
 		// 一気に投稿しないver
@@ -133,31 +133,33 @@ export default class extends Module {
 			}
 		} else {
 			// 一気に投稿ver(件数や文字数が多いときは、複数のノートに分ける)
+			// 長くなりやすいので、絵文字の並びは折りたたみ、注釈(CW)に追加の件数を書く
 			// 取得の上限で止まったときは、続きを次の回に出すことを1ノート目に書く
-			const firstText = (text: string) => hasMore ? `${serifs.checkCustomEmojis.continued}\n${text}` : text;
 			const render = (index: number, chunk: any[]) => {
 				const text = chunk.map(emoji => serifs.checkCustomEmojis.emojiOnce(emoji.name)).join('');
-				// 2ノート目以降のページ表記は、桁数が最大になる値で見積もる(ページ数は件数以下)
-				return index === 0
-					? serifs.checkCustomEmojis.postOnce(server_name, emojiSize, firstText(text))
-					: serifs.checkCustomEmojis.postOncePage(emojiSize, emojiSize, text);
+				return serifs.checkCustomEmojis.bodyOnce(index === 0 && hasMore ? `${serifs.checkCustomEmojis.continued}\n${text}` : text);
 			};
 			const chunks = splitEmojis(emojisData, resolveChunkSize(config.checkEmojisChunkSize), MAX_NOTE_LENGTH, render);
+			// 注釈が長すぎるとき(サーバーの呼び名が長いとき)は、呼び名を既定の「このサーバー」にする
+			const summary = serifs.checkCustomEmojis.post(server_name, emojiSize);
+			const baseCw = serifs.checkCustomEmojis.cwOncePage(summary, chunks.length, chunks.length).length <= MAX_CW_LENGTH
+				? summary
+				: serifs.checkCustomEmojis.post('このサーバー', emojiSize);
 
 			// 2ノート目以降は、直前のノートへの返信としてつなげる
 			let prevNoteId: string | null = null;
 			for (let i = 0; i < chunks.length; i++) {
 				if (i > 0) await this.sleep(POST_INTERVAL);
-				const text = chunks[i].map(emoji => serifs.checkCustomEmojis.emojiOnce(emoji.name)).join('');
-				const message = i === 0
-					? serifs.checkCustomEmojis.postOnce(server_name, emojiSize, firstText(text))
-					: serifs.checkCustomEmojis.postOncePage(i + 1, chunks.length, text);
-				this.log(message);
+				const message = render(i, chunks[i]);
+				// 複数のノートに分けたときは、注釈にページ表記を付ける
+				const cw = chunks.length > 1 ? serifs.checkCustomEmojis.cwOncePage(baseCw, i + 1, chunks.length) : baseCw;
+				this.log(`${cw}\n${message}`);
 				const posted = prevNoteId ? await this.ai.post({
 					text: message,
+					cw,
 					replyId: prevNoteId,
 					...scope
-				}) : await postFirst(message);
+				}) : await postFirst(message, cw);
 				prevNoteId = posted.id;
 			}
 		}
