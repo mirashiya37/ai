@@ -26,7 +26,7 @@ const makeEmojis = (from, to) => Array.from({ length: to - from + 1 }, (_, i) =>
 	return { id: String(n).padStart(6, '0'), name: 'emoji_' + n };
 });
 
-async function setup({ existing = [], lastId = null, atOnce = false, chunkSize } = {}) {
+async function setup({ existing = [], lastId = null, atOnce = false, chunkSize, master = 'master' } = {}) {
 	const require = createRequire(ROOT);
 	const loki = require('lokijs');
 	const config = (await import('../built/config.js')).default;
@@ -34,11 +34,12 @@ async function setup({ existing = [], lastId = null, atOnce = false, chunkSize }
 	const CheckCustomEmojis = (await import('../built/modules/check-custom-emojis/index.js')).default;
 
 	const saved = {};
-	for (const k of ['checkEmojisEnabled', 'checkEmojisAtOnce', 'checkEmojisChunkSize', 'serverName']) saved[k] = config[k];
+	for (const k of ['checkEmojisEnabled', 'checkEmojisAtOnce', 'checkEmojisChunkSize', 'serverName', 'master']) saved[k] = config[k];
 	config.checkEmojisEnabled = true;
 	config.checkEmojisAtOnce = atOnce;
 	config.checkEmojisChunkSize = chunkSize;
 	config.serverName = 'テスト鯖';
+	config.master = master;
 	const restore = () => { for (const k in saved) config[k] = saved[k]; };
 
 	const db = new loki('test.json');
@@ -47,14 +48,20 @@ async function setup({ existing = [], lastId = null, atOnce = false, chunkSize }
 	const posts = [];
 	const calls = [];
 	const events = [];
+	const chats = [];
 	const api = fakeEmojiApi(existing, calls);
 	const ai = {
 		account: { id: 'bot' },
 		moduleData: getCollection('moduleData'),
 		getCollection,
 		log: () => {},
-		api: async (...a) => { events.push('api'); return api(...a); },
+		api: async (endpoint, param) => {
+			if (endpoint === 'users/show') return { id: 'id-' + param.username };
+			events.push('api');
+			return api(endpoint, param);
+		},
 		post: async note => { events.push('post'); posts.push(note); return { id: 'n' + posts.length }; },
+		sendMessage: async (userId, param) => { chats.push({ userId, ...param }); },
 	};
 
 	const mod = new CheckCustomEmojis();
@@ -73,7 +80,23 @@ async function setup({ existing = [], lastId = null, atOnce = false, chunkSize }
 	if (lastId != null) cols.lastEmoji.insertOne({ id: lastId, updatedAt: 0 });
 	const savedId = () => cols.lastEmoji.find({}).map(d => d.id);
 
-	return { mod, serifs, posts, calls, events, sleeps, savedId, restore };
+	return { mod, serifs, posts, chats, calls, events, sleeps, savedId, restore };
+}
+
+// 頼まれたときのメッセージ(Message の代わり)。投稿への返信は、Message.reply と同じく公開範囲を引き継ぐ想定で返す
+function fakeMessage({ isChat = false } = {}) {
+	const replies = [];
+	const obj = {
+		isChat,
+		replies,
+		replyOpts: [],
+		reply: async (text, opts) => {
+			replies.push(text);
+			obj.replyOpts.push(opts);
+			return isChat ? {} : { id: 'r' + replies.length, visibility: 'specified', visibleUserIds: ['requester'] };
+		},
+	};
+	return obj;
 }
 
 // 投稿に出てくる絵文字名を、順に取り出す
@@ -243,13 +266,57 @@ test('投稿が途中で失敗したときは、IDを保存しない(保存済�
 	} finally { t.restore(); }
 });
 
-test('API が失敗したときは、権限のエラーを投稿する', { skip }, async () => {
+// got の HTTPError と同じく、response.statusCode を持つエラー
+const httpError = statusCode => Object.assign(new Error(`Response code ${statusCode}`), { response: { statusCode } });
+
+for (const [label, err, key] of [
+	['403(権限が無い)', httpError(403), 'errorPermission'],
+	['401(トークンが無効)', httpError(401), 'errorPermission'],
+	['500', httpError(500), 'error'],
+	['通信のエラー', new Error('ECONNRESET'), 'error'],
+]) {
+	test(`取得が失敗(${label}): 定期の確認ではマスターにチャットで知らせ、投稿はしない`, { skip }, async () => {
+		const t = await setup({ existing: [] });
+		try {
+			const api = t.mod.ai.api;
+			t.mod.ai.api = async (endpoint, param) => { if (endpoint === 'admin/emoji/list') throw err; return api(endpoint, param); };
+			await t.mod.post();
+			assert.equal(t.posts.length, 0);
+			assert.deepEqual(t.chats, [{ userId: 'id-master', text: t.serifs.checkCustomEmojis[key] }]);
+			assert.deepEqual(t.savedId(), []);
+		} finally { t.restore(); }
+	});
+
+	test(`取得が失敗(${label}): 頼まれたときは、頼んだ人に返事をする`, { skip }, async () => {
+		const t = await setup({ existing: [] });
+		try {
+			t.mod.ai.api = async () => { throw err; };
+			const msg = fakeMessage();
+			await t.mod.post(msg);
+			assert.deepEqual(msg.replies, [t.serifs.checkCustomEmojis[key]]);
+			assert.equal(t.posts.length, 0);
+			assert.equal(t.chats.length, 0);
+		} finally { t.restore(); }
+	});
+}
+
+test('取得が失敗: マスターが設定されていなければ、ログに残すだけ', { skip }, async () => {
+	const t = await setup({ existing: [], master: undefined });
+	try {
+		t.mod.ai.api = async () => { throw httpError(403); };
+		await t.mod.post();
+		assert.equal(t.posts.length, 0);
+		assert.equal(t.chats.length, 0);
+	} finally { t.restore(); }
+});
+
+test('取得が失敗: マスターへのチャットが失敗しても、エラーにしない', { skip }, async () => {
 	const t = await setup({ existing: [] });
 	try {
-		t.mod.ai.api = async () => { throw new Error('403'); };
+		const api = t.mod.ai.api;
+		t.mod.ai.api = async (endpoint, param) => { if (endpoint === 'admin/emoji/list') throw httpError(403); return api(endpoint, param); };
+		t.mod.ai.sendMessage = async () => { throw new Error('not mutual'); };
 		await t.mod.post();
-		assert.equal(t.posts.length, 1);
-		assert.ok(t.posts[0].text.includes('read:admin:emoji'));
-		assert.deepEqual(t.savedId(), []);
+		assert.equal(t.posts.length, 0);
 	} finally { t.restore(); }
 });

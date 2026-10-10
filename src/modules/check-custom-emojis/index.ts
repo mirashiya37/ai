@@ -15,6 +15,12 @@ const FIRST_RUN_COUNT = 5;
 const FETCH_INTERVAL = 50;
 const POST_INTERVAL = 1000;
 
+// トークンやアカウントの権限が足りないときのエラーか(Misskey は 401・403 を返す)
+function isPermissionError(err: unknown): boolean {
+	const status = (err as any)?.response?.statusCode;
+	return status === 401 || status === 403;
+}
+
 export default class extends Module {
 	public readonly name = 'checkCustomEmojis';
 
@@ -53,31 +59,38 @@ export default class extends Module {
 	}
 
 	@bindThis
-	private async post(byMentionHook:boolean = false) {
+	private async post(msg: Message | null = null) {
 		this.log('Start to Check CustomEmojis.');
 		const lastEmoji = this.lastEmoji.find({});
 
 		const lastId = lastEmoji.length != 0 ? lastEmoji[0].id : null;
 		let emojisData:any[] | null = null;
+		let fetchError: unknown = null;
 		try {
 			emojisData = await this.checkCumstomEmojis(lastId);
 		} catch (err: unknown) {
+			fetchError = err;
 			this.log('Error By API(admin/emoji/list)');
 			if (err instanceof Error) {
 				this.log(`${err.name}\n${err.message}`);
 			}
 		}
 		if (emojisData === null) {
-			const errMessage = 'read:admin:emoji権限がないため、エラーが発生しました。\nカスタム絵文字管理の権限が付与されているか見直しをお願いします。';
+			// 頼まれたときは頼んだ人へ返事をし、定期の確認ではマスターにチャットで知らせる
+			const errMessage = isPermissionError(fetchError)
+				? serifs.checkCustomEmojis.errorPermission
+				: serifs.checkCustomEmojis.error;
 			this.log(errMessage);
-			await this.ai.post({
-				text: errMessage
-			});
+			if (msg) {
+				await msg.reply(errMessage);
+			} else {
+				await this.tellMaster(errMessage);
+			}
 			return;
 		}
 		else if (emojisData.length == 0) {
 			this.log('No CustomEmojis Added.');
-			if (byMentionHook) {
+			if (msg) {
 				await this.ai.post({
 					text: serifs.checkCustomEmojis.nothing
 				});
@@ -189,11 +202,23 @@ export default class extends Module {
 			this.log('Check CustomEmojis requested');
 		}
 
-		await this.post(true);
+		await this.post(msg);
 
 		return {
 			reaction: 'like'
 		};
+	}
+
+	/** マスターにチャットで知らせる。マスターがいない・送れないときは、ログに残すだけ */
+	@bindThis
+	private async tellMaster(text: string) {
+		if (!config.master) return;
+		try {
+			const master: any = await this.ai.api('users/show', { username: config.master });
+			await this.ai.sendMessage(master.id, { text });
+		} catch (err) {
+			this.log(`Failed to tell the master: ${err}`);
+		}
 	}
 
 	@bindThis

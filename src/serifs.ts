@@ -562,6 +562,8 @@ export default {
 		postOncePage: (page, total, text) => `(${page}/${total})\n${text} #AddCustomEmojis`,
 		emojiOnce: emoji => `:${emoji}:(\`${emoji}\`)`,
 		nothing: '絵文字を確認しましたが、なにも追加されていないみたいです',
+		errorPermission: '絵文字を確認しようとしたら、見せてもらえませんでした...\n藍のアカウントに絵文字を管理する権限があるか、トークンに「絵文字を見る」権限(read:admin:emoji)があるか、見直してもらえますか？',
+		error: '絵文字を確認しようとしたら、エラーが出ちゃいました...\nしばらくしてから、もう一度試してみてください',
 	},
 
 	aichat: {
