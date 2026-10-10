@@ -222,6 +222,7 @@ test('メンション: 公開で頼まれたら、既定では公開のまま。
 			assert.equal(calls.posts[0].visibility, expected, `上限 ${cap}`);
 			assert.deepEqual(calls.posts[0].visibleUserIds, expected === 'specified' ? ['u1', 'm1'] : undefined);
 			assert.equal(calls.posts[0].replyId, 'note1', '頼んだ人の投稿への返信');
+			assert.ok(calls.posts[0].text.startsWith('@alice @boss '), '先頭に、頼んだ人のメンション(通知が届くように)');
 		} finally { restore(); }
 	}
 });
@@ -239,7 +240,7 @@ test('メンション: 頼んだ人の投稿への返信で、マスターにメ
 		const post = calls.posts[0];
 		const item = post.text.match(/呼び名を「(.+?)」にしました/)?.[1];
 		assert.ok(item, post.text);
-		assert.deepEqual(post, { replyId: 'note1', text: serifs.core.adanaMasterRenamedMention('@boss', '@alice', item, 'マスター'), visibility: 'home', visibleUserIds: undefined });
+		assert.deepEqual(post, { replyId: 'note1', text: '@alice ' + serifs.core.adanaMasterRenamedMention('@boss', '@alice', item, 'マスター'), visibility: 'home', visibleUserIds: undefined });
 		assert.ok(!post.text.includes('いかがでしょうか'), '呼び名にするなら、提案の聞き方はしない');
 		assert.deepEqual(replies, [], '返信はメンションの投稿だけ');
 		assert.deepEqual(calls.chats, []);
@@ -459,6 +460,6 @@ test('呼び名にする設定なら、チャットでも「いかがでしょ�
 	try {
 		off.mod.adana(message(off.ai, 'マスターのあだ名', []));
 		await tick();
-		assert.match(off.calls.posts[0].text, /^@boss @aliceに頼まれて、マスターのあだ名を考えました！ 「.+」とかいかがでしょうか？$/);
+		assert.match(off.calls.posts[0].text, /^@alice @boss @aliceに頼まれて、マスターのあだ名を考えました！ 「.+」とかいかがでしょうか？$/);
 	} finally { off.restore(); }
 });

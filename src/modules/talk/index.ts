@@ -10,6 +10,7 @@ import config from '@/config.js';
 import Friend from '@/friend.js';
 import { isMaster } from '@/utils/is-master.js';
 import { replyWithMention } from '@/utils/reply-with-mention.js';
+import { acct } from '@/utils/acct.js';
 import type MasterNicknameModule from '@/modules/master-nickname/index.js';
 import { pickNickname, parseAdanaTarget, ADANA_WORDS, ADANA_REFUSE_WORDS, REROLL_WORDS, YES_WORDS, NO_WORDS, isChatReplyExpired, startsWithReplyWord } from './nickname.js';
 import { resolveMasterNicknameSettings, checkMasterNicknameLimit, nextMasterNicknameUserRecord, describeRequester, masterLabel, masterMentionVisibility, masterNames, MasterNicknameSettings } from './master-nickname.js';
@@ -609,15 +610,17 @@ export default class extends Module {
 	 * 頼まれた投稿が公開でも、設定の上限(masterNicknameMentionVisibility)より広くはしない
 	 */
 	private masterMentionParams(msg: Message, master: any, text: string, max: MasterNicknameSettings['mentionVisibility']) {
+		// 頼んだ人にも通知が届くように、本文の先頭に、頼んだ人のメンションを必ず付ける
+		const mentioned = `${acct(msg.user)} ${text}`;
+
 		if (msg.isChat) {
-			const acct = msg.user.host ? `@${msg.user.username}@${msg.user.host}` : `@${msg.user.username}`;
-			return { text: `${acct} ${text}`, visibility: 'specified', visibleUserIds: [msg.userId, master.id] };
+			return { text: mentioned, visibility: 'specified', visibleUserIds: [msg.userId, master.id] };
 		}
 
 		const visibility = masterMentionVisibility(msg.visibility ?? 'public', max);
 		return {
 			replyId: msg.id,
-			text,
+			text: mentioned,
 			visibility,
 			visibleUserIds: visibility === 'specified' ? [msg.userId, master.id] : undefined,
 		};

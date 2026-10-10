@@ -372,7 +372,7 @@ test('すぐ変える設定で、伝え方が mention なら、マスターへ�
 		assert.notEqual(item, 'ボス');
 		assert.deepEqual(state.posts, [{
 			replyId: 'note1',
-			text: '@boss ' + serifs.core.adanaMasterRenamedNow(item, 'ご主人', false),
+			text: '@alice @boss ' + serifs.core.adanaMasterRenamedNow(item, 'ご主人', false),
 			visibility: 'public',
 			visibleUserIds: undefined,
 		}]);
