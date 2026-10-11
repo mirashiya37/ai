@@ -67,10 +67,7 @@ jobs:
     env:
       SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
       SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
-      DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
       - name: Connect to tailnet
         uses: tailscale/github-action@d1b6cd204f8dceda5b3eaad7f1f767be390056cd # v4.2.0
         with:
@@ -79,7 +76,7 @@ jobs:
           tags: tag:ci
           ping: ${{ secrets.DEPLOY_SSH_HOST }}
 
+      # サーバ上の固定スクリプトを sudo で実行する。スタックのディレクトリとイメージ名はサーバ側に書いてあり、
+      # ここから渡すのはコミットSHAだけ。デプロイ用ユーザーは docker を直接使えず、sudo で実行できるのもこのスクリプトだけ
       - name: Deploy over Tailscale SSH
-        run: |
-          tailscale ssh "$SSH_USER@$SSH_HOST" \
-            bash -s -- "$DEPLOY_PATH" "$GITHUB_SHA" "$IMAGE" < scripts/deploy.sh
+        run: tailscale ssh "$SSH_USER@$SSH_HOST" sudo -n /usr/local/sbin/deploy-ai "$GITHUB_SHA"
