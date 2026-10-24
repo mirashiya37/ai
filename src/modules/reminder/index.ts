@@ -36,7 +36,7 @@ export default class extends Module {
 
 	@bindThis
 	private async mentionHook(msg: Message) {
-		let text = msg.extractedText.toLowerCase();
+		const text = msg.extractedText.toLowerCase();
 		if (!text.startsWith('remind') && !text.startsWith('todo')) return false;
 
 		if (text.startsWith('reminds') || text.startsWith('todos')) {
@@ -50,14 +50,9 @@ export default class extends Module {
 			return true;
 		}
 
-		if (text.match(/^(.+?)\s(.+)/)) {
-			text = text.replace(/^(.+?)\s/, '');
-		} else {
-			text = '';
-		}
-
-		const separatorIndex = text.indexOf(' ') > -1 ? text.indexOf(' ') : text.indexOf('\n');
-		const thing = text.substr(separatorIndex + 1).trim();
+		// 先頭の `remind` / `todo` だけを取り除く(判定には小文字にした text を使うが、内容は元の文字列から取る)
+		const thingMatch = msg.extractedText.match(/^\S+\s+([\s\S]+)/);
+		const thing = thingMatch ? thingMatch[1].trim() : '';
 
 		if (thing === '' && msg.quoteId == null || msg.visibility === 'followers') {
 			msg.reply(serifs.reminder.invalid);
