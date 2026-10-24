@@ -18,6 +18,9 @@ async function setup() {
 	const getCollection = (name, opts) => cols[name] ?? (cols[name] = db.addCollection(name, opts));
 	const posts = [];
 	const unsubscribed = [];
+	const subscribed = [];
+	const timers = [];
+	const messages = [];
 	let failPost = null;
 	const friend = { userId: 'u1', name: 'テスト', doc: { user: { username: 'tester', host: null } } };
 	const ai = {
@@ -31,9 +34,10 @@ async function setup() {
 			posts.push(note);
 			return { id: 'reply' + posts.length };
 		},
-		subscribeReply: () => {},
+		sendMessage: (userId, message) => messages.push({ userId, message }),
+		subscribeReply: (module, key) => subscribed.push(key),
 		unsubscribeReply: (module, key) => unsubscribed.push(key),
-		setTimeoutWithPersistence: () => {},
+		setTimeoutWithPersistence: (module, delay, data) => timers.push({ delay, data }),
 	};
 
 	const mod = new Reminder();
@@ -52,7 +56,7 @@ async function setup() {
 
 	const setFailPost = err => { failPost = err; };
 
-	return { serifs, reminds, unsubscribed, nthNotify, setFailPost };
+	return { serifs, reminds, unsubscribed, subscribed, timers, messages, posts, nthNotify, setFailPost };
 }
 
 test('催促の回数に応じて(8回目から week、31回目から month)、催促の言い方を変える', { skip: !hasConfig && 'config.json がない' }, async () => {
@@ -103,4 +107,45 @@ test('引用だけのリマインダーでも、消すときは登録したキ�
 	} finally {
 		Math.random = random;
 	}
+});
+
+test('日時を指定したリマインダーは、1回だけ知らせて、記録と待ち受けを消す', { skip: !hasConfig && 'config.json がない' }, async () => {
+	const { serifs, reminds, unsubscribed, subscribed, timers, nthNotify } = await setup();
+
+	const post = await nthNotify(1, { id: 's1', notifyAt: Date.now() });
+	assert.deepEqual(post, { renoteId: 's1', text: '@tester ' + serifs.reminder.time('テスト') });
+	assert.equal(reminds.findOne({ id: 's1' }), null);
+	assert.deepEqual(unsubscribed, ['s1']);
+	// 催促の続きの待ち受けも、次のタイマーも作らない
+	assert.deepEqual(subscribed, []);
+	assert.deepEqual(timers, []);
+
+	// 引用だけのときは、引用元を Renote する
+	const quote = await nthNotify(1, { id: 's2', thing: null, quoteId: 'q2', notifyAt: Date.now() });
+	assert.equal(quote.renoteId, 'q2');
+	assert.equal(reminds.findOne({ id: 's2' }), null);
+});
+
+test('日時を指定したチャットのリマインダーも、1回だけ知らせて消す', { skip: !hasConfig && 'config.json がない' }, async () => {
+	const { serifs, reminds, unsubscribed, timers, messages, nthNotify } = await setup();
+
+	await nthNotify(1, { id: 'c1', isChat: true, notifyAt: Date.now() });
+	assert.deepEqual(messages, [{ userId: 'u1', message: { text: serifs.reminder.timeWithThing('しごと', 'テスト') } }]);
+	assert.equal(reminds.findOne({ id: 'c1' }), null);
+	assert.deepEqual(unsubscribed, ['c1']);
+	assert.deepEqual(timers, []);
+});
+
+test('日時を指定していない(これまでの)リマインダーは、催促を続ける', { skip: !hasConfig && 'config.json がない' }, async () => {
+	const { serifs, reminds, subscribed, timers, nthNotify } = await setup();
+
+	// notifyAt が無い古い記録と、null の記録のどちらも
+	for (const [id, extra] of [['o1', {}], ['o2', { notifyAt: null }]]) {
+		const post = await nthNotify(1, { id, ...extra });
+		assert.equal(post.text, '@tester ' + serifs.reminder.notify('テスト'));
+		assert.notEqual(reminds.findOne({ id }), null);
+	}
+	assert.deepEqual(subscribed, ['o1', 'o2']);
+	assert.equal(timers.length, 2);
+	assert.equal(timers[0].delay, 1000 * 60 * 60 * 24);
 });

@@ -5,6 +5,7 @@ import Message from '@/message.js';
 import serifs, { getSerif } from '@/serifs.js';
 import { acct } from '@/utils/acct.js';
 import config from '@/config.js';
+import { parseWhen, checkWhen } from './parse-when.js';
 
 const NOTIFY_INTERVAL = 1000 * 60 * 60 * 24; // 24時間ごとに変更する
 
@@ -18,6 +19,7 @@ export default class extends Module {
 		thing: string | null;
 		quoteId: string | null;
 		times: number; // 催促した回数(使うのか？) => 使った
+		notifyAt?: number | null; // 日時を指定したときの、お知らせの時刻。この場合は1回だけ知らせて消す
 		createdAt: number;
 	}>;
 
@@ -46,13 +48,20 @@ export default class extends Module {
 
 			const getQuoteLink = id => `[${id}](${config.host}/notes/${id})`;
 
-			msg.reply(serifs.reminder.reminds + '\n' + reminds.map(remind => `・${remind.thing ? remind.thing : getQuoteLink(remind.quoteId)}`).join('\n'));
+			const getSchedule = remind => remind.notifyAt != null ? `(予定: $[unixtime ${Math.floor(remind.notifyAt / 1000)}])` : '';
+
+			msg.reply(serifs.reminder.reminds + '\n' + reminds.map(remind => `・${remind.thing ? remind.thing : getQuoteLink(remind.quoteId)}${getSchedule(remind)}`).join('\n'));
 			return true;
 		}
 
 		// 先頭の `remind` / `todo` だけを取り除く(判定には小文字にした text を使うが、内容は元の文字列から取る)
 		const thingMatch = msg.extractedText.match(/^\S+\s+([\s\S]+)/);
-		const thing = thingMatch ? thingMatch[1].trim() : '';
+		const body = thingMatch ? thingMatch[1].trim() : '';
+
+		// 先頭に日時の指定があれば読み取る(「明日9時 会議」「30分後 洗濯物」)
+		const now = new Date();
+		const when = parseWhen(body, now);
+		const thing = when ? when.rest : body;
 
 		if (thing === '' && msg.quoteId == null || msg.visibility === 'followers') {
 			msg.reply(serifs.reminder.invalid);
@@ -62,6 +71,17 @@ export default class extends Module {
 			};
 		}
 
+		if (when) {
+			const range = checkWhen(when.at, now);
+			if (range !== 'ok') {
+				msg.reply(range === 'past' ? serifs.reminder.past : serifs.reminder.tooFar);
+				return {
+					reaction: '🆖',
+					immediate: true,
+				};
+			}
+		}
+
 		const remind = this.reminds.insertOne({
 			id: msg.id,
 			userId: msg.userId,
@@ -69,6 +89,7 @@ export default class extends Module {
 			thing: thing === '' ? null : thing,
 			quoteId: msg.quoteId,
 			times: 0,
+			notifyAt: when ? when.at.getTime() : null,
 			createdAt: Date.now(),
 		});
 
@@ -84,10 +105,14 @@ export default class extends Module {
 			});
 		}
 
-		// タイマーセット
-		this.setTimeoutWithPersistence(NOTIFY_INTERVAL, {
+		// タイマーセット(日時の指定があれば、その時刻に)
+		this.setTimeoutWithPersistence(when ? when.at.getTime() - Date.now() : NOTIFY_INTERVAL, {
 			id: remind!.id,
 		});
+
+		if (when) {
+			msg.reply(serifs.reminder.set(Math.floor(when.at.getTime() / 1000)));
+		}
 
 		return {
 			reaction: '🆗',
@@ -139,10 +164,15 @@ export default class extends Module {
 		const friend = this.ai.lookupFriend(remind.userId);
 		if (friend == null) return; // 処理の流れ上、実際にnullになることは無さそうだけど一応
 
+		// 日時を指定したリマインダーは、1回だけ知らせて消す
+		const isScheduled = remind.notifyAt != null;
+
 		let reply;
 		if (remind.isChat) {
 			this.ai.sendMessage(friend.userId, {
-				text: serifs.reminder.notifyWithThing(remind.thing, friend.name)
+				text: isScheduled
+					? serifs.reminder.timeWithThing(remind.thing, friend.name)
+					: serifs.reminder.notifyWithThing(remind.thing, friend.name)
 			});
 		} else {
 			const renoteId = remind.thing == null && remind.quoteId ? remind.quoteId : remind.id;
@@ -159,6 +189,7 @@ export default class extends Module {
 				}
 
 				const notify =
+					isScheduled ? serifs.reminder.time :
 					remind.times > 30 ? serifs.reminder.month : // 1ヶ月放置
 					remind.times > 7 ? serifs.reminder.week : // 1週間放置
 					serifs.reminder.notify;
@@ -176,6 +207,12 @@ export default class extends Module {
 				}
 				return;
 			}
+		}
+
+		if (isScheduled) {
+			this.unsubscribeReply(remind.id);
+			this.reminds.remove(remind);
+			return;
 		}
 
 		this.subscribeReply(remind.id, remind.isChat, remind.isChat ? remind.userId : reply.id, {

@@ -510,6 +510,16 @@ export default {
 
 		reminds: 'やること一覧です！',
 
+		set: (noticeDate) => `わかりました！$[unixtime ${noticeDate}]にお知らせしますね！`,
+
+		past: 'もう過ぎてますよ...？',
+
+		tooFar: '遠すぎます...',
+
+		time: (name) => name ? `${name}、時間ですよ！ #remAInder` : `時間ですよ！ #remAInder`,
+
+		timeWithThing: (thing, name) => name ? `${name}、「${thing}」の時間ですよ！ #remAInder` : `「${thing}」の時間ですよ！ #remAInder`,
+
 		forget: 'えーっと...なに言おうとしたんでしたっけ...？',
 
 		notify: (name) => name ? `${name}、これやりましたか？ #remAInder` : `これやりましたか？ #remAInder`,
