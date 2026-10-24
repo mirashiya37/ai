@@ -1,15 +1,15 @@
 # ベースイメージはダイジェストで固定する(タグが指す中身が、知らないうちに変わらないように)。
 # 更新するときは `docker buildx imagetools inspect node:lts` で新しいダイジェストを調べ、ビルドして確かめてから差し替える
-FROM node:lts@sha256:64af3819f9275802414d7cdc38c27e9d82bd564dec4d4da87d008255d36c63b4
+FROM node:lts@sha256:6449e19d8184d84062525b6a7524def03146c2cb04a7f08b076680d0e8e4240a
 
-RUN apt-get update && apt-get install tini --no-install-recommends -y && apt-get clean && rm -rf /var/lib/apt-get/lists/*
+RUN apt-get update && apt-get install tini --no-install-recommends -y && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ARG enable_mecab=1
 
 RUN if [ $enable_mecab -ne 0 ]; then apt-get update \
   && apt-get install mecab libmecab-dev mecab-ipadic-utf8 make curl xz-utils file sudo --no-install-recommends -y \
   && apt-get clean \
-  && rm -rf /var/lib/apt-get/lists/* \
+  && rm -rf /var/lib/apt/lists/* \
   && cd /opt \
   && git clone --depth 1 https://github.com/yokomotod/mecab-ipadic-neologd.git \
   && cd /opt/mecab-ipadic-neologd \
